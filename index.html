@@ -91,7 +91,7 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794952805";
+const BUILD_VERSION = "1794953067";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1180,7 +1180,7 @@ function viewToday() {
   const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.g} g · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
   const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
-  const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div>
+  const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyOpen" title="Copier un autre jour">↺ Copier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
     ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
     ${!all.length ? `<p class="mut sm">Rien pour l'instant. Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("") : all.map(entryRow).join("")}
   </div>`;
@@ -1233,7 +1233,7 @@ function LS_get(k) { try { return localStorage.getItem(k); } catch (e) { return 
 // ---------- Feuille d'ajout ----------
 function addSheet() {
   const A = S.add;
-  const tabs = [["search", "Rechercher"], ["ia", "Décrire (IA)"], ["photo", "Photo du plat"], ["scan", "📷 Scanner"], ["fav", "Favoris"]];
+  const tabs = [["search", "Rechercher"], ["scan", "📷 Scanner"], ["photo", "Photo du plat"], ["ia", "Décrire (IA)"], ["recipes", "Recettes"], ["fav", "Favoris"]];
   let body = "";
   if (A.items) body = pendingItemsHTML();
   else if (A.sel) body = selFoodHTML();
@@ -1263,6 +1263,7 @@ function addSheet() {
         <label class="btn" style="display:block;text-align:center;background:var(--chip);color:var(--txt)">📸 Photo du produit et/ou de ses valeurs nutritionnelles<input type="file" accept="image/*" multiple data-file="prodphotos" style="display:none"></label>
         <p class="xs mut c" style="margin:6px 0 14px">1 à 3 photos : l'avant du paquet, le tableau « Información nutricional »… L'IA lit le nom et les valeurs.</p>
         <div class="row"><label class="btn sec small" style="background:var(--chip);color:var(--txt);white-space:nowrap">Photo du code<input type="file" accept="image/*" capture="environment" data-file="barcode" style="display:none"></label><input id="bcManual" inputmode="numeric" placeholder="ou tape le code"><button class="small sec" data-act="bcManual">OK</button></div>`;
+  } else if (A.tab === "recipes") { body = recipesTabHTML();
   } else if (A.tab === "fav") {
     const favs = Store.get("favs", { items: [] }).items || [];
     body = favs.length ? favs.map(f => `<div class="entry"><div><div>${esc(f.name)}</div><div class="mut xs">${f.entries.length} aliment(s) · ${r0(f.entries.reduce((s, e) => s + scaleNutr(e.per100, e.g).kcal, 0))} kcal</div></div><div class="row"><button class="danger small" data-act="delFav" data-v="${f.id}">✕</button><button class="small" data-act="addFav" data-v="${f.id}">Ajouter</button></div></div>`).join("")
@@ -1314,10 +1315,10 @@ const MUSC_FRONT = [["traps_up", 40, 26, 6, 2.3, 22], ["delt_ant", 33, 32, 3.5, 
 const MUSC_BACK = [["traps_up", 42, 26, 7, 2.6, 18], ["traps_mid", 44, 38, 5, 5, 0], ["traps_low", 46, 50, 3, 7, -15], ["rot_cuff", 37, 40, 4.5, 3.5, 0], ["delt_post", 30, 33, 3.8, 5, -15],
   ["delt_lat", 27, 33, 2.6, 5.5, 8], ["teres", 34, 47, 4, 2, 30], ["lats", 38.5, 58, 5.5, 12, -14], ["erectors", 47.2, 76, 2.2, 11, 0], ["triceps_long", 27, 48, 1.9, 8, 8],
   ["triceps_latmed", 24.4, 50, 1.8, 7, 8], ["forearm", 21.6, 78, 2.4, 10, 8], ["glutes_med", 40, 96, 5, 3.2, -10], ["glutes_max", 43.5, 106, 6.5, 7, 0], ["hamstrings", 43, 130, 5.2, 15, -3], ["calves", 42, 165, 4, 11, 0]];
-function muscleSVG(prim = [], sec = [], focus = [], mini = false) {
+function muscleSVG(prim = [], sec = [], focus = [], mini = false, colors = null) {
   const cls = id => "m" + (prim.includes(id) ? " prim" : sec.includes(id) ? " sec" : "") + (focus.includes(id) ? " focus" : "");
   const shapes = (list, ox) => list.map(([id, cx, cy, rx, ry, rot, single]) => {
-    const one = (x, r) => `<ellipse class="${cls(id)}" cx="${ox + x}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(${r} ${ox + x} ${cy})"><title>${MUSCLES[id][0]}</title></ellipse>`;
+    const one = (x, r) => `<ellipse class="${cls(id)}" ${colors && colors[id] ? `style="fill:${colors[id]};opacity:.9"` : ""} cx="${ox + x}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(${r} ${ox + x} ${cy})"><title>${MUSCLES[id][0]}</title></ellipse>`;
     return single ? one(cx, rot) : one(cx, rot) + one(100 - cx, -rot);
   }).join("");
   const sil = ox => {
@@ -1352,7 +1353,7 @@ function viewWorkout() {
       <button style="width:100%;margin-top:8px" data-act="finishW">Terminer la séance</button></div>` : ""}`;
   if (w) return toggle + liveView(w);
   const P = program(); const hist = workouts().filter(x => !x.live).slice(0, 30);
-  return `${statusBanner()}<h1>Séance</h1>${toggle}
+  return `${statusBanner()}<h1>Séance</h1>${toggle}${recoveryCardHTML()}
     <div class="card"><h2>Démarrer</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${Object.keys(P).map(n => `<button data-act="startW" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div>
     <p class="xs mut">Ton programme est préchargé. Tu peux changer d'exercice, en ajouter ou en enlever pendant la séance.</p></div>
     <div class="card"><h2>Historique</h2>${hist.map(h => {
@@ -1647,6 +1648,105 @@ function gymExSheet(exId) {
   };
 }
 
+// ===================== RECETTES PERSO =====================
+const recipes = () => Store.get("recipes", { items: [] }).items || [];
+function recipeTotals(r) {
+  const t = { g: 0, n: {}, micro: {} };
+  (r.ings || []).forEach(i => { t.g += +i.g || 0; NUTR_KEYS.forEach(k => t.n[k] = (t.n[k] || 0) + (i.per100?.[k] || 0) * (+i.g || 0) / 100);
+    Object.entries(i.micro100 || {}).forEach(([m, v]) => t.micro[m] = (t.micro[m] || 0) + (+v || 0) * (+i.g || 0) / 100); });
+  return t;
+}
+function recipeAsFood(r) {
+  const t = recipeTotals(r); const g = r.cookedG || t.g || 1; const per100 = {}; NUTR_KEYS.forEach(k => per100[k] = (t.n[k] || 0) / g * 100);
+  const micro100 = {}; Object.entries(t.micro).forEach(([m, v]) => micro100[m] = v / g * 100);
+  return { name: r.name, per100, micro100, unit: Math.round(g / (r.portions || 1)), src: "recette", recipeId: r.id };
+}
+function recipesTabHTML() {
+  const rs = recipes();
+  return `<button class="sec" style="width:100%;margin-bottom:10px" data-act="recNew">+ Créer une recette</button>
+    ${rs.length ? rs.map(r => { const f = recipeAsFood(r); return `<div class="entry"><div class="grow" data-act="recPick" data-v="${r.id}"><div class="b">${esc(r.name)}</div><div class="xs mut">${r.portions || 1} portion(s) · ${r0(f.per100.kcal * f.unit / 100)} kcal et P ${r0(f.per100.p * f.unit / 100)} g par portion</div></div><button class="ghost small" data-act="recEdit" data-v="${r.id}">✎</button></div>`; }).join("")
+      : `<p class="mut sm">Aucune recette. Crée tes plats habituels une fois (ex. ton batch de riz-poulet), puis ajoute-les en 1 clic en choisissant le nombre de portions.</p>`}`;
+}
+function recipePortionSheet(id) {
+  return () => {
+    const r = recipes().find(x => x.id === id); if (!r) return ""; const f = recipeAsFood(r); const p = S.recPortions || 1; const g = Math.round(f.unit * p);
+    return `<div class="row between"><h2>${esc(r.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+      <label>Nombre de portions</label><div class="stepper"><button data-act="recP" data-v="-0.5">−</button><input id="recPIn" type="number" step="0.5" value="${p}" data-input="recP"><button data-act="recP" data-v="0.5">+</button></div>
+      <p class="sm" id="recPInfo"><b>${r0(f.per100.kcal * g / 100)} kcal</b> · P ${r1(f.per100.p * g / 100)} g · G ${r1(f.per100.c * g / 100)} g · L ${r1(f.per100.f * g / 100)} g · ${g} g</p>
+      <button style="width:100%" data-act="recAdd" data-v="${id}">Ajouter à ma journée</button>`;
+  };
+}
+function recipeEditSheet() {
+  const R = S.rec; const t = recipeTotals(R); const res = R.q ? searchFoods(R.q).slice(0, 8) : []; S._recRes = res;
+  return `<div class="row between"><h2>${R.id ? "Modifier" : "Nouvelle"} recette</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <label>Nom</label><input id="recName" value="${esc(R.name)}" placeholder="ex. Batch riz poulet curry">
+    <div class="row"><div class="grow"><label>Nombre de portions</label><input id="recPortions" type="number" step="1" value="${R.portions || 1}"></div><div class="grow"><label>Poids cuit total (g, facultatif)</label><input id="recCooked" type="number" value="${R.cookedG || ""}" placeholder="si tu pèses le plat fini"></div></div>
+    <h3 style="margin-top:12px">Ingrédients (poids cru)</h3>
+    ${(R.ings || []).map((i, k) => `<div class="entry"><div class="grow sm">${esc(i.name)}</div><input type="number" value="${r0(i.g)}" style="width:76px" data-input="recG" data-i="${k}"><span class="xs mut">g</span><button class="danger small" data-act="recDelIng" data-v="${k}">✕</button></div>`).join("") || `<p class="mut sm">Aucun ingrédient.</p>`}
+    <p class="xs b">Total : ${r0(t.n.kcal || 0)} kcal · P ${r0(t.n.p || 0)} g · G ${r0(t.n.c || 0)} g · L ${r0(t.n.f || 0)} g · ${r0(t.g)} g</p>
+    <input placeholder="Ajouter un ingrédient (ex. riz cru, poulet…)" value="${esc(R.q || "")}" data-input="recQ" autocomplete="off">
+    <div id="recRes">${res.map((f, k) => `<div class="entry" data-act="recAddIng" data-i="${k}"><span class="sm">${esc(f.name)}</span><span class="mut">+</span></div>`).join("")}</div>
+    <details style="margin-top:8px"><summary class="sm" style="color:var(--acc)">Ou décris la recette (IA)</summary><textarea id="recAi" placeholder="ex. 500 g de riz cru, 800 g de blanc de poulet, 1 brique de lait de coco, 2 c. à soupe de curry"></textarea><button class="small" style="margin-top:6px" data-act="recAiGo" ${S.busy.rec ? "disabled" : ""}>${S.busy.rec ? '<span class="spin"></span>' : "Analyser les ingrédients"}</button></details>
+    <div class="row" style="margin-top:14px">${R.id ? `<button class="danger grow" data-act="recDel">Supprimer</button>` : ""}<button class="grow" data-act="recSave">Enregistrer la recette</button></div>`;
+}
+function saveRecipeFromForm() {
+  const R = S.rec; R.name = ($("#recName")?.value || R.name || "").trim(); R.portions = Math.max(1, parseFloat($("#recPortions")?.value) || R.portions || 1); R.cookedG = parseFloat($("#recCooked")?.value) || null;
+}
+// ===================== COPIER UN AUTRE JOUR =====================
+function copyDaySheet() {
+  const k = S.copyFrom || addDays(S.day, -1); const es = day(k).entries || [];
+  if (!S.copySel || S.copySelDay !== k) { S.copySel = es.map(() => true); S.copySelDay = k; }
+  return `<div class="row between"><h2>Copier depuis un autre jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <div class="row"><button class="sec small" data-act="copyNav" data-v="-1">‹</button><input type="date" id="copyDate" value="${k}" max="${todayKey()}" style="text-align:center"><button class="sec small" data-act="copyNav" data-v="1">›</button></div>
+    ${es.length ? es.map((e, i) => `<label class="entry" style="cursor:pointer;margin:0;color:var(--txt);font-size:15px"><span><input type="checkbox" style="width:auto;margin-right:8px" data-act="copyChk" data-v="${i}" ${S.copySel[i] ? "checked" : ""}>${esc(e.name)} <span class="xs mut">${e.g} g${e.meal ? " · " + esc(e.meal) : ""}</span></span><span class="b">${r0(e.n.kcal)}</span></label>`).join("")
+      : `<p class="mut sm">Rien de noté le ${fmtDay(k)}.</p>`}
+    ${es.length ? `<button style="width:100%;margin-top:10px" data-act="copyGo">Copier ${S.copySel.filter(Boolean).length} aliment(s) vers ${S.day === todayKey() ? "aujourd'hui" : fmtDay(S.day)}</button>` : ""}`;
+}
+// ===================== RÉCUPÉRATION DES MUSCLES =====================
+// Charge = séries dures (principal 1, secondaire 0,5) qui décroît avec le temps (récupération ~48-72 h selon le volume).
+function muscleFatigue() {
+  const now = Date.now(); const f = {}; Object.keys(MUSCLES).forEach(m => f[m] = 0);
+  workouts().forEach(w => { const h = (now - (w.end || w.start)) / 3600000; if (h > 120 || w.live) return; const decay = Math.exp(-h / 30);
+    (w.ex || []).forEach(e => { const n = workSets(e).length; if (!n) return; const x = getEx(e.id);
+      x.prim.forEach(m => f[m] = (f[m] || 0) + n * decay); x.sec.forEach(m => f[m] = (f[m] || 0) + n * 0.5 * decay); }); });
+  const rec = {}; Object.keys(f).forEach(m => rec[m] = Math.max(0, Math.min(1, 1 - f[m] / 6))); return rec; // 1 = récupéré
+}
+const recColor = r => r >= 0.85 ? "#22c55e" : r >= 0.6 ? "#eab308" : r >= 0.35 ? "#f97316" : "#ef4444";
+function recoveryCardHTML() {
+  const rec = muscleFatigue(); const colors = {}; Object.entries(rec).forEach(([m, r]) => colors[m] = recColor(r));
+  const groupRec = {}; Object.entries(rec).forEach(([m, r]) => { const g = MUSCLES[m][1]; groupRec[g] = Math.min(groupRec[g] ?? 1, r); });
+  const tired = Object.entries(groupRec).filter(([g, r]) => r < 0.6).sort((a, b) => a[1] - b[1]);
+  const P = program(); const score = n => { const ids = (P[n]?.ex || []).flatMap(id => getEx(id).prim); return ids.length ? ids.reduce((s, m) => s + rec[m], 0) / ids.length : null; };
+  const best = Object.keys(P).map(n => [n, score(n)]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1])[0];
+  return `<div class="card"><h2>Récupération des muscles</h2>
+    <div style="max-width:320px;margin:auto">${muscleSVG([], [], [], true, colors)}</div>
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>
+    ${tired.length ? `<p class="sm">À laisser reposer : <b>${tired.map(([g, r]) => `${g} (${Math.round(r * 100)} %)`).join(", ")}</b></p>` : `<p class="sm">Tous tes muscles sont récupérés 💪</p>`}
+    ${best ? `<div class="reco good sm">Séance conseillée aujourd'hui : <b>${esc(best[0])}</b> (muscles récupérés à ${Math.round(best[1] * 100)} %)</div>` : ""}
+    <p class="xs mut">Estimation à partir de tes séries des 5 derniers jours (muscle principal = 1 série, secondaire = ½) ; récupération d'environ 48 à 72 h selon le volume.</p></div>`;
+}
+const RECIPE_ACT = {
+  recNew: () => { S.rec = { name: "", portions: 4, ings: [], q: "" }; openSheet(recipeEditSheet); },
+  recEdit: el => { const r = recipes().find(x => x.id === el.dataset.v); if (!r) return; S.rec = Object.assign({ q: "" }, clone(r)); openSheet(recipeEditSheet); },
+  recAddIng: el => { saveRecipeFromForm(); const f = S._recRes[+el.dataset.i]; S.rec.ings.push({ name: f.name, g: f.unit || 100, per100: f.per100, micro100: f.micro100 || null }); S.rec.q = ""; renderSheet(); },
+  recDelIng: el => { saveRecipeFromForm(); S.rec.ings.splice(+el.dataset.v, 1); renderSheet(); },
+  recAiGo: async () => { const txt = $("#recAi").value.trim(); if (!txt) return; saveRecipeFromForm(); S.busy.rec = true; renderSheet();
+    try { const r = await aiMealText(txt + " (ingrédients CRUS d'une recette, donne les valeurs pour 100 g crus)"); itemsFromAI(r).forEach(x => S.rec.ings.push({ name: x.name, g: x.grams, per100: x.per100, micro100: x.micro100 })); } catch (e) { toast(aiErr(e)); }
+    S.busy.rec = false; renderSheet(); },
+  recSave: () => { saveRecipeFromForm(); const R = S.rec; if (!R.name || !R.ings.length) { toast("Donne un nom et au moins un ingrédient"); return; }
+    const doc = clone(Store.get("recipes", { items: [] })); doc.items = doc.items || []; const item = { id: R.id || uid(), name: R.name, portions: R.portions, cookedG: R.cookedG, ings: R.ings };
+    const i = doc.items.findIndex(x => x.id === item.id); if (i >= 0) doc.items[i] = item; else doc.items.unshift(item); Store.set("recipes", doc); toast("Recette enregistrée"); S.add.tab = "recipes"; openSheet(addSheet); },
+  recDel: () => { const doc = clone(Store.get("recipes", { items: [] })); doc.items = (doc.items || []).filter(x => x.id !== S.rec.id); Store.set("recipes", doc); S.add.tab = "recipes"; openSheet(addSheet); },
+  recPick: el => { S.recPortions = 1; openSheet(recipePortionSheet(el.dataset.v)); },
+  recP: el => { S.recPortions = Math.max(0.5, (parseFloat($("#recPIn")?.value) || 1) + +el.dataset.v); renderSheet(); },
+  recAdd: el => { const r = recipes().find(x => x.id === el.dataset.v); if (!r) return; const f = recipeAsFood(r); const p = parseFloat($("#recPIn")?.value) || S.recPortions || 1; const g = f.unit * p;
+    updDay(d => d.entries.push(makeEntry(f, g, S.add?.meal || ""))); const frac = g / (r.cookedG || recipeTotals(r).g || g); (r.ings || []).forEach(i => fridgeConsume(i.name, i.g * frac));
+    toast(`${r.name} ajouté (${p} portion${p > 1 ? "s" : ""})`); closeSheet(); },
+  copyOpen: () => { S.copyFrom = addDays(S.day, -1); S.copySel = null; openSheet(copyDaySheet); },
+  copyNav: el => { const k = addDays(S.copyFrom || addDays(S.day, -1), +el.dataset.v); if (k > todayKey()) return; S.copyFrom = k; S.copySel = null; renderSheet(); },
+  copyGo: () => { const es = (day(S.copyFrom).entries || []).filter((e, i) => S.copySel[i]); updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) copié(s)`); closeSheet(); }
+};
+
 // ===================== ACTIONS =====================
 function updDay(fn) { const d = clone(day(S.day)); d.entries = d.entries || []; d.acts = d.acts || []; fn(d); saveDay(S.day, d); }
 function updW(fn) { const w = liveWorkout(); if (!w) return; const id = w._id; const o = clone(Store.get(id)); fn(o); Store.set(id, o); }
@@ -1917,6 +2017,8 @@ document.addEventListener("change", ev => {
   if (el.dataset.file) { if (el.dataset.file === "prodphotos") onProductPhotos([...(el.files || [])].slice(0, 3)); else if (el.dataset.file === "fridgephotos") onFridgePhotos([...(el.files || [])].slice(0, 3)); else onFile(el.dataset.file, el.files?.[0]); el.value = ""; return; }
   if (el.dataset.act === "range") { const [a, b] = el.value.split("-").map(Number); const doc = clone(Store.get("program", {})); doc.ranges = doc.ranges || {}; doc.ranges[el.dataset.v] = [a, b]; Store.set("program", doc); return; }
   if (el.dataset.act === "progEx") { S.progEx = el.value; render(); return; }
+  if (el.dataset.act === "copyChk") { S.copySel[+el.dataset.v] = el.checked; renderSheet(); return; }
+  if (el.id === "copyDate" && el.value) { S.copyFrom = el.value; S.copySel = null; renderSheet(); return; }
   if (el.id === "wDate") { const w = liveWorkout(); if (w && el.value) { const t = new Date(w.start); const d = parseKey(el.value); d.setHours(t.getHours(), t.getMinutes()); const delta = d.getTime() - w.start; updW(o => { o.start += delta; o.ex.forEach(e => e.sets.forEach(s => s.t += delta)); }); } return; }
   if (el.dataset.act === "warmAll") { updW(w => w.warmDone = el.checked); return; }
   if (el.type === "checkbox" && el.dataset.act && ACT[el.dataset.act]) ACT[el.dataset.act](el, ev);
@@ -1928,6 +2030,9 @@ document.addEventListener("input", ev => {
   else if (k === "itemG") { S.add.items[+el.dataset.i].grams = +el.value || 0; }
   else if (k === "fq") { S.fq = el.value; const res = searchFoods(el.value).slice(0, 12); S._fres = res; $("#fres").innerHTML = fridgeResHTML(res, el.value); }
   else if (k === "shopQ") { S.shop.items[+el.dataset.i].qty = +el.value || 0; }
+  else if (k === "recQ") { S.rec.q = el.value; const res = searchFoods(el.value).slice(0, 8); S._recRes = res; $("#recRes").innerHTML = res.map((f, i) => `<div class="entry" data-act="recAddIng" data-i="${i}"><span class="sm">${esc(f.name)}</span><span class="mut">+</span></div>`).join(""); }
+  else if (k === "recG") { S.rec.ings[+el.dataset.i].g = +el.value || 0; }
+  else if (k === "recP") { S.recPortions = parseFloat(el.value) || 1; }
   else if (k === "draft") { const dr = S.draft[+el.dataset.i]; if (dr) dr[el.dataset.k] = el.value; }
   else if (k === "exQ") { S.exQ = el.value; const sh = exPickerSheet("add")(); const tmp = document.createElement("div"); tmp.innerHTML = sh; $("#exList").innerHTML = tmp.querySelector("#exList").innerHTML; }
 });
@@ -1935,7 +2040,7 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, PLATFORM_ACT);
+Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); });
