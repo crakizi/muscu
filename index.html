@@ -84,7 +84,7 @@ nav.tabs button:active{transform:none}
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794952363";
+const BUILD_VERSION = "1794952596";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -722,6 +722,25 @@ function makeScene(key, opts) {
   controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = opts.minD || 1; controls.maxDistance = opts.maxD || 20;
   if (opts.map) { controls.screenSpacePanning = false; controls.panSpeed = 1.2; controls.rotateSpeed = 0.7; controls.zoomSpeed = 1.2; controls.keyPanSpeed = 25; try { controls.listenToKeyEvents(window); } catch (e) {} }
   controls.update();
+  // Trackpad Mac : 2 doigts = tourner la salle, pincer = zoom. Molette de souris classique = zoom.
+  controls.enableZoom = false;
+  renderer.domElement.addEventListener("wheel", e => {
+    e.preventDefault(); S3.anim = null;
+    const t = controls.target, off = cam.position.clone().sub(t);
+    const mouseWheel = e.deltaMode !== 0 || (e.deltaX === 0 && Math.abs(e.deltaY) >= 60 && Number.isInteger(e.deltaY));
+    if (e.ctrlKey || mouseWheel) {
+      const k = Math.exp((e.ctrlKey ? e.deltaY * 0.01 : Math.sign(e.deltaY) * 0.15));
+      off.setLength(Math.max(controls.minDistance, Math.min(controls.maxDistance, off.length() * k)));
+    } else {
+      const sp = new THREE.Spherical().setFromVector3(off);
+      sp.theta -= e.deltaX * 0.006; sp.phi = Math.max(0.12, Math.min(controls.maxPolarAngle, sp.phi + e.deltaY * 0.004));
+      off.setFromSpherical(sp);
+    }
+    cam.position.copy(t).add(off); controls.update();
+  }, { passive: false });
+  // Safari : geste « pincer » natif du trackpad
+  let gScale = 1; renderer.domElement.addEventListener("gesturestart", e => { e.preventDefault(); gScale = 1; });
+  renderer.domElement.addEventListener("gesturechange", e => { e.preventDefault(); const off = cam.position.clone().sub(controls.target); off.setLength(Math.max(controls.minDistance, Math.min(controls.maxDistance, off.length() * gScale / e.scale))); gScale = e.scale; cam.position.copy(controls.target).add(off); controls.update(); });
   if (opts.bounds) controls.addEventListener("change", () => { const b = opts.bounds, t = controls.target; const cx = Math.max(b[0], Math.min(b[1], t.x)), cz = Math.max(b[2], Math.min(b[3], t.z)); if (cx !== t.x || cz !== t.z) { const dx = cx - t.x, dz = cz - t.z; t.x = cx; t.z = cz; cam.position.x += dx; cam.position.z += dz; } });
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444455, 0.75));
   const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(5, 9, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
@@ -764,7 +783,7 @@ function mount3D(key, holder, build) {
   holder.appendChild(S3.tip);
   if (!holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
     const hint = document.createElement("div"); hint.style.cssText = "position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
-    hint.textContent = key === "gym" ? "Glisser : se déplacer · Clic droit ou 2 doigts : tourner · Molette/pincer : zoom · Double-clic : aller à la machine · Flèches du clavier" : "Glisser : tourner · Molette/pincer : zoom · Double-clic : zoomer sur un aliment"; holder.appendChild(hint); }
+    hint.textContent = key === "gym" ? "Trackpad : 2 doigts = tourner · pincer = zoom · glisser = se déplacer · double-clic = aller à la machine" : "Trackpad : 2 doigts = tourner · pincer = zoom · glisser = tourner"; holder.appendChild(hint); }
   if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
   V3.active = S3; if (!V3.raf) loop3D(); return S3;
