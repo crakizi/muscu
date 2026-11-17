@@ -91,7 +91,7 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794953067";
+const BUILD_VERSION = "1794955922";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -209,6 +209,57 @@ const MICRO_REFS = { // EFSA, homme 18-29 / adulte
   folate:["Folates (B9)","µg",330],vitA:["Vitamine A","µg",750]
 };
 const ACTIVITIES = {"Foot":7,"Padel":6,"Course à pied":9,"Vélo":7,"Marche rapide":4.3,"Natation":7,"Autre":5};
+
+// Portions de base (poids comestible en g), par mot-clé du nom de l'aliment
+const PORTIONS = [
+  [/banane/i, [["Petite", 90], ["Moyenne", 120], ["Grande", 150]]],
+  [/pomme(?! de terre)/i, [["Petite", 120], ["Moyenne", 160], ["Grande", 220]]],
+  [/orange/i, [["Petite", 110], ["Moyenne", 150], ["Grande", 200]]],
+  [/kiwi/i, [["1 kiwi", 75]]],
+  [/avocat/i, [["½ avocat", 70], ["1 avocat", 140]]],
+  [/tomate/i, [["Petite", 80], ["Moyenne", 120], ["Grande", 180]]],
+  [/carotte/i, [["Moyenne", 70]]],
+  [/pomme de terre/i, [["Petite", 100], ["Moyenne", 150], ["Grande", 250]]],
+  [/blanc d.?(œ|oe)uf/i, [["1 blanc", 33], ["2 blancs", 66]]],
+  [/(œ|oe)uf/i, [["S", 43], ["M", 50], ["L", 58], ["XL", 66]]],
+  [/baguette/i, [["¼ baguette", 60], ["½ baguette", 125], ["Tranche", 25]]],
+  [/pain de mie/i, [["1 tranche", 27], ["2 tranches", 54]]],
+  [/pain/i, [["Tranche", 35], ["2 tranches", 70]]],
+  [/tortilla de bl/i, [["1 wrap", 40]]],
+  [/riz.*cuit/i, [["Bol", 150], ["Assiette", 250]]],
+  [/riz.*cru/i, [["Portion", 75], ["Grosse portion", 100]]],
+  [/p[âa]tes.*cuit/i, [["Assiette", 250], ["Grosse assiette", 350]]],
+  [/p[âa]tes.*cru/i, [["Portion", 80], ["Grosse portion", 110]]],
+  [/avoine/i, [["Petit bol", 40], ["Bol", 60], ["Grand bol", 80]]],
+  [/(poulet|dinde)/i, [["½ filet", 75], ["1 filet", 150], ["Grand filet", 200]]],
+  [/(steak|b(œ|oe)uf)/i, [["Steak", 120], ["Gros steak", 180]]],
+  [/jambon|jam[oó]n/i, [["1 tranche", 30], ["2 tranches", 60]]],
+  [/thon|at[uú]n/i, [["Petite boîte égouttée", 56], ["Grande boîte égouttée", 112]]],
+  [/saumon/i, [["Pavé", 125]]],
+  [/skyr|prot[ée]in/i, [["1 pot", 150]]],
+  [/yaourt|yogur/i, [["1 pot", 125]]],
+  [/lait|leche/i, [["Verre", 250], ["Bol", 300]]],
+  [/whey/i, [["1 dose", 30], ["2 doses", 60]]],
+  [/huile/i, [["1 c. à café", 4], ["1 c. à soupe", 10]]],
+  [/beurre de cacahu/i, [["1 c. à soupe", 15]]],
+  [/beurre/i, [["Noisette", 5], ["1 c. à soupe", 12]]],
+  [/chocolat/i, [["1 carré", 5], ["4 carrés", 20]]],
+  [/(fromage|emmental|mozza|queso)/i, [["Portion", 30], ["Boule de mozza", 125]]],
+  [/amande|noix/i, [["Poignée", 30]]],
+  [/(coca|bi[eè]re|soda|cerveza)/i, [["Canette 33 cl", 330], ["Bouteille 50 cl", 500]]],
+  [/jus/i, [["Verre", 200]]],
+  [/(soupe|velout|gazpacho)/i, [["Bol", 250], ["Grand bol", 400]]],
+  [/pizza/i, [["1 part", 110], ["½ pizza", 220], ["Pizza entière", 430]]],
+  [/croissant/i, [["1 croissant", 60]]],
+  [/miel|confiture/i, [["1 c. à café", 7], ["1 c. à soupe", 20]]]
+];
+function portionsFor(f) {
+  const out = []; if (f.unit) out.push([f.src === "off" || f.src === "perso" ? "1 portion (paquet)" : "1 portion", f.unit]);
+  const hit = PORTIONS.find(([re]) => re.test(f.name)); if (hit) hit[1].forEach(p => out.push(p));
+  if (f.lastG) out.push(["Dernière fois", f.lastG]);
+  out.push(["100 g", 100]);
+  const seen = new Set(); return out.filter(([l, g]) => { const k = l + g; if (seen.has(k)) return false; seen.add(k); return true; });
+}
 
 // ===================== OUTILS =====================
 const $ = (s, r = document) => r.querySelector(s);
@@ -588,6 +639,24 @@ async function checkUpdate() {
 }
 setTimeout(checkUpdate, 1500); setInterval(checkUpdate, 5 * 60000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+
+// ---------- App iPhone native : pont Apple Santé ----------
+const NATIVE = () => !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.health);
+window.onNativeHealth = data => {
+  try {
+    if (!data || data.available === false) return;
+    const k = todayKey(); const d = clone(day(k)); d.entries = d.entries || []; d.acts = d.acts || [];
+    const before = JSON.stringify([d.steps, d.sleep, d.health]);
+    if (data.steps != null) d.steps = Math.round(data.steps);
+    if (data.sleepH != null && data.sleepH > 0) d.sleep = Math.round(data.sleepH * 4) / 4;
+    d.health = { active: Math.round(data.activeKcal || 0), restingHR: data.restingHR || null, at: Date.now() };
+    if (data.weightKg && data.weightDay === k && !d.weight) d.weight = Math.round(data.weightKg * 10) / 10;
+    if (JSON.stringify([d.steps, d.sleep, d.health]) !== before || (data.weightKg && !day(k).weight && d.weight)) saveDay(k, d);
+  } catch (e) {}
+};
+function askHealth() { if (NATIVE()) try { window.webkit.messageHandlers.health.postMessage({ type: "read" }); } catch (e) {} }
+setTimeout(askHealth, 1200); setInterval(askHealth, 10 * 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) askHealth(); });
 
 // ===================== SPOTIFY (contrôle de la musique) =====================
 // OAuth PKCE sans serveur. Le retour de connexion peut arriver dans un autre contexte (Safari au lieu de l'app) :
@@ -1204,6 +1273,7 @@ function viewToday() {
   </div>
   ${meals}
   <div class="card"><h2>Suivi du jour</h2>
+    ${d.health ? `<div class="banner" style="background:#fde8ef;color:#9d174d">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}${d.health.restingHR ? " · FC repos " + d.health.restingHR : ""}</div>` : ""}
     <div class="row"><div class="grow"><label>Poids (kg, le matin à jeun)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="ex. 80.2"></div>
     <div class="grow"><label>Pas</label><input id="inSteps" type="number" inputmode="numeric" value="${d.steps || ""}" placeholder="ex. 8500"></div>
     <div class="grow"><label>Sommeil (h)</label><input id="inSleep" type="number" step="0.25" inputmode="decimal" value="${d.sleep || ""}"></div></div>
@@ -1279,10 +1349,11 @@ function foodList(res) {
 }
 function selFoodHTML() {
   const f = S.add.sel, g = +S.add.g || 0, n = scaleNutr(f.per100, g);
-  const presets = [f.unit && [f.unit, "1 portion"], f.lastG && [f.lastG, "dernière fois"], [100, "100 g"]].filter(Boolean);
-  return `<h3>${esc(f.name)}</h3><div class="mut xs">${r0(f.per100.kcal)} kcal / 100 g</div>
+  const ports = portionsFor(f);
+  return `<h3>${esc(f.name)}</h3><div class="mut xs">${r0(f.per100.kcal)} kcal / 100 g${f.brand ? " · " + esc(f.brand) : ""}</div>
+    <label>Portion</label><div class="chips">${ports.map(([l, v]) => `<button class="chip ${+S.add.g === v ? "on" : ""}" data-act="gSet" data-v="${v}">${esc(l)} <span class="xs" style="opacity:.7">${v} g</span></button>`).join("")}</div>
     <label>Quantité (g)</label><div class="stepper"><button data-act="gStep" data-v="-10">−</button><input id="gIn" type="number" inputmode="decimal" value="${g}" data-input="g"><button data-act="gStep" data-v="10">+</button></div>
-    <div class="chips" style="margin-top:6px">${presets.map(([v, l]) => `<button class="chip" data-act="gSet" data-v="${v}">${l} (${v} g)</button>`).join("")}${f.unit ? `<button class="chip" data-act="gSet" data-v="${f.unit * 2}">2 portions</button>` : ""}</div>
+    <div class="row xs" style="gap:6px;margin-top:6px"><span class="mut">Nombre :</span>${[0.5, 1, 2, 3].map(k => `<button class="chip" data-act="gMul" data-v="${k}">×${k}</button>`).join("")}</div>
     <div class="card" style="margin-top:10px" id="selN"><b>${r0(n.kcal)} kcal</b> · P ${r1(n.p)} g · G ${r1(n.c)} g · L ${r1(n.f)} g</div>
     <div class="row"><button class="sec grow" data-act="selBack">Retour</button><button class="grow" data-act="selAdd">Ajouter</button></div>`;
 }
@@ -1768,13 +1839,14 @@ const ACT = {
   openAdd: el => { S.sheet = null; resetAdd(el.dataset.v || defaultMeal()); openSheet(addSheet); },
   addMeal: el => { S.add.meal = el.dataset.v; renderSheet(); },
   addTab: el => { S.add.tab = el.dataset.v; S.add.err = ""; S.add.img = null; S.add.blob = null; S.add.scan = null; renderSheet(); },
-  selFood: el => { const f = _searchRes[+el.dataset.i]; S.add.sel = f; S.add.g = f.lastG || f.unit || 100; renderSheet(); },
+  selFood: el => { const f = _searchRes[+el.dataset.i]; S.add.sel = f; S.add.g = f.lastG || f.unit || 100; S.add.baseG = S.add.g; renderSheet(); },
   offSearch: async () => { S.add.offBusy = true; renderSheet(); const res = await offSearch(S.add.q); S.add.offBusy = false;
     if (!res.length) { toast("Rien trouvé en ligne"); renderSheet(); return; }
     S.add.offRes = res; _searchRes = res; $("#qres").innerHTML = foodList(res); $$(".sheet button[data-act=offSearch]").forEach(b => b.remove()); },
   selBack: () => { S.add.sel = null; renderSheet(); },
   gStep: el => { S.add.g = Math.max(0, (+S.add.g || 0) + +el.dataset.v); renderSheet(); },
-  gSet: el => { S.add.g = +el.dataset.v; renderSheet(); },
+  gSet: el => { S.add.g = +el.dataset.v; S.add.baseG = +el.dataset.v; renderSheet(); },
+  gMul: el => { S.add.g = Math.round((S.add.baseG || +S.add.g || 100) * +el.dataset.v); renderSheet(); },
   selAdd: () => { const g = +($("#gIn")?.value || S.add.g); if (!g) return; const f = S.add.sel; if (f.src === "off" && !myFoods()["bc" + f.barcode]) saveMyFood(f); updDay(d => d.entries.push(makeEntry(f, g, S.add.meal))); const fx = fridgeConsume(f.name, g); toast(`${f.name} ajouté${fx ? " · retiré du frigo" : ""}`); S.add.sel = null; S.add.q = ""; closeSheet(); },
   aiText: async () => {
     const txt = $("#iaTxt").value.trim(); if (!txt) return; S.add.note = txt; S.add.busy = true; S.add.err = ""; renderSheet();
