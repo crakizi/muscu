@@ -1,4 +1,4 @@
-const C = "muscu-25fb864e";
+const C = "muscu-d56191d2";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "vendor/three.min.js", "vendor/OrbitControls.js", "vendor/chart.umd.min.js", "vendor/zxing.min.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

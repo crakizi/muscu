@@ -594,19 +594,36 @@ function loop3D() {
 }
 
 // ===================== SALLE DE SPORT 3D =====================
+// Salle reconstituée d'après les photos officielles de l'UAX Fitness Center (Villanueva de la Cañada) :
+// grande halle aux murs gris foncé, lettrage « UAX FITNESS CENTER », sol caoutchouc noir avec marquages blancs,
+// plateforme parquet avec machines à charge libre (cadres argent, assises rouges), machines guidées le long du mur,
+// tour à poulies BH au centre, bancs + râteliers d'haltères au fond à droite, racks à droite, piste en gazon vert,
+// zone cardio vitrée. Positions approximatives : à ajuster avec les infos de Vuthy.
 const GYM_MACHINES = [
-  { id: "cable", label: "Poulie vis-à-vis", pos: [-3.2, 0, -3.2], rot: 0, build: "cable", ex: ["lat_raise_cable", "tri_oh_cable", "tri_push_uni", "tri_push_rope", "hammer_rope", "bayesian_curl", "cable_crunch", "face_pull"] },
-  { id: "pulldown", label: "Tirage vertical", pos: [0, 0, -3.4], rot: 0, build: "pulldown", ex: ["lat_pulldown_pron"] },
-  { id: "row", label: "Tirage horizontal", pos: [2.8, 0, -3.3], rot: 0, build: "row", ex: ["row_neutral_close", "row_pron_wide"] },
-  { id: "incline", label: "Développé incliné machine", pos: [-3.6, 0, 0], rot: Math.PI / 2, build: "press", ex: ["incline_press_machine", "chest_press", "shoulder_press"] },
-  { id: "pecdeck", label: "Pec fly / Oiseau", pos: [-3.6, 0, 2.6], rot: Math.PI / 2, build: "pecdeck", ex: ["pec_fly_machine", "rear_delt_fly"] },
-  { id: "rack", label: "Rack + banc", pos: [0, 0, 0.2], rot: 0, build: "rack", ex: ["squat", "bench_press", "hip_thrust"] },
-  { id: "dumbbells", label: "Haltères + banc", pos: [0, 0, 3.6], rot: Math.PI, build: "dumbbells", ex: ["db_incline_press", "incline_db_curl", "lat_raise_db", "db_row", "shoulder_press", "bulgarian", "lunges", "rdl", "preacher_curl"] },
-  { id: "legpress", label: "Presse à cuisses", pos: [3.4, 0, 0], rot: -Math.PI / 2, build: "legpress", ex: ["leg_press", "calf_seated"] },
-  { id: "legext", label: "Leg extension / curl", pos: [3.5, 0, 2.6], rot: -Math.PI / 2, build: "legext", ex: ["leg_ext", "seated_leg_curl", "lying_leg_curl"] },
-  { id: "pullup", label: "Tractions / dips", pos: [-1.3, 0, -1.6], rot: 0, build: "pullup", ex: ["pull_up", "dips"] },
-  { id: "adductor", label: "Adducteurs / abducteurs", pos: [1.6, 0, -1.4], rot: 0, build: "seat", ex: ["adductor_machine", "abductor_machine"] },
-  { id: "hack", label: "Hack squat", pos: [1.8, 0, 2.4], rot: Math.PI, build: "hack", ex: ["hack_squat", "calf_standing", "back_ext"] }
+  // machines guidées (le long du mur gauche)
+  { id: "pulldown", label: "Tirage vertical", pos: [-10.6, 0, -6], rot: Math.PI / 2, build: "pulldown", ex: ["lat_pulldown_pron", "pull_up"] },
+  { id: "row", label: "Tirage horizontal", pos: [-10.6, 0, -3.4], rot: Math.PI / 2, build: "row", ex: ["row_neutral_close", "row_pron_wide"] },
+  { id: "pecdeck", label: "Pec fly / Oiseau", pos: [-10.6, 0, -0.8], rot: Math.PI / 2, build: "pecdeck", ex: ["pec_fly_machine", "rear_delt_fly"] },
+  { id: "legext", label: "Leg extension / curl", pos: [-10.6, 0, 1.8], rot: Math.PI / 2, build: "legext", ex: ["leg_ext", "seated_leg_curl", "lying_leg_curl"] },
+  { id: "adductor", label: "Adducteurs / abducteurs", pos: [-10.6, 0, 4.4], rot: Math.PI / 2, build: "seat", ex: ["adductor_machine", "abductor_machine"] },
+  // plateforme parquet : machines à charge libre (argent / rouge)
+  { id: "incline", label: "Développé incliné (disques)", pos: [-6.5, 0.08, 4.2], rot: Math.PI, build: "plate_press", ex: ["incline_press_machine", "chest_press"] },
+  { id: "prow", label: "Rowing (disques)", pos: [-4, 0.08, 4.2], rot: Math.PI, build: "plate_row", ex: ["row_neutral_close", "row_pron_wide", "db_row"] },
+  { id: "pshoulder", label: "Développé épaules (disques)", pos: [-1.5, 0.08, 4.2], rot: Math.PI, build: "plate_press", ex: ["shoulder_press"] },
+  { id: "ppulldown", label: "Tirage iso-latéral (disques)", pos: [1, 0.08, 4.2], rot: Math.PI, build: "plate_pulldown", ex: ["lat_pulldown_pron"] },
+  { id: "legpress", label: "Presse à cuisses", pos: [-5.2, 0.08, 6.6], rot: Math.PI / 2, build: "legpress", ex: ["leg_press", "calf_seated"] },
+  { id: "hack", label: "Hack squat", pos: [-1.8, 0.08, 6.6], rot: Math.PI, build: "hack", ex: ["hack_squat", "calf_standing"] },
+  // centre : tour à poulies BH + rig fonctionnel
+  { id: "cable", label: "Poulies (tour BH)", pos: [-1.5, 0, -3.2], rot: 0, build: "cable", ex: ["lat_raise_cable", "tri_oh_cable", "tri_push_uni", "tri_push_rope", "hammer_rope", "bayesian_curl", "cable_crunch", "face_pull"] },
+  { id: "rig", label: "Rig fonctionnel / tractions", pos: [-5.5, 0, -3.6], rot: 0, build: "pullup", ex: ["pull_up", "dips", "back_ext"] },
+  // bancs + haltères (fond droit, miroir)
+  { id: "benches", label: "Bancs réglables", pos: [2.6, 0, -2.2], rot: 0, build: "benches", ex: ["db_incline_press", "incline_db_curl", "lat_raise_db", "db_row", "shoulder_press", "preacher_curl", "bulgarian", "hip_thrust"] },
+  { id: "dumbbells", label: "Haltères", pos: [4.5, 0, -6.6], rot: 0, build: "dumbbells", ex: ["db_incline_press", "incline_db_curl", "lat_raise_db", "db_row", "rdl", "lunges"] },
+  // racks (côté droit)
+  { id: "rack", label: "Rack + banc", pos: [9.8, 0, -4.5], rot: -Math.PI / 2, build: "rack", ex: ["squat", "bench_press", "hip_thrust"] },
+  { id: "rack2", label: "Smith / rack 2", pos: [9.8, 0, -1.2], rot: -Math.PI / 2, build: "rack", ex: ["squat", "bench_press", "rdl"] },
+  // zone cardio vitrée
+  { id: "cardio", label: "Zone cardio", pos: [8.5, 0, 5], rot: 0, build: "cardio", ex: [] }
 ];
 function buildMachine(type) {
   const g = new THREE.Group(); const metal = M(0x3a3f47, { metalness: 0.6, roughness: 0.35 }); const pad = M(0x16181c, { roughness: 0.8 });
@@ -657,23 +674,60 @@ function buildMachine(type) {
     case "seat":
       g.add(box(0.8, 0.1, 0.9, metal, 0, 0.05, 0)); g.add(seat(0, 0.5, 0.05, 0.5, 0.5)); g.add(back(0, 0.9, -0.2, 0, 0.7)); g.add(weightStack(0, -0.42)); g.add(post(0, -0.35, 1.6));
       [-1, 1].forEach(s => g.add(box(0.08, 0.35, 0.08, accent, s * 0.3, 0.5, 0.35))); break;
+    case "plate_press": case "plate_row": case "plate_pulldown": {
+      const silver = M(0xc3c8cf, { metalness: 0.7, roughness: 0.3 }); const red = M(0xc0262d, { roughness: 0.6 }); const plateM = M(0x141414, { roughness: 0.5 });
+      const tube = (w, h, d, x, y, z, rx = 0, rz = 0) => { const t = box(w, h, d, silver, x, y, z); t.rotation.x = rx; t.rotation.z = rz; g.add(t); };
+      tube(0.9, 0.06, 1.3, 0, 0.03, 0); tube(0.07, 1.5, 0.07, 0, 0.75, -0.5);
+      if (type === "plate_pulldown") { tube(0.07, 2.2, 0.07, 0, 1.1, -0.55); [-1, 1].forEach(s2 => { tube(0.06, 0.06, 1, s2 * 0.35, 1.95, -0.1, 0.5); g.add(box(0.05, 0.25, 0.05, red, s2 * 0.45, 1.75, 0.35)); }); g.add(box(0.45, 0.09, 0.4, red, 0, 0.5, 0.25)); g.add(cyl(0.07, 0.07, 0.45, red, 0, 0.75, 0.15).rotateZ(Math.PI / 2)); }
+      else if (type === "plate_row") { g.add(box(0.4, 0.09, 0.35, red, 0, 0.5, 0.35)); const chest = box(0.4, 0.45, 0.08, red, 0, 0.95, 0.05); chest.rotation.x = 0.2; g.add(chest); [-1, 1].forEach(s2 => { tube(0.06, 0.06, 0.9, s2 * 0.35, 1.0, -0.2, -0.2); g.add(box(0.05, 0.3, 0.05, red, s2 * 0.38, 0.95, -0.6)); }); }
+      else { g.add(box(0.45, 0.09, 0.4, red, 0, 0.5, 0.3)); const bk = box(0.45, 0.8, 0.09, red, 0, 0.95, 0.5); bk.rotation.x = -0.4; g.add(bk); [-1, 1].forEach(s2 => { tube(0.06, 0.06, 0.9, s2 * 0.36, 1.25, 0.0, 0.6); g.add(box(0.05, 0.22, 0.05, red, s2 * 0.38, 1.4, -0.3)); }); }
+      [-1, 1].forEach(s2 => { const p = cyl(0.23, 0.23, 0.05, plateM, s2 * 0.55, 1.05, -0.35); p.rotation.z = Math.PI / 2; g.add(p); const p2 = cyl(0.18, 0.18, 0.05, plateM, s2 * 0.6, 1.05, -0.35); p2.rotation.z = Math.PI / 2; g.add(p2); tube(0.25, 0.04, 0.04, s2 * 0.5, 1.05, -0.35); });
+      break; }
+    case "benches":
+      for (let i = 0; i < 4; i++) { const x = (i - 1.5) * 0.9; g.add(box(0.3, 0.07, 1.15, M(0xc0262d), x, 0.45, 0)); const bk = box(0.3, 0.55, 0.07, M(0xc0262d), x, 0.72, -0.45); bk.rotation.x = 0.7; g.add(bk); g.add(box(0.08, 0.42, 0.9, M(0xc3c8cf, { metalness: 0.6 }), x, 0.21, 0)); }
+      break;
+    case "cardio": {
+      const glass = M(0xcfe8ff, { transparent: true, opacity: 0.18, roughness: 0.05 });
+      g.add(box(6, 2.6, 0.05, glass, 0, 1.3, -2.6)); g.add(box(0.05, 2.6, 5.2, glass, -3, 1.3, 0));
+      for (let i = 0; i < 5; i++) { const x = -2.2 + i * 1.05; g.add(box(0.7, 0.18, 1.6, pad, x, 0.12, -1.2)); g.add(box(0.06, 1.2, 0.06, metal, x - 0.3, 0.7, -1.95)); g.add(box(0.06, 1.2, 0.06, metal, x + 0.3, 0.7, -1.95)); g.add(box(0.6, 0.35, 0.08, pad, x, 1.35, -1.95)); }
+      for (let i = 0; i < 5; i++) { const x = -2.2 + i * 1.05; g.add(box(0.12, 0.7, 0.9, metal, x, 0.35, 1.2)); g.add(box(0.28, 0.07, 0.3, pad, x, 0.75, 1.5)); g.add(box(0.45, 0.06, 0.06, metal, x, 1.05, 0.85)); const fw = cyl(0.25, 0.25, 0.06, accent, x, 0.35, 0.8); fw.rotation.z = Math.PI / 2; g.add(fw); }
+      break; }
     case "hack":
       g.add(box(1, 0.12, 1.4, metal, 0, 0.06, 0)); [-0.35, 0.35].forEach(x => { const r = box(0.08, 2, 0.08, metal, x, 1, -0.2); r.rotation.x = -0.35; g.add(r); });
       const sled = box(0.5, 0.8, 0.1, pad, 0, 1.0, 0.0); sled.rotation.x = -0.35; g.add(sled); g.add(box(0.8, 0.06, 0.5, accent, 0, 0.18, 0.45)); break;
   }
   return g;
 }
+function textPlane(text, w, h, color = "#d9d4c7", size = 120) {
+  const c = document.createElement("canvas"); c.width = 2048; c.height = 256; const ctx = c.getContext("2d");
+  ctx.fillStyle = color; ctx.font = `600 ${size}px Georgia, "Times New Roman", serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, 1024, 140);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true })); return m;
+}
 function buildGym() {
-  const S3 = makeScene("gym", { cam: [6.5, 6.5, 8], target: [0, 0.5, 0], minD: 2, maxD: 16, bg: 0x20242b, onPick: id => ACT_PICK_MACHINE(id) });
-  const sc = S3.scene;
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 9.5), M(0x2b2f36, { roughness: 0.95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
-  const grid = new THREE.GridHelper(10, 20, 0x3a3f48, 0x30343b); grid.position.y = 0.002; sc.add(grid);
-  const wallM = M(0xd9dde3, { roughness: 0.9 }); const mirror = M(0x9fb6c9, { metalness: 0.9, roughness: 0.08 });
-  sc.add(box(10, 3, 0.1, wallM, 0, 1.5, -4.75)); sc.add(box(0.1, 3, 9.5, wallM, -5, 1.5, 0)); sc.add(box(6, 2, 0.04, mirror, 0, 1.4, -4.68));
-  sc.add(box(0.04, 2, 4, mirror, -4.93, 1.4, 1));
+  const S3 = makeScene("gym", { cam: [15, 14, 17], target: [0, 0, 0], minD: 3, maxD: 40, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
+  const sc = S3.scene; const W = 24, D = 16;
+  const rubber = M(0x1c1e22, { roughness: 0.95 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), rubber); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+  // plateforme parquet (machines à disques)
+  sc.add(box(9.6, 0.08, 4.6, M(0xc9a97c, { roughness: 0.8 }), -2.8, 0.04, 5.4));
+  // piste gazon
+  const turf = box(2.2, 0.03, 7, M(0x2f8f3a, { roughness: 1 }), -7.6, 0.015, -1.5); sc.add(turf);
+  [-1, 1].forEach(s2 => sc.add(box(0.05, 0.035, 7, M(0xffffff), -7.6 + s2 * 0.9, 0.02, -1.5)));
+  // marquages blancs au sol (zone fonctionnelle)
+  const white = new THREE.MeshBasicMaterial({ color: 0xe8e8e8 });
+  [[-3.5, -0.6], [-2, 0.2], [-0.5, -0.7], [-4.2, 1.1]].forEach(([x, z]) => { const r = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.42, 40), white); r.rotation.x = -Math.PI / 2; r.position.set(x, 0.01, z); sc.add(r); });
+  for (let i = 0; i < 4; i++) { const l = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 2), white); l.rotation.x = -Math.PI / 2; l.position.set(-1 + i * 0.5, 0.01, 1.4); sc.add(l); }
+  // murs gris foncé + lettrage
+  const wallM = M(0x3a3e45, { roughness: 0.9 }); const H = 5;
+  sc.add(box(W, H, 0.15, wallM, 0, H / 2, -D / 2)); sc.add(box(0.15, H, D, wallM, -W / 2, H / 2, 0));
+  const t = textPlane("UAX FITNESS CENTER", 11, 1.4); t.position.set(1.5, 3.7, -D / 2 + 0.09); sc.add(t);
+  sc.add(box(5, 2.2, 0.04, M(0x9fb6c9, { metalness: 0.9, roughness: 0.08 }), 4.5, 1.4, -D / 2 + 0.1));
+  // poutres métalliques (charpente)
+  for (let i = -2; i <= 2; i++) sc.add(box(0.08, 0.15, D, M(0x111214), i * 5, H + 0.6, 0));
+  sc.add(new THREE.AmbientLight(0xffffff, 0.15));
   GYM_MACHINES.forEach(m => {
     const g = buildMachine(m.build); g.position.set(...m.pos); g.rotation.y = m.rot; g.userData.pick = m.id;
-    const lab = labelSprite(m.label, 0.7); lab.position.set(0, 2.75, 0); g.add(lab);
+    const lab = labelSprite(m.label, 0.75); lab.position.set(0, m.build === "cardio" ? 3 : 2.75, 0); g.add(lab);
     sc.add(g); S3.pickables.push(g);
   });
   return S3;
@@ -1274,7 +1328,7 @@ function machineSheet(mid) {
   return () => {
     const m = GYM_MACHINES.find(x => x.id === mid); if (!m) return "";
     return `<div class="row between"><h2>${esc(m.label)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-      <p class="sm mut">Quel exercice fais-tu sur cette machine ?</p>
+      ${m.ex.length ? `<p class="sm mut">Quel exercice fais-tu sur cette machine ?</p>` : `<p class="sm">Zone cardio (tapis, vélos, rameurs). Note ton cardio dans Aujourd'hui → « Sport en plus ».</p>`}
       ${m.ex.map(id => { const x = getEx(id); return `<div class="entry" data-act="gymPickEx" data-v="${id}"><div style="width:96px;flex:none">${muscleSVG(x.prim, x.sec, x.focus, true)}</div><div class="grow"><div class="b">${esc(x.name)}</div><div class="xs mut">${x.focus.map(f => MUSCLES[f][0]).join(", ")}</div></div><div class="mut">›</div></div>`; }).join("")}`;
   };
 }
