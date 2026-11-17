@@ -79,12 +79,19 @@ nav.tabs button:active{transform:none}
 
 #app.wide{max-width:1280px}
 
+nav.tabs{align-items:flex-end}
+nav.tabs button.scanbtn{color:var(--acc);font-weight:700;margin-top:-26px}
+nav.tabs button.scanbtn span{width:58px;height:58px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(37,99,235,.4);border:4px solid var(--card)}
+nav.tabs button.scanbtn svg{width:28px;height:28px}
+.scanmodes{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.scanmodes label,.scanmodes button{background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:10px 14px;font:600 14px -apple-system,system-ui;cursor:pointer}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794952596";
+const BUILD_VERSION = "1794952805";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -324,7 +331,8 @@ function makeEntry(food, g, meal) {
   if (food.micro100) Object.entries(food.micro100).forEach(([m, v]) => micro[m] = (+v || 0) * g / 100);
   return { id: uid(), meal, name: food.name, brand: food.brand || "", g: r0(g), per100: food.per100, unit: food.unit || null, micro100: food.micro100 || null, n: scaleNutr(food.per100, g), micro, src: food.src || "", t: Date.now() };
 }
-function defaultMeal() { const h = new Date().getHours(); return h < 11 ? "Petit-déj" : h < 16 ? "Déjeuner" : h < 19 ? "Collation" : "Dîner"; }
+function defaultMeal() { return ""; } // par défaut : ajouté à la journée, sans repas (comme demandé)
+const mealLabel = m => m || "Sans repas";
 const MEALS = ["Petit-déj", "Déjeuner", "Collation", "Dîner"];
 
 // ===================== SÉANCES =====================
@@ -1058,7 +1066,9 @@ let ACT_PICK_FRIDGE = () => {};
 // ===================== SCANNER CODE-BARRES EN DIRECT (caméra) =====================
 const Scanner = {
   reader: null, el: null, stream: null,
-  async open(onCode, title) {
+  hub: false,
+  async open(onCode, title, hub) {
+    this.hub = !!hub;
     if (!navigator.mediaDevices?.getUserMedia) { toast("Caméra indisponible ici : prends le code en photo."); return; }
     const Z = await loadZXing(); if (!Z) { toast("Scanner indisponible (connexion ?)"); return; }
     this.close();
@@ -1070,9 +1080,11 @@ const Scanner = {
         <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
         <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:#22c55e;opacity:.8;animation:blink 1.2s infinite"></div></div>
       <div style="color:#cbd5e1;text-align:center;padding:12px 16px calc(16px + env(safe-area-inset-bottom));font:14px -apple-system,system-ui">Place le code-barres dans le cadre vert, il se lit tout seul.
+        ${this.hub ? `<div class="scanmodes"><label>📸 Photo du plat<input type="file" accept="image/*" capture="environment" data-file="hubphoto" style="display:none"></label><label>🏷️ Étiquette / produit<input type="file" accept="image/*" multiple data-file="hubprod" style="display:none"></label><button id="scanSearch">🔎 Chercher</button></div>` : ""}
         <div class="row" style="margin-top:10px;justify-content:center"><input id="scanManual" inputmode="numeric" placeholder="ou tape le code" style="max-width:200px;background:#111;color:#fff;border-color:#333"><button class="small" id="scanManualOk">OK</button></div></div>`;
     document.body.appendChild(el);
     el.querySelector("#scanClose").onclick = () => this.close();
+    const ss = el.querySelector("#scanSearch"); if (ss) ss.onclick = () => { this.close(); resetAdd(defaultMeal()); S.add.tab = "search"; openSheet(addSheet); };
     el.querySelector("#scanManualOk").onclick = () => { const v = el.querySelector("#scanManual").value.replace(/\D/g, ""); if (v) { this.close(); onCode(v); } };
     try {
       const hints = new Map(); hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E, Z.BarcodeFormat.CODE_128]);
@@ -1112,8 +1124,7 @@ function render() {
   $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge");
   $("#app").innerHTML = (views[S.tab] || viewToday)();
   $("#nav").innerHTML = navHTML();
-  let fab = $("#fab"); if (!fab) { fab = document.createElement("button"); fab.id = "fab"; fab.className = "fab"; fab.dataset.act = "quick"; fab.setAttribute("aria-label", "Ajouter"); fab.textContent = "+"; document.body.appendChild(fab); }
-  fab.style.display = (S.tab === "workout" && (liveWorkout() || S.wMode === "3d")) || S.tab === "fridge" ? "none" : "";
+
   renderSheet();
   window.scrollTo(0, sy);
   if (S.tab === "progress") drawCharts();
@@ -1141,7 +1152,9 @@ const ICONS = {
 };
 function navHTML() {
   const L = { today: "Aujourd'hui", fridge: "Frigo", workout: "Séance", progress: "Progrès", coach: "Coach" };
-  return Object.keys(L).map(k => `<button class="${S.tab === k ? "on" : ""}" data-act="tab" data-v="${k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${L[k]}${k === "workout" && liveWorkout() ? " •" : ""}</button>`).join("");
+  const btn = k => `<button class="${S.tab === k ? "on" : ""}" data-act="tab" data-v="${k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${L[k]}${k === "workout" && liveWorkout() ? " •" : ""}</button>`;
+  const keys = Object.keys(L);
+  return keys.slice(0, 2).map(btn).join("") + `<button class="scanbtn" data-act="scanHub" aria-label="Scanner un aliment"><span><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 9v6M10 9v6M13 9v6M17 9v6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Scanner</button>` + keys.slice(2).map(btn).join("");
 }
 function statusBanner() {
   if (Store.banner) return Store.banner();
@@ -1164,18 +1177,19 @@ function viewToday() {
   const left = T.kcal - t.kcal;
   const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
   const mini = (lab, v, ref, max) => `<span class="${max ? (v > ref ? "tag red" : "tag") : (v >= ref ? "tag grn" : "tag")}">${lab} ${r1(v)}/${ref} g</span>`;
-  const meals = MEALS.map(m => {
-    const es = (d.entries || []).filter(e => e.meal === m);
-    const kc = es.reduce((s, e) => s + (e.n.kcal || 0), 0);
-    return `<div class="card"><div class="row between"><h3>${m} <span class="mut sm">${r0(kc)} kcal</span></h3><div class="row">${es.length ? `<button class="ghost small" data-act="favMeal" data-v="${m}" title="Enregistrer en favori">★</button>` : ""}<button class="small" data-act="openAdd" data-v="${m}">+ Ajouter</button></div></div>
-      ${es.map(e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.g} g · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`).join("") || `<div class="mut sm">Rien pour l'instant</div>`}</div>`;
-  }).join("");
+  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.g} g · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
+  const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
+  const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
+  const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div>
+    ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
+    ${!all.length ? `<p class="mut sm">Rien pour l'instant. Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("") : all.map(entryRow).join("")}
+  </div>`;
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   const h = new Date().getHours(); const hello = h < 6 ? "Bonne nuit" : h < 13 ? "Bonjour" : h < 19 ? "Salut" : "Bonsoir";
   return `${statusBanner()}
   ${k === todayKey() ? `<div class="hello"><img src="icons/icon-192.png" alt="" onerror="this.remove()"><div><div class="b" style="font-size:18px">${hello} Vuthy 👋</div><div class="xs mut">${fmtDay(k)} · objectif : ${esc(GOALS[profile().goal].label)}</div></div><button class="ghost" style="margin-left:auto;font-size:20px" data-act="tab" data-v="profile" title="Profil">⚙︎</button></div>
   ${onboardingHTML()}
-  <div class="qa"><button data-act="openAdd" data-v=""><span>🍽️</span>Repas</button><button data-act="tab" data-v="workout"><span>🏋️</span>Séance</button><button data-act="quickWeight"><span>⚖️</span>Poids</button><button data-act="tab" data-v="fridge"><span>🧊</span>Frigo</button></div>` : ""}
+  <div class="qa"><button data-act="openAdd" data-v=""><span>🍽️</span>Aliment</button><button data-act="tab" data-v="workout"><span>🏋️</span>Séance</button><button data-act="quickWeight"><span>⚖️</span>Poids</button><button data-act="tab" data-v="fridge"><span>🧊</span>Frigo</button></div>` : ""}
   <div class="row between"><button class="sec small" data-act="dayNav" data-v="-1">‹</button><h2 class="c" style="margin:0">${k === todayKey() ? "Mon journal du jour" : fmtDay(k)}</h2><button class="sec small" data-act="dayNav" data-v="1" ${k >= todayKey() ? "disabled" : ""}>›</button></div>
   <div class="card" style="margin-top:10px"><div class="row" style="gap:14px">
     <div class="ring">${ring(t.kcal, T.kcal, "var(--acc)")}<div class="in"><div class="big">${r0(Math.abs(left))}</div><div class="xs mut">${left >= 0 ? "kcal restantes" : "kcal en trop"}</div></div></div>
@@ -1185,7 +1199,7 @@ function viewToday() {
     </div></div>
     <div class="chips" style="margin-top:10px">${mini("Fibres", t.fib, 30)}${mini("Sucres", t.sugar, sugarMax, 1)}${mini("Sel", t.salt, 5, 1)}${mini("Saturés", t.satfat, satMax, 1)}</div>
     ${Object.keys(t.micro).length ? `<details style="margin-top:8px"><summary class="xs mut">Micronutriments (estimés pour les aliments analysés par l'IA)</summary><div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag ${t.micro[m] >= ref ? "grn" : ""}">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div><p class="xs mut">Repères EFSA pour un homme adulte.</p></details>` : ""}
-    <button style="width:100%;margin-top:12px" data-act="openAdd" data-v="">+ Ajouter un repas</button><div class="row" style="margin-top:8px"><button class="sec grow small" data-act="aiFinish">Que manger ce soir ?</button><button class="sec grow small" data-act="aiFridge">Recette avec mon frigo</button></div>
+    <button style="width:100%;margin-top:12px" data-act="openAdd" data-v="">+ Ajouter un aliment</button><div class="row" style="margin-top:8px"><button class="sec grow small" data-act="aiFinish">Que manger ce soir ?</button><button class="sec grow small" data-act="aiFridge">Recette avec mon frigo</button></div>
     ${S.aiOut.today ? `<div class="ai-out">${esc(S.aiOut.today)}</div>` : ""}
   </div>
   ${meals}
@@ -1254,8 +1268,8 @@ function addSheet() {
     body = favs.length ? favs.map(f => `<div class="entry"><div><div>${esc(f.name)}</div><div class="mut xs">${f.entries.length} aliment(s) · ${r0(f.entries.reduce((s, e) => s + scaleNutr(e.per100, e.g).kcal, 0))} kcal</div></div><div class="row"><button class="danger small" data-act="delFav" data-v="${f.id}">✕</button><button class="small" data-act="addFav" data-v="${f.id}">Ajouter</button></div></div>`).join("")
       : `<p class="mut sm">Aucun favori. Dans l'écran Aujourd'hui, touche ★ sur un repas pour l'enregistrer.</p>`;
   }
-  return `<div class="row between"><h2>Ajouter ${A.meal ? "· " + A.meal : ""}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-    <div class="chips" style="margin:6px 0 10px">${MEALS.map(m => `<button class="chip ${A.meal === m ? "on" : ""}" data-act="addMeal" data-v="${m}">${m}</button>`).join("")}</div>
+  return `<div class="row between"><h2>Ajouter un aliment</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <div class="chips" style="margin:6px 0 10px"><span class="xs mut" style="align-self:center">Repas (facultatif) :</span>${["", ...MEALS].map(m => `<button class="chip ${A.meal === m ? "on" : ""}" data-act="addMeal" data-v="${m}">${mealLabel(m)}</button>`).join("")}</div>
     ${A.items || A.sel ? "" : `<div class="chips" style="margin-bottom:10px">${tabs.map(([k, l]) => `<button class="chip ${A.tab === k ? "on" : ""}" data-act="addTab" data-v="${k}">${l}</button>`).join("")}</div>`}
     ${A.err ? `<div class="banner" style="background:#fde2e3;color:#7f1d1d">${esc(A.err)}</div>` : ""}${body}`;
 }
@@ -1287,7 +1301,7 @@ function editEntrySheet(id) {
     const d = day(S.day); const e = (d.entries || []).find(x => x.id === id); if (!e) return "";
     return `<div class="row between"><h2>${esc(e.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
       <label>Quantité (g)</label><input id="eg" type="number" inputmode="decimal" value="${e.g}">
-      <label>Repas</label><select id="em">${MEALS.map(m => `<option ${m === e.meal ? "selected" : ""}>${m}</option>`).join("")}</select>
+      <label>Repas (facultatif)</label><select id="em"><option value="">Sans repas</option>${MEALS.map(m => `<option ${m === e.meal ? "selected" : ""}>${m}</option>`).join("")}</select>
       <p class="sm mut">${r0(e.per100.kcal)} kcal · P ${r1(e.per100.p)} · G ${r1(e.per100.c)} · L ${r1(e.per100.f)} pour 100 g</p>
       <div class="row"><button class="danger grow" data-act="delEntry" data-v="${id}">Supprimer</button><button class="sec grow" data-act="entryToFood" data-v="${id}">Mettre dans mes aliments</button><button class="grow" data-act="saveEntry" data-v="${id}">Enregistrer</button></div>`;
   };
@@ -1576,7 +1590,7 @@ function fridgeEatSheet(id) {
     const def = it.unit === "pc" ? (it.gPerPc || 100) : Math.min(it.qty, 150);
     return `<div class="row between"><h2>Manger : ${esc(it.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
       <label>Quantité mangée (g)</label><input id="feG" type="number" inputmode="decimal" value="${r0(def)}">
-      <label>Repas</label><select id="feM">${MEALS.map(m => `<option ${m === defaultMeal() ? "selected" : ""}>${m}</option>`).join("")}</select>
+      <label>Repas (facultatif)</label><select id="feM"><option value="">Sans repas</option>${MEALS.map(m => `<option>${m}</option>`).join("")}</select>
       ${food ? "" : `<p class="xs mut">Valeurs nutritionnelles inconnues pour cet aliment : l'IA va les estimer.</p>`}
       <button style="width:100%;margin-top:10px" data-act="fridgeEatGo" data-v="${id}" ${S.busy.eat ? "disabled" : ""}>${S.busy.eat ? '<span class="spin"></span>' : "Ajouter au journal et retirer du frigo"}</button>`;
   };
@@ -1637,7 +1651,7 @@ function gymExSheet(exId) {
 function updDay(fn) { const d = clone(day(S.day)); d.entries = d.entries || []; d.acts = d.acts || []; fn(d); saveDay(S.day, d); }
 function updW(fn) { const w = liveWorkout(); if (!w) return; const id = w._id; const o = clone(Store.get(id)); fn(o); Store.set(id, o); }
 let _searchRes = [];
-function resetAdd(meal) { S.add = { tab: S.add?.tab || "search", meal: meal || defaultMeal(), q: "", sel: null, g: 100, items: null, busy: false, note: "", img: null, blob: null, scan: null, err: "" }; }
+function resetAdd(meal) { S.add = { tab: S.add?.tab || "search", meal: meal || "", q: "", sel: null, g: 100, items: null, busy: false, note: "", img: null, blob: null, scan: null, err: "" }; }
 function aiErr(e) { if (e?.code === "no_key" || e?.code === "offline") return e.message; return e?.code === "not_granted" ? "L'IA n'est pas autorisée ou pas disponible ici (ouvre l'app depuis claude.ai et accepte la demande)." : e?.code === "rate_limited" ? "Trop de demandes à l'IA, réessaie dans une minute." : "Erreur IA : " + (e?.message || e?.code || "inconnue"); }
 function itemsFromAI(res) {
   return (res?.items || []).filter(x => x && x.name).map(x => ({ name: x.name, grams: +x.grams || 100, per100: Object.fromEntries(NUTR_KEYS.map(k => [k, +x.per100?.[k] || 0])), micro100: x.micro100 || null, confidence: x.confidence || "" }));
@@ -1683,6 +1697,7 @@ const ACT = {
     const out = S.add.items.filter(x => fridgeConsume(x.name, x.grams)).length;
     toast(`${S.add.items.length} aliment(s) ajouté(s)${out ? ` · ${out} retiré(s) du frigo` : ""}`); S.add.items = null; closeSheet();
   },
+  scanHub: () => Scanner.open(code => { resetAdd(defaultMeal()); S.add.tab = "scan"; openSheet(addSheet); handleBarcode(code); }, "Scanne un code-barres, ou choisis une photo", true),
   scanLive: () => Scanner.open(code => { S.add.tab = "scan"; if (!S.sheet) openSheet(addSheet); handleBarcode(code); }),
   fridgeScan: () => Scanner.open(async code => { let f = myFoods()["bc" + code]; if (!f) { toast("Recherche du produit…"); f = await offBarcode(code); if (f) f = saveMyFood(f); }
     if (!f) { toast("Produit inconnu : prends l'étiquette en photo"); S.fq = ""; openSheet(fridgeAddSheet); return; } S._fpick = f; openSheet(fridgeQtySheet(f)); }, "Scanne un produit pour ton frigo"),
@@ -1692,11 +1707,12 @@ const ACT = {
   saveEntry: el => { const g = +$("#eg").value, m = $("#em").value; updDay(d => { const e = d.entries.find(x => x.id === el.dataset.v); if (e && g > 0) { const ne = makeEntry(e, g, m); ne.id = e.id; ne.src = e.src; ne.brand = e.brand; Object.assign(e, ne); } }); closeSheet(); },
   delEntry: el => { updDay(d => d.entries = d.entries.filter(x => x.id !== el.dataset.v)); closeSheet(); },
   entryToFood: el => { const e = day(S.day).entries.find(x => x.id === el.dataset.v); if (e) { saveMyFood({ name: e.name, brand: e.brand, per100: e.per100, micro100: e.micro100, unit: e.g }); toast("Ajouté à mes aliments"); } },
+  byMeal: el => { S.byMeal = el.dataset.v === "1"; render(); },
   favMeal: el => {
-    const es = day(S.day).entries.filter(e => e.meal === el.dataset.v); if (!es.length) return;
-    openSheet(() => `<h2>Enregistrer en favori</h2><input id="favName" value="${esc(el.dataset.v + " – " + es.map(e => e.name).slice(0, 2).join(", "))}"><div class="row" style="margin-top:10px"><button class="sec grow" data-act="closeSheet">Annuler</button><button class="grow" data-act="favSave" data-v="${el.dataset.v}">Enregistrer</button></div>`);
+    const es = day(S.day).entries.filter(e => el.dataset.v === "__all" || e.meal === el.dataset.v); if (!es.length) return;
+    openSheet(() => `<h2>Enregistrer en favori</h2><input id="favName" value="${esc(es.map(e => e.name).slice(0, 3).join(", "))}"><div class="row" style="margin-top:10px"><button class="sec grow" data-act="closeSheet">Annuler</button><button class="grow" data-act="favSave" data-v="${el.dataset.v}">Enregistrer</button></div>`);
   },
-  favSave: el => { const es = day(S.day).entries.filter(e => e.meal === el.dataset.v); const doc = clone(Store.get("favs", { items: [] })); doc.items = doc.items || [];
+  favSave: el => { const es = day(S.day).entries.filter(e => el.dataset.v === "__all" || e.meal === el.dataset.v); const doc = clone(Store.get("favs", { items: [] })); doc.items = doc.items || [];
     doc.items.unshift({ id: uid(), name: $("#favName").value || "Favori", entries: es.map(e => ({ name: e.name, brand: e.brand, g: e.g, per100: e.per100, micro100: e.micro100, unit: e.unit })) }); Store.set("favs", doc); toast("Favori enregistré"); closeSheet(); },
   addFav: el => { const f = (Store.get("favs", { items: [] }).items || []).find(x => x.id === el.dataset.v); if (!f) return; updDay(d => f.entries.forEach(e => d.entries.push(makeEntry(e, e.g, S.add.meal)))); f.entries.forEach(e => fridgeConsume(e.name, e.g)); toast("Favori ajouté"); closeSheet(); },
   delFav: el => { const doc = clone(Store.get("favs", { items: [] })); doc.items = (doc.items || []).filter(x => x.id !== el.dataset.v); Store.set("favs", doc); renderSheet(); },
@@ -1791,7 +1807,7 @@ const ACT = {
   shopAdd: () => { fridgeAdd(S.shop.items.map(x => ({ name: x.name, qty: +x.qty, unit: x.unit === "pc" ? "pc" : "g", gPerPc: x.gPerPc || null, cat: FRIDGE_CATS[x.cat] ? x.cat : guessCat(x.name), zone: FRIDGE_ZONES[x.zone] ? x.zone : "frigo", per100: x.per100 || null })));
     toast(`${S.shop.items.length} aliment(s) rangé(s)`); S.shop = {}; closeSheet(); },
   quick: () => openSheet(() => `<div class="row between"><h2>Ajouter</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-    <div class="qa" style="grid-template-columns:repeat(2,1fr)"><button data-act="openAdd" data-v=""><span>🍽️</span>Un repas</button><button data-act="quickWeight"><span>⚖️</span>Mon poids</button><button data-act="tab" data-v="workout"><span>🏋️</span>Une séance</button><button data-act="fridgeShop"><span>🛒</span>Mes courses</button></div>`),
+    <div class="qa" style="grid-template-columns:repeat(2,1fr)"><button data-act="openAdd" data-v=""><span>🍽️</span>Un aliment</button><button data-act="quickWeight"><span>⚖️</span>Mon poids</button><button data-act="tab" data-v="workout"><span>🏋️</span>Une séance</button><button data-act="fridgeShop"><span>🛒</span>Mes courses</button></div>`),
   quickWeight: () => openSheet(() => `<div class="row between"><h2>Poids du jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     <p class="xs mut">Le matin, à jeun, après les toilettes : c'est le plus fiable.</p><input id="qW" type="number" step="0.1" inputmode="decimal" value="${day(todayKey()).weight || ""}" placeholder="ex. 80.2" style="font-size:22px;text-align:center">
     <button style="width:100%;margin-top:10px" data-act="quickWeightGo">Enregistrer</button>`),
@@ -1894,6 +1910,10 @@ document.addEventListener("click", ev => {
 });
 document.addEventListener("change", ev => {
   const el = ev.target;
+  if (el.dataset.file === "hubphoto" || el.dataset.file === "hubprod") { const files = [...(el.files || [])]; Scanner.close(); resetAdd(defaultMeal());
+    if (el.dataset.file === "hubphoto") { S.add.tab = "photo"; openSheet(addSheet); (async () => { if (!files[0]) return; S.add.blob = await shrinkImage(files[0]); S.add.img = URL.createObjectURL(S.add.blob); renderSheet(); ACT.aiPhoto(); })(); }
+    else { S.add.tab = "scan"; openSheet(addSheet); onProductPhotos(files.slice(0, 3)); }
+    el.value = ""; return; }
   if (el.dataset.file) { if (el.dataset.file === "prodphotos") onProductPhotos([...(el.files || [])].slice(0, 3)); else if (el.dataset.file === "fridgephotos") onFridgePhotos([...(el.files || [])].slice(0, 3)); else onFile(el.dataset.file, el.files?.[0]); el.value = ""; return; }
   if (el.dataset.act === "range") { const [a, b] = el.value.split("-").map(Number); const doc = clone(Store.get("program", {})); doc.ranges = doc.ranges || {}; doc.ranges[el.dataset.v] = [a, b]; Store.set("program", doc); return; }
   if (el.dataset.act === "progEx") { S.progEx = el.value; render(); return; }
