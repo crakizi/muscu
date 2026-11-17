@@ -82,6 +82,7 @@ nav.tabs button:active{transform:none}
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
+const BUILD_VERSION = "1794951248";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -420,6 +421,7 @@ const Store = {
   emit() { clearTimeout(this._emitT); this._emitT = setTimeout(() => this.listeners.forEach(f => f()), 30); },
   banner() {
     if (!navigator.onLine) return `<div class="banner">Hors-ligne : tout ce que tu notes est gardé sur l'appareil et sera synchronisé au retour d'internet.</div>`;
+    if (window._updReady) return `<div class="banner row between"><span>✨ Nouvelle version disponible</span><button class="small" onclick="location.reload()">Mettre à jour</button></div>`;
     if (this.syncErr) return `<div class="banner">Synchro en pause : ${esc(this.syncErr)}</div>`;
     return "";
   }
@@ -562,6 +564,20 @@ const PLATFORM_ACT = {
   aiKeySave: () => { Store.set("settings", Object.assign({}, aiSettings(), { geminiKey: $("#aiKey").value.trim() })); toast("Clé IA enregistrée"); }
 };
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+// ---------- Mises à jour automatiques ----------
+async function checkUpdate() {
+  if (!navigator.onLine || typeof BUILD_VERSION === "undefined" || !location.protocol.startsWith("http")) return;
+  try {
+    const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
+    if (j.v && j.v !== BUILD_VERSION) {
+      const reg = await navigator.serviceWorker?.getRegistration(); if (reg) await reg.update().catch(() => {});
+      if (S.sheet || isEditing() || liveWorkout()) { window._updReady = true; Store.emit(); return; }
+      toast("Mise à jour de l'app…"); setTimeout(() => location.reload(), 800);
+    }
+  } catch (e) {}
+}
+setTimeout(checkUpdate, 1500); setInterval(checkUpdate, 5 * 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
 
 // ===================== SPOTIFY (contrôle de la musique) =====================
 // OAuth PKCE sans serveur. Le retour de connexion peut arriver dans un autre contexte (Safari au lieu de l'app) :
