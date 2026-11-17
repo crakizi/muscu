@@ -84,7 +84,7 @@ nav.tabs button:active{transform:none}
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794951933";
+const BUILD_VERSION = "1794952363";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -707,8 +707,8 @@ function labelSprite(text, scale = 1, bg = "rgba(20,22,26,.85)") {
   ctx.font = `600 ${fs}px -apple-system,system-ui,sans-serif`; ctx.fillStyle = bg; const r = 18;
   ctx.beginPath(); ctx.moveTo(r, 0); ctx.arcTo(w, 0, w, c.height, r); ctx.arcTo(w, c.height, 0, c.height, r); ctx.arcTo(0, c.height, 0, 0, r); ctx.arcTo(0, 0, w, 0, r); ctx.fill();
   ctx.fillStyle = "#fff"; ctx.textBaseline = "middle"; ctx.fillText(text, 18, c.height / 2 + 2);
-  const tex = new THREE.CanvasTexture(c); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false }));
-  s.scale.set(c.width / c.height * 0.32 * scale, 0.32 * scale, 1); s.renderOrder = 10; return s;
+  const tex = new THREE.CanvasTexture(c); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false }));
+  const k = 0.028 * scale; s.scale.set(c.width / c.height * k, k, 1); s.renderOrder = 10; return s;
 }
 function makeScene(key, opts) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -716,12 +716,18 @@ function makeScene(key, opts) {
   renderer.outputEncoding = THREE.sRGBEncoding;
   const scene = new THREE.Scene(); scene.background = new THREE.Color(isDark() ? (opts.bg || 0x1b1e24) : (opts.bgLight || 0xe4e8ef));
   const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100); cam.position.set(...opts.cam);
-  const controls = new THREE.OrbitControls(cam, renderer.domElement); controls.target.set(...opts.target); controls.enableDamping = true;
-  controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = opts.minD || 1; controls.maxDistance = opts.maxD || 20; controls.update();
+  // Salle : contrôles « carte » (glisser = se déplacer, clic droit / 2 doigts = tourner, molette / pincer = zoom)
+  const controls = opts.map && THREE.MapControls ? new THREE.MapControls(cam, renderer.domElement) : new THREE.OrbitControls(cam, renderer.domElement);
+  controls.target.set(...opts.target); controls.enableDamping = true; controls.dampingFactor = 0.12;
+  controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = opts.minD || 1; controls.maxDistance = opts.maxD || 20;
+  if (opts.map) { controls.screenSpacePanning = false; controls.panSpeed = 1.2; controls.rotateSpeed = 0.7; controls.zoomSpeed = 1.2; controls.keyPanSpeed = 25; try { controls.listenToKeyEvents(window); } catch (e) {} }
+  controls.update();
+  if (opts.bounds) controls.addEventListener("change", () => { const b = opts.bounds, t = controls.target; const cx = Math.max(b[0], Math.min(b[1], t.x)), cz = Math.max(b[2], Math.min(b[3], t.z)); if (cx !== t.x || cz !== t.z) { const dx = cx - t.x, dz = cz - t.z; t.x = cx; t.z = cz; cam.position.x += dx; cam.position.z += dz; } });
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444455, 0.75));
   const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(5, 9, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, { left: -10, right: 10, top: 10, bottom: -10 }); scene.add(sun);
-  const S3 = { key, renderer, scene, cam, controls, pickables: [], onPick: opts.onPick, hover: null };
+  const S3 = { key, renderer, scene, cam, controls, pickables: [], onPick: opts.onPick, hover: null, home: { cam: [...opts.cam], target: [...opts.target] }, anim: null };
+
   // tap vs glisser
   let down = null; const ray = new THREE.Raycaster(); const v = new THREE.Vector2();
   const hit = e => { const r = renderer.domElement.getBoundingClientRect(); v.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -735,6 +741,7 @@ function makeScene(key, opts) {
     renderer.domElement.style.cursor = o ? "pointer" : "grab";
     if (S3.tip) { S3.tip.style.display = o ? "block" : "none"; if (o) { S3.tip.textContent = o.userData.label || ""; S3.tip.style.left = (e.offsetX + 14) + "px"; S3.tip.style.top = (e.offsetY + 10) + "px"; } }
   });
+  renderer.domElement.addEventListener("dblclick", e => { const o = hit(e); if (o) flyTo(S3, o.getWorldPosition(new THREE.Vector3())); });
   renderer.domElement.addEventListener("pointerleave", () => { if (S3.hover && S3.hover !== S3.selected) tint(S3.hover, null); S3.hover = null; if (S3.tip) S3.tip.style.display = "none"; });
   renderer.domElement.addEventListener("pointerup", e => {
     if (!down) return; const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); const dt = Date.now() - down[2]; down = null;
@@ -755,13 +762,42 @@ function mount3D(key, holder, build) {
   holder.style.position = "relative"; holder.appendChild(S3.renderer.domElement);
   if (!S3.tip) { S3.tip = document.createElement("div"); S3.tip.style.cssText = "position:absolute;pointer-events:none;background:rgba(17,24,39,.88);color:#fff;font:600 13px -apple-system,system-ui;padding:6px 10px;border-radius:10px;display:none;white-space:nowrap;z-index:2"; }
   holder.appendChild(S3.tip);
+  if (!holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
+    const hint = document.createElement("div"); hint.style.cssText = "position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
+    hint.textContent = key === "gym" ? "Glisser : se déplacer · Clic droit ou 2 doigts : tourner · Molette/pincer : zoom · Double-clic : aller à la machine · Flèches du clavier" : "Glisser : tourner · Molette/pincer : zoom · Double-clic : zoomer sur un aliment"; holder.appendChild(hint); }
   if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
   V3.active = S3; if (!V3.raf) loop3D(); return S3;
 }
+// ---- déplacements par boutons / animations ----
+function flyTo(S3, target, camPos) {
+  const t0 = S3.controls.target.clone(), c0 = S3.cam.position.clone();
+  const t1 = target.clone(); const c1 = camPos ? camPos.clone() : t1.clone().add(c0.clone().sub(t0).setLength(Math.min(7, c0.distanceTo(t0))));
+  S3.anim = { t0, c0, t1, c1, s: performance.now(), d: 650 };
+}
+function camMove(S3, kind) {
+  const c = S3.controls, cam = S3.cam, t = c.target; const off = cam.position.clone().sub(t);
+  if (kind === "in" || kind === "out") { const k = kind === "in" ? 0.7 : 1.4; const len = Math.max(c.minDistance, Math.min(c.maxDistance, off.length() * k)); flyTo(S3, t, t.clone().add(off.setLength(len))); return; }
+  if (kind === "left" || kind === "right") { const a = (kind === "left" ? 1 : -1) * Math.PI / 6; const o2 = off.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), a); flyTo(S3, t, t.clone().add(o2)); return; }
+  if (kind === "top") { flyTo(S3, t, t.clone().add(new THREE.Vector3(0.01, Math.max(14, off.length()), 0.6))); return; }
+  if (kind === "home") { flyTo(S3, new THREE.Vector3(...S3.home.target), new THREE.Vector3(...S3.home.cam)); return; }
+  const fwd = t.clone().sub(cam.position); fwd.y = 0; fwd.normalize(); const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+  const step = Math.max(1.5, off.length() * 0.18); const d = kind === "up" ? fwd.multiplyScalar(step) : kind === "down" ? fwd.multiplyScalar(-step) : kind === "pl" ? right.multiplyScalar(-step) : right.multiplyScalar(step);
+  flyTo(S3, t.clone().add(d), cam.position.clone().add(d));
+}
+function navPadHTML(key) {
+  const b = (k, l, t) => `<button class="sec small" data-act="cam" data-k="${key}" data-v="${k}" title="${t}" style="width:40px;height:40px;padding:0;font-size:17px;box-shadow:var(--shadow)">${l}</button>`;
+  return `<div style="position:absolute;right:10px;bottom:10px;display:grid;grid-template-columns:repeat(3,40px);gap:6px;z-index:3">
+    ${b("left", "⟲", "Tourner à gauche")}${b("up", "▲", "Avancer")}${b("right", "⟳", "Tourner à droite")}
+    ${b("pl", "◀", "Aller à gauche")}${b("home", "⌂", "Vue de départ")}${b("pr", "▶", "Aller à droite")}
+    ${b("in", "＋", "Zoomer")}${b("down", "▼", "Reculer")}${b("out", "－", "Dézoomer")}
+    <div></div>${b("top", "⬒", "Vue de dessus")}<div></div></div>`;
+}
 function loop3D() {
   V3.raf = requestAnimationFrame(loop3D);
   const S3 = V3.active; if (!S3 || !S3.renderer.domElement.isConnected) return;
+  if (S3.anim) { const a = S3.anim; let k = Math.min(1, (performance.now() - a.s) / a.d); k = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    S3.controls.target.lerpVectors(a.t0, a.t1, k); S3.cam.position.lerpVectors(a.c0, a.c1, k); if (k >= 1) S3.anim = null; }
   S3.controls.update(); if (S3.tick) S3.tick(performance.now() / 1000); S3.renderer.render(S3.scene, S3.cam);
 }
 
@@ -876,7 +912,7 @@ function textPlane(text, w, h, color = "#d9d4c7", size = 120) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true })); return m;
 }
 function buildGym() {
-  const S3 = makeScene("gym", { cam: [10, 9.5, 11], target: [-0.5, 0, 0.5], minD: 3, maxD: 40, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
+  const S3 = makeScene("gym", { map: true, bounds: [-12, 12, -8, 8], cam: [10, 9.5, 11], target: [-0.5, 0, 0.5], minD: 2.5, maxD: 34, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
   const sc = S3.scene; const W = 24, D = 16;
   const rubber = M(0x1c1e22, { roughness: 0.95 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), rubber); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
@@ -895,11 +931,10 @@ function buildGym() {
   const t = textPlane("UAX FITNESS CENTER", 11, 1.4); t.position.set(1.5, 3.7, -D / 2 + 0.09); sc.add(t);
   sc.add(box(5, 2.2, 0.04, M(0x9fb6c9, { metalness: 0.9, roughness: 0.08 }), 4.5, 1.4, -D / 2 + 0.1));
   // poutres métalliques (charpente)
-  for (let i = -2; i <= 2; i++) sc.add(box(0.08, 0.15, D, M(0x111214), i * 5, H + 0.6, 0));
   sc.add(new THREE.AmbientLight(0xffffff, 0.15));
   GYM_MACHINES.forEach(m => {
     const g = buildMachine(m.build); g.position.set(...m.pos); g.rotation.y = m.rot; g.userData.pick = m.id; g.userData.label = m.label + (m.ex.length ? " · " + m.ex.length + " exercice" + (m.ex.length > 1 ? "s" : "") : "");
-    const lab = labelSprite(m.label, 1.15); lab.position.set(0, m.build === "cardio" ? 3 : 2.75, 0); g.add(lab);
+    const lab = labelSprite(m.label, 1); lab.position.set(0, m.build === "cardio" ? 3 : 2.75, 0); g.add(lab);
     sc.add(g); S3.pickables.push(g);
   });
   return S3;
@@ -1000,6 +1035,43 @@ function updateFridge3D(items) {
   });
 }
 let ACT_PICK_FRIDGE = () => {};
+
+// ===================== SCANNER CODE-BARRES EN DIRECT (caméra) =====================
+const Scanner = {
+  reader: null, el: null, stream: null,
+  async open(onCode, title) {
+    if (!navigator.mediaDevices?.getUserMedia) { toast("Caméra indisponible ici : prends le code en photo."); return; }
+    const Z = await loadZXing(); if (!Z) { toast("Scanner indisponible (connexion ?)"); return; }
+    this.close();
+    const el = document.createElement("div"); this.el = el;
+    el.style.cssText = "position:fixed;inset:0;background:#000;z-index:80;display:flex;flex-direction:column";
+    el.innerHTML = `<div style="color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 10px;display:flex;justify-content:space-between;align-items:center;font:600 16px -apple-system,system-ui">
+        <span>${esc(title || "Scanne le code-barres")}</span><button class="sec small" id="scanClose">Fermer</button></div>
+      <div style="position:relative;flex:1;overflow:hidden"><video id="scanVid" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
+        <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
+        <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:#22c55e;opacity:.8;animation:blink 1.2s infinite"></div></div>
+      <div style="color:#cbd5e1;text-align:center;padding:12px 16px calc(16px + env(safe-area-inset-bottom));font:14px -apple-system,system-ui">Place le code-barres dans le cadre vert, il se lit tout seul.
+        <div class="row" style="margin-top:10px;justify-content:center"><input id="scanManual" inputmode="numeric" placeholder="ou tape le code" style="max-width:200px;background:#111;color:#fff;border-color:#333"><button class="small" id="scanManualOk">OK</button></div></div>`;
+    document.body.appendChild(el);
+    el.querySelector("#scanClose").onclick = () => this.close();
+    el.querySelector("#scanManualOk").onclick = () => { const v = el.querySelector("#scanManual").value.replace(/\D/g, ""); if (v) { this.close(); onCode(v); } };
+    try {
+      const hints = new Map(); hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E, Z.BarcodeFormat.CODE_128]);
+      this.reader = new Z.BrowserMultiFormatReader(hints, 300);
+      await this.reader.decodeFromConstraints({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } }, "scanVid", (res) => {
+        if (res) { const code = res.getText(); try { navigator.vibrate && navigator.vibrate(60); } catch (e) {} this.close(); onCode(code); }
+      });
+    } catch (e) { this.close(); toast(e?.name === "NotAllowedError" ? "Autorise l'accès à la caméra pour scanner." : "Caméra impossible à ouvrir : prends le code en photo."); }
+  },
+  close() { try { this.reader && this.reader.reset(); } catch (e) {} this.reader = null; if (this.el) { this.el.remove(); this.el = null; } }
+};
+async function aiProductPhotos(blobs) {
+  return aiJSON(`Tu reçois ${blobs.length} photo(s) d'un produit alimentaire acheté en supermarché (Espagne ou France) : l'emballage et/ou le tableau des valeurs nutritionnelles.
+1) Identifie le produit : nom simple en français, marque, chiffres du code-barres s'ils sont lisibles.
+2) Si un tableau nutritionnel est visible, recopie EXACTEMENT les valeurs pour 100 g / 100 ml ("valor energético" en kcal, grasas, saturadas, hidratos, azúcares, fibra, proteínas, sal). Sinon, donne des valeurs typiques pour ce produit et mets "estime": true.
+3) Portion conseillée en g si indiquée.
+Réponds UNIQUEMENT en JSON : {"name":"","brand":"","barcode":"chiffres ou vide","servingG":nombre ou null,"estime":false,"per100":{"kcal":n,"p":n,"c":n,"f":n,"fib":n,"sugar":n,"satfat":n,"salt":n}}`, blobs);
+}
 
 // ===================== THÈME =====================
 function themePref() { try { return localStorage.getItem("muscu_theme") || "clair"; } catch (e) { return "clair"; } }
@@ -1128,7 +1200,7 @@ function LS_get(k) { try { return localStorage.getItem(k); } catch (e) { return 
 // ---------- Feuille d'ajout ----------
 function addSheet() {
   const A = S.add;
-  const tabs = [["search", "Rechercher"], ["ia", "Décrire (IA)"], ["photo", "Photo du plat"], ["scan", "Code-barres"], ["fav", "Favoris"]];
+  const tabs = [["search", "Rechercher"], ["ia", "Décrire (IA)"], ["photo", "Photo du plat"], ["scan", "📷 Scanner"], ["fav", "Favoris"]];
   let body = "";
   if (A.items) body = pendingItemsHTML();
   else if (A.sel) body = selFoodHTML();
@@ -1149,14 +1221,15 @@ function addSheet() {
       <button style="margin-top:8px;width:100%" data-act="aiPhoto" ${!A.blob || A.busy ? "disabled" : ""}>${A.busy ? '<span class="spin"></span> Analyse…' : "Estimer les calories"}</button>`;
   } else if (A.tab === "scan") {
     const sc = A.scan || {};
-    body = sc.step === "label" ? `<div class="banner">Code ${esc(sc.barcode || "?")} pas encore dans tes aliments. Prends en photo le <b>tableau nutritionnel</b> du paquet : il sera enregistré pour les prochaines fois.</div>
-        <label class="btn" style="display:block;text-align:center">📷 Photo de l'étiquette<input type="file" accept="image/*" capture="environment" data-file="label" style="display:none"></label>
+    body = sc.step === "label" ? `<div class="banner">Code ${esc(sc.barcode || "?")} introuvable (ni dans tes aliments ni dans Open Food Facts). Prends en photo le <b>tableau nutritionnel</b> (et l'avant du paquet si tu veux) : il sera enregistré pour les prochaines fois.</div>
+        <label class="btn" style="display:block;text-align:center">📸 Photo(s) de l'étiquette<input type="file" accept="image/*" multiple data-file="prodphotos" style="display:none"></label>
         ${A.busy ? `<p class="c"><span class="spin"></span> Lecture de l'étiquette…</p>` : ""}`
-      : `<p class="sm mut">Prends le code-barres en photo, bien net et de près.</p>
-        <label class="btn" style="display:block;text-align:center">📷 Photo du code-barres<input type="file" accept="image/*" capture="environment" data-file="barcode" style="display:none"></label>
-        <div class="row" style="margin-top:8px"><input id="bcManual" inputmode="numeric" placeholder="ou tape le code"><button class="small sec" data-act="bcManual">OK</button></div>
-        ${A.busy ? `<p class="c"><span class="spin"></span> Lecture…</p>` : ""}
-        <p class="xs mut">Ou directement : <label style="display:inline;color:var(--acc)">photo de l'étiquette nutritionnelle<input type="file" accept="image/*" capture="environment" data-file="label" style="display:none"></label></p>`;
+      : `${A.busy ? `<p class="c"><span class="spin"></span> Recherche du produit…</p>` : ""}
+        <button style="width:100%;font-size:17px;padding:16px" data-act="scanLive">📷 Scanner le code-barres</button>
+        <p class="xs mut c" style="margin:6px 0 14px">La caméra s'ouvre et lit le code toute seule.</p>
+        <label class="btn" style="display:block;text-align:center;background:var(--chip);color:var(--txt)">📸 Photo du produit et/ou de ses valeurs nutritionnelles<input type="file" accept="image/*" multiple data-file="prodphotos" style="display:none"></label>
+        <p class="xs mut c" style="margin:6px 0 14px">1 à 3 photos : l'avant du paquet, le tableau « Información nutricional »… L'IA lit le nom et les valeurs.</p>
+        <div class="row"><label class="btn sec small" style="background:var(--chip);color:var(--txt);white-space:nowrap">Photo du code<input type="file" accept="image/*" capture="environment" data-file="barcode" style="display:none"></label><input id="bcManual" inputmode="numeric" placeholder="ou tape le code"><button class="small sec" data-act="bcManual">OK</button></div>`;
   } else if (A.tab === "fav") {
     const favs = Store.get("favs", { items: [] }).items || [];
     body = favs.length ? favs.map(f => `<div class="entry"><div><div>${esc(f.name)}</div><div class="mut xs">${f.entries.length} aliment(s) · ${r0(f.entries.reduce((s, e) => s + scaleNutr(e.per100, e.g).kcal, 0))} kcal</div></div><div class="row"><button class="danger small" data-act="delFav" data-v="${f.id}">✕</button><button class="small" data-act="addFav" data-v="${f.id}">Ajouter</button></div></div>`).join("")
@@ -1492,6 +1565,7 @@ function fridgeEatSheet(id) {
 function fridgeAddSheet() {
   const q = S.fq || ""; const res = searchFoods(q).slice(0, 12); S._fres = res;
   return `<div class="row between"><h2>Ajouter au frigo</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <div class="row" style="margin-bottom:8px"><button class="grow" data-act="fridgeScan">📷 Scanner un code-barres</button><label class="btn grow" style="text-align:center;background:var(--chip);color:var(--txt)">📸 Photo produit<input type="file" accept="image/*" multiple data-file="fridgephotos" style="display:none"></label></div>
     <input placeholder="Aliment (ex. blanc de poulet, skyr…)" value="${esc(q)}" data-input="fq" autocomplete="off">
     <div id="fres">${fridgeResHTML(res, q)}</div>`;
 }
@@ -1590,6 +1664,9 @@ const ACT = {
     const out = S.add.items.filter(x => fridgeConsume(x.name, x.grams)).length;
     toast(`${S.add.items.length} aliment(s) ajouté(s)${out ? ` · ${out} retiré(s) du frigo` : ""}`); S.add.items = null; closeSheet();
   },
+  scanLive: () => Scanner.open(code => { S.add.tab = "scan"; if (!S.sheet) openSheet(addSheet); handleBarcode(code); }),
+  fridgeScan: () => Scanner.open(async code => { let f = myFoods()["bc" + code]; if (!f) { toast("Recherche du produit…"); f = await offBarcode(code); if (f) f = saveMyFood(f); }
+    if (!f) { toast("Produit inconnu : prends l'étiquette en photo"); S.fq = ""; openSheet(fridgeAddSheet); return; } S._fpick = f; openSheet(fridgeQtySheet(f)); }, "Scanne un produit pour ton frigo"),
   bcManual: () => { const v = ($("#bcManual").value || "").replace(/\D/g, ""); if (v) handleBarcode(v); },
   // ----- entrées
   editEntry: el => openSheet(editEntrySheet(el.dataset.v)),
@@ -1660,6 +1737,7 @@ const ACT = {
   cancelWok: () => { const w = liveWorkout(); if (w) Store.del(w._id); S.draft = {}; closeSheet(); },
   openHist: el => openSheet(histSheet(el.dataset.v)),
   delW: el => { Store.del(el.dataset.v); closeSheet(); },
+  cam: el => { const S3 = V3.scenes[el.dataset.k]; if (S3) camMove(S3, el.dataset.v); },
   wMode: el => { S.wMode = el.dataset.v; render(); },
   gymPickEx: el => {
     const id = el.dataset.v; let w = liveWorkout();
@@ -1769,6 +1847,26 @@ async function onFile(kind, file) {
   }
 }
 
+async function onProductPhotos(files) {
+  if (!files.length) return; S.add.busy = true; S.add.err = ""; renderSheet();
+  try {
+    const blobs = []; for (const f of files) blobs.push(await shrinkImage(f, 1600));
+    const r = await aiProductPhotos(blobs);
+    const per100 = Object.fromEntries(NUTR_KEYS.map(k => [k, r?.per100?.[k] == null ? 0 : +r.per100[k]]));
+    if (!per100.kcal && !per100.p && !per100.c) throw { message: "valeurs illisibles, reprends la photo bien à plat et nette" };
+    const code = S.add.scan?.barcode || (r.barcode || "").replace(/\D/g, "") || null;
+    const food = saveMyFood({ name: (r.name || "Produit") + (r.estime ? " (estimé)" : ""), brand: r.brand || "", barcode: code, per100, unit: r.servingG || null });
+    toast(r.estime ? "Produit reconnu (valeurs estimées)" : "Étiquette lue et enregistrée"); S.add.sel = food; S.add.g = food.unit || 100; S.add.scan = null;
+  } catch (e) { S.add.err = e?.code ? aiErr(e) : "Erreur : " + (e?.message || ""); }
+  S.add.busy = false; renderSheet();
+}
+async function onFridgePhotos(files) {
+  if (!files.length) return; toast("Lecture du produit…");
+  try { const blobs = []; for (const f of files) blobs.push(await shrinkImage(f, 1600)); const r = await aiProductPhotos(blobs);
+    const per100 = Object.fromEntries(NUTR_KEYS.map(k => [k, r?.per100?.[k] == null ? 0 : +r.per100[k]]));
+    const f = saveMyFood({ name: r.name || "Produit", brand: r.brand || "", barcode: (r.barcode || "").replace(/\D/g, "") || null, per100, unit: r.servingG || null });
+    S._fpick = f; openSheet(fridgeQtySheet(f)); } catch (e) { toast(e?.code ? aiErr(e) : "Erreur de lecture"); }
+}
 // ===================== ÉVÉNEMENTS =====================
 document.addEventListener("click", ev => {
   const el = ev.target.closest("[data-act]"); if (!el) return;
@@ -1777,7 +1875,7 @@ document.addEventListener("click", ev => {
 });
 document.addEventListener("change", ev => {
   const el = ev.target;
-  if (el.dataset.file) { onFile(el.dataset.file, el.files?.[0]); el.value = ""; return; }
+  if (el.dataset.file) { if (el.dataset.file === "prodphotos") onProductPhotos([...(el.files || [])].slice(0, 3)); else if (el.dataset.file === "fridgephotos") onFridgePhotos([...(el.files || [])].slice(0, 3)); else onFile(el.dataset.file, el.files?.[0]); el.value = ""; return; }
   if (el.dataset.act === "range") { const [a, b] = el.value.split("-").map(Number); const doc = clone(Store.get("program", {})); doc.ranges = doc.ranges || {}; doc.ranges[el.dataset.v] = [a, b]; Store.set("program", doc); return; }
   if (el.dataset.act === "progEx") { S.progEx = el.value; render(); return; }
   if (el.id === "wDate") { const w = liveWorkout(); if (w && el.value) { const t = new Date(w.start); const d = parseKey(el.value); d.setHours(t.getHours(), t.getMinutes()); const delta = d.getTime() - w.start; updW(o => { o.start += delta; o.ex.forEach(e => e.sets.forEach(s => s.t += delta)); }); } return; }
