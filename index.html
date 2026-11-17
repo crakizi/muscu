@@ -77,12 +77,14 @@ nav.tabs button:active{transform:none}
 .steps .done .num{background:#dcfce7;color:#166534}
 .banner{border-radius:14px}
 
+#app.wide{max-width:1280px}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794951248";
+const BUILD_VERSION = "1794951933";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -722,21 +724,38 @@ function makeScene(key, opts) {
   const S3 = { key, renderer, scene, cam, controls, pickables: [], onPick: opts.onPick, hover: null };
   // tap vs glisser
   let down = null; const ray = new THREE.Raycaster(); const v = new THREE.Vector2();
+  const hit = e => { const r = renderer.domElement.getBoundingClientRect(); v.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(v, cam); const hits = ray.intersectObjects(S3.pickables, true); if (!hits.length) return null; let o = hits[0].object; while (o && !o.userData.pick) o = o.parent; return o; };
   renderer.domElement.addEventListener("pointerdown", e => { down = [e.clientX, e.clientY, Date.now()]; });
+  renderer.domElement.addEventListener("pointermove", e => {
+    if (e.pointerType === "touch" || (down && e.buttons)) return;
+    const o = hit(e); if (o === S3.hover) return;
+    if (S3.hover && S3.hover !== S3.selected) tint(S3.hover, null);
+    S3.hover = o; if (o && o !== S3.selected) tint(o, 0x1d4ed8, 0.35);
+    renderer.domElement.style.cursor = o ? "pointer" : "grab";
+    if (S3.tip) { S3.tip.style.display = o ? "block" : "none"; if (o) { S3.tip.textContent = o.userData.label || ""; S3.tip.style.left = (e.offsetX + 14) + "px"; S3.tip.style.top = (e.offsetY + 10) + "px"; } }
+  });
+  renderer.domElement.addEventListener("pointerleave", () => { if (S3.hover && S3.hover !== S3.selected) tint(S3.hover, null); S3.hover = null; if (S3.tip) S3.tip.style.display = "none"; });
   renderer.domElement.addEventListener("pointerup", e => {
     if (!down) return; const moved = Math.hypot(e.clientX - down[0], e.clientY - down[1]); const dt = Date.now() - down[2]; down = null;
     if (moved > 8 || dt > 600) return;
     const r = renderer.domElement.getBoundingClientRect(); v.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    ray.setFromCamera(v, cam); const hits = ray.intersectObjects(S3.pickables, true);
-    if (hits.length) { let o = hits[0].object; while (o && !o.userData.pick) o = o.parent; if (o) { flash(o); S3.onPick && S3.onPick(o.userData.pick); } }
+    if (S && S.sheet) return; // une seule machine à la fois
+    const o = hit(e); if (o) { select3D(S3, o); S3.onPick && S3.onPick(o.userData.pick); }
   });
   V3.scenes[key] = S3; return S3;
 }
-function flash(o) { o.traverse(m => { if (m.isMesh && m.material.emissive) { const em = m.material; const old = em.emissive.getHex(); em.emissive.setHex(0x3355ff); setTimeout(() => em.emissive.setHex(old), 350); } }); }
+// surbrillance : la couleur d'origine est mémorisée une seule fois, donc plusieurs clics rapides ne laissent plus de machine « bloquée » en couleur
+function tint(o, hex, k = 0.6) { o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
+function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, 0x2563eb, 0.75); }
+V3.clearSel = () => Object.values(V3.scenes).forEach(S3 => { if (S3.selected) { tint(S3.selected, null); S3.selected = null; } if (S3.hover) { tint(S3.hover, null); S3.hover = null; } });
 function mount3D(key, holder, build) {
   if (!has3D()) { holder.innerHTML = `<p class="mut sm c" style="padding:30px">La 3D n'a pas pu se charger (connexion ?).</p>`; return null; }
   let S3 = V3.scenes[key]; if (!S3) { S3 = build(); }
-  holder.appendChild(S3.renderer.domElement);
+  holder.style.position = "relative"; holder.appendChild(S3.renderer.domElement);
+  if (!S3.tip) { S3.tip = document.createElement("div"); S3.tip.style.cssText = "position:absolute;pointer-events:none;background:rgba(17,24,39,.88);color:#fff;font:600 13px -apple-system,system-ui;padding:6px 10px;border-radius:10px;display:none;white-space:nowrap;z-index:2"; }
+  holder.appendChild(S3.tip);
+  if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
   V3.active = S3; if (!V3.raf) loop3D(); return S3;
 }
@@ -857,7 +876,7 @@ function textPlane(text, w, h, color = "#d9d4c7", size = 120) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true })); return m;
 }
 function buildGym() {
-  const S3 = makeScene("gym", { cam: [15, 14, 17], target: [0, 0, 0], minD: 3, maxD: 40, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
+  const S3 = makeScene("gym", { cam: [10, 9.5, 11], target: [-0.5, 0, 0.5], minD: 3, maxD: 40, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
   const sc = S3.scene; const W = 24, D = 16;
   const rubber = M(0x1c1e22, { roughness: 0.95 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), rubber); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
@@ -879,8 +898,8 @@ function buildGym() {
   for (let i = -2; i <= 2; i++) sc.add(box(0.08, 0.15, D, M(0x111214), i * 5, H + 0.6, 0));
   sc.add(new THREE.AmbientLight(0xffffff, 0.15));
   GYM_MACHINES.forEach(m => {
-    const g = buildMachine(m.build); g.position.set(...m.pos); g.rotation.y = m.rot; g.userData.pick = m.id;
-    const lab = labelSprite(m.label, 0.75); lab.position.set(0, m.build === "cardio" ? 3 : 2.75, 0); g.add(lab);
+    const g = buildMachine(m.build); g.position.set(...m.pos); g.rotation.y = m.rot; g.userData.pick = m.id; g.userData.label = m.label + (m.ex.length ? " · " + m.ex.length + " exercice" + (m.ex.length > 1 ? "s" : "") : "");
+    const lab = labelSprite(m.label, 1.15); lab.position.set(0, m.build === "cardio" ? 3 : 2.75, 0); g.add(lab);
     sc.add(g); S3.pickables.push(g);
   });
   return S3;
@@ -976,7 +995,7 @@ function updateFridge3D(items) {
   Object.values(S3.slots).forEach(s => { s.used = []; s.i = 0; });
   items.filter(i => i.qty > 0).forEach(it => {
     let sl = S3.slots[zoneSlot(it)]; if (sl.i >= sl.pts.length) sl = [S3.slots.top, S3.slots.mid, S3.slots.placard].find(s => s.i < s.pts.length); if (!sl) return;
-    const o = foodMesh(it); o.scale.setScalar(1.25); const p = sl.pts[sl.i++]; o.position.set(...p); o.rotation.y = (Math.random() - 0.5) * 0.4; o.userData.pick = it.id;
+    const o = foodMesh(it); o.scale.setScalar(1.25); const p = sl.pts[sl.i++]; o.position.set(...p); o.rotation.y = (Math.random() - 0.5) * 0.4; o.userData.pick = it.id; o.userData.label = it.name + " · " + (it.unit === "pc" ? r1(it.qty) + " pc" : r0(it.qty) + " g");
     sl.g.add(o); sl.used.push(o); S3.pickables.push(o);
   });
 }
@@ -999,10 +1018,11 @@ function render() {
   pendingRender = false;
   const views = { today: viewToday, fridge: viewFridge, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
   const sy = window.scrollY;
+  $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge");
   $("#app").innerHTML = (views[S.tab] || viewToday)();
   $("#nav").innerHTML = navHTML();
   let fab = $("#fab"); if (!fab) { fab = document.createElement("button"); fab.id = "fab"; fab.className = "fab"; fab.dataset.act = "quick"; fab.setAttribute("aria-label", "Ajouter"); fab.textContent = "+"; document.body.appendChild(fab); }
-  fab.style.display = S.tab === "workout" && liveWorkout() ? "none" : "";
+  fab.style.display = (S.tab === "workout" && (liveWorkout() || S.wMode === "3d")) || S.tab === "fridge" ? "none" : "";
   renderSheet();
   window.scrollTo(0, sy);
   if (S.tab === "progress") drawCharts();
@@ -1017,7 +1037,7 @@ function renderSheet() {
   el.innerHTML = `<div class="sheet-bg" data-act="closeSheetBg"><div class="sheet">${S.sheet()}</div></div>`;
 }
 function openSheet(fn) { S.sheet = fn; renderSheet(); }
-function closeSheet() { S.sheet = null; renderSheet(); }
+function closeSheet() { S.sheet = null; renderSheet(); if (typeof V3 !== "undefined" && V3.clearSel) V3.clearSel(); }
 document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender && !isEditing()) render(); }, 50));
 
 const ICONS = {
@@ -1220,7 +1240,7 @@ function viewWorkout() {
   const spb = typeof spBarHTML === "function" ? spBarHTML() : "";
   const toggle = spb + `<div class="chips" style="margin-bottom:10px"><button class="chip ${mode === "list" ? "on" : ""}" data-act="wMode" data-v="list">Liste</button><button class="chip ${mode === "3d" ? "on" : ""}" data-act="wMode" data-v="3d">Salle 3D</button></div>`;
   if (mode === "3d") return `${statusBanner()}<div class="row between"><h1>${w ? esc(w.name) : "Salle 3D"}</h1>${w ? `<span class="mut" id="wTimer">${fmtDur(Date.now() - w.start)}</span>` : ""}</div>${toggle}
-    <div id="scene3d" style="height:58vh;min-height:320px;border-radius:16px;overflow:hidden;background:var(--chip)"></div>
+    <div id="scene3d" style="height:calc(100vh - 250px);min-height:420px;border-radius:18px;overflow:hidden;background:var(--chip)"></div>
     <p class="xs mut c">Touche une machine → choisis l'exercice → note tes séries. Salle provisoire : je la referai à l'identique de la tienne avec tes photos.</p>
     ${w ? `<div class="card"><h3>Dans cette séance</h3>${(w.ex || []).map(e => `<div class="entry" data-act="gymPickEx" data-v="${e.id}"><span class="sm">${esc(getEx(e.id).name)}</span><span class="xs mut">${workSets(e).length} série(s) ›</span></div>`).join("") || `<p class="mut sm">Aucun exercice.</p>`}
       <button style="width:100%;margin-top:8px" data-act="finishW">Terminer la séance</button></div>` : ""}`;
@@ -1439,7 +1459,7 @@ function viewFridge() {
     return `<div class="card"><h3>${FRIDGE_ZONES[z]} <span class="mut sm">${list.length}</span></h3>${list.map(i => `<div class="entry"><div data-act="fridgeEdit" data-v="${i.id}" style="flex:1"><div>${esc(i.name)}</div><div class="xs mut">${qtyTxt(i)} · ${FRIDGE_CATS[i.cat] || ""}</div></div><button class="small sec" data-act="fridgeEat" data-v="${i.id}">Manger</button></div>`).join("")}</div>`;
   }).join("");
   return `${statusBanner()}<div class="row between"><h1>Mon frigo</h1><button class="ghost" data-act="tab" data-v="profile">⚙︎</button></div>
-    <div id="scene3d" style="height:52vh;min-height:300px;border-radius:16px;overflow:hidden;margin-bottom:10px;background:var(--chip)"></div>
+    <div id="scene3d" style="height:60vh;min-height:380px;border-radius:16px;overflow:hidden;margin-bottom:10px;background:var(--chip)"></div>
     <p class="xs mut c" style="margin-top:-4px">Fais glisser pour tourner, pince pour zoomer, touche un aliment pour le modifier.</p>
     <div class="row" style="margin-bottom:10px"><button class="grow" data-act="fridgeAddOpen">+ Ajouter</button><button class="sec grow" data-act="fridgeShop">Courses (IA)</button></div>
     <button class="sec" style="width:100%;margin-bottom:12px" data-act="aiFridge">👨‍🍳 Recette avec ce que j'ai</button>
