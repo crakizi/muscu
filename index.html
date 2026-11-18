@@ -100,13 +100,14 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .dstrip{display:flex;gap:8px;overflow-x:auto;margin:10px 0 8px;padding-bottom:2px;scrollbar-width:none}.dstrip::-webkit-scrollbar{display:none}
 .dpill{flex:none;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600;box-shadow:var(--shadow)}
 .dpill.empty{color:var(--mut);font-weight:500;border-style:dashed;box-shadow:none;background:transparent}
+.sheet:has(#body3d){max-height:96vh}
 
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795024376";
+const BUILD_VERSION = "1795038346";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -348,6 +349,49 @@ const EX_CUES = {
   calf_standing: ["Pointe du pied sur la marche, talon dans le vide", "Descends au maximum (étirement 1-2 s en bas)", "Monte le plus haut possible, jambes tendues"],
   calf_seated: ["Genoux à 90° : vise le soléaire", "Étirement complet en bas", "Pause 1 s en haut"],
   back_ext: ["Hanches au bord du coussin", "Descends en gardant le dos plat (ou arrondi pour viser les lombaires)", "Remonte jusqu'à l'alignement, pas d'hyperextension"]
+};
+// variantes populaires (nom, ce que ça change)
+const EX_VARIANTS = {
+  lat_raise_cable: [["Poulie derrière le dos", "câble qui passe dans le dos : plus de tension en bas, très populaire"], ["Penché vers la poulie (lean-away)", "tu te tiens au poteau et te penches : amplitude plus grande"], ["Y-raise à la poulie", "bras en Y vers le haut : deltoïde moyen + bas des trapèzes"], ["Avec manchette (cuff)", "accroché au poignet : la main ne compte plus, sensation plus pure"]],
+  lat_raise_db: [["Penché en avant (≈ 15°)", "aligne le geste avec le deltoïde moyen"], ["Assis", "supprime l'élan"], ["Allongé sur le côté (side-lying)", "tension maximale en bas du mouvement"], ["Lu raise", "pouces vers le haut jusqu'au-dessus de la tête"]],
+  shoulder_press: [["Haltères assis", "chaque bras travaille seul, trajectoire libre"], ["Barre debout (military press)", "plus de gainage, plus lourd"], ["Arnold press", "rotation des mains : plus de deltoïde avant"], ["Landmine press", "plus doux pour les épaules"]],
+  face_pull: [["Poulie haute vers le front", "classique : arrière d'épaule + coiffe"], ["Assis au sol", "supprime la triche avec le dos"], ["Prise par-dessous", "plus de rotation externe"]],
+  rear_delt_fly: [["Unilatéral à la machine", "plus d'amplitude"], ["Poulies croisées", "tension constante"], ["Haltères penché en avant", "sans machine"]],
+  tri_oh_cable: [["Corde au-dessus de la tête", "classique : étire le chef long"], ["Unilatéral à la poulie", "plus d'amplitude"], ["Barre EZ couché (skull crusher)", "chef long étiré, plus lourd"], ["Haltère à deux mains", "sans poulie"]],
+  tri_push_uni: [["Prise neutre", "plus confortable pour le coude"], ["Prise inversée", "accent sur le chef médial"], ["Croisé (cross-body)", "angle différent, très populaire"]],
+  tri_push_rope: [["Barre droite", "plus lourd"], ["Barre en V", "prise intermédiaire"], ["Corde en écartant", "contraction maximale en bas"]],
+  dips: [["Buste penché", "plus de pectoraux"], ["Buste droit", "plus de triceps"], ["Lestés", "ceinture de lest"], ["Machine assistée", "pour débuter ou finir une série"]],
+  hammer_rope: [["Haltères prise marteau", "classique"], ["Marteau croisé (cross-body)", "accent brachial"], ["Corde à la poulie basse", "tension constante"]],
+  bayesian_curl: [["Face à la poulie (classique)", "coude derrière le corps : étirement du chef long"], ["Assis sur un banc", "supprime l'élan"]],
+  incline_db_curl: [["Banc à 45°", "étirement maximal du chef long"], ["Supination progressive", "tourner le poignet en montant"], ["Prise marteau inclinée", "brachial + brachio-radial"]],
+  preacher_curl: [["Barre EZ", "plus confortable pour les poignets"], ["Unilatéral haltère", "chaque bras séparé"], ["Machine pupitre", "tension guidée"], ["Spider curl", "poitrine contre le banc incliné, bras vers le bas"]],
+  cable_crunch: [["À genoux (classique)", "enroulement de la colonne"], ["Debout", "variante sans s'agenouiller"], ["Oblique (rotation)", "cible les obliques"]],
+  incline_press_machine: [["Haltères inclinés 30°", "trajectoire libre"], ["Barre inclinée", "plus lourd"], ["Smith incliné", "stable, facile à pousser à l'échec"]],
+  bench_press: [["Prise serrée", "plus de triceps"], ["Pause en bas (paused bench)", "supprime le rebond"], ["Haltères", "plus d'amplitude"], ["Smith machine", "plus stable"]],
+  db_incline_press: [["Prise neutre", "plus doux pour les épaules"], ["Angle 15-30°", "le plus efficace pour le haut des pecs"], ["Unilatéral", "gainage + correction des déséquilibres"]],
+  chest_press: [["Unilatéral à la machine", "un bras à la fois"], ["Machine convergente", "les poignées se rapprochent : meilleure contraction"]],
+  pec_fly_machine: [["Poulies croisées (cable fly)", "tension constante"], ["Poulies basses vers le haut", "accent haut des pecs"], ["Haltères couché", "étirement maximal"]],
+  lat_pulldown_pron: [["Prise neutre serrée", "plus de grand dorsal bas"], ["Unilatéral (un bras)", "plus d'amplitude, très populaire"], ["Prise supination", "plus de biceps"], ["Bras tendus (pullover poulie)", "isole le grand dorsal"]],
+  pull_up: [["Chin-up (supination)", "plus de biceps"], ["Prise neutre", "plus doux pour les épaules"], ["Lestées", "progression"], ["Négatives lentes", "pour progresser"]],
+  row_neutral_close: [["Unilatéral à la poulie", "plus d'amplitude et de rotation"], ["Machine avec appui poitrine", "supprime la triche du bas du dos"], ["Barre penché (Yates)", "plus lourd"]],
+  row_pron_wide: [["Coudes ouverts à 70°", "haut du dos + arrière d'épaule"], ["Kroc row", "lourd, unilatéral"], ["T-bar row", "épaisseur du dos"]],
+  db_row: [["Appui sur banc (classique)", "dos stable"], ["Kroc row", "lourd avec un peu d'élan, beaucoup de reps"], ["Seal row", "allongé sur un banc, aucune triche"]],
+  shrug: [["Haltères", "trajectoire libre"], ["Barre", "plus lourd"], ["Machine / Smith", "stable"], ["Poulies basses", "tension constante"]],
+  squat: [["Barre basse", "plus de fessiers, plus lourd"], ["Front squat", "buste droit, plus de quadriceps"], ["Goblet squat", "haltère devant : technique facile"], ["Talons surélevés", "plus de quadriceps"]],
+  leg_press: [["Pieds hauts et larges", "plus de fessiers et ischios"], ["Pieds bas et serrés", "plus de quadriceps"], ["Unilatéral", "corrige les déséquilibres"]],
+  hack_squat: [["Pieds bas sur la plateforme", "plus de quadriceps"], ["Hack inversé (face à la machine)", "plus de fessiers"], ["Pendulum squat", "très populaire, trajectoire en arc"]],
+  leg_ext: [["Unilatéral", "un côté à la fois"], ["Buste penché en arrière", "étire le droit fémoral"], ["Pointes vers l'extérieur", "variante pour le vaste médial (effet modeste)"]],
+  bulgarian: [["Buste penché", "plus de fessiers"], ["Buste droit", "plus de quadriceps"], ["Smith machine", "plus stable"]],
+  lunges: [["Fentes marchées", "classique, cardio en plus"], ["Fentes arrière", "plus doux pour les genoux"], ["Fentes au Smith", "stable"]],
+  rdl: [["Haltères", "plus libre"], ["Unilatéral (une jambe)", "équilibre + fessiers"], ["Good morning", "barre sur le dos"], ["Stiff-leg", "jambes plus tendues, plus d'ischios"]],
+  seated_leg_curl: [["Buste penché en avant", "étire davantage les ischios : encore mieux"], ["Unilatéral", "un côté à la fois"]],
+  lying_leg_curl: [["Pointes de pied tirées", "plus de gastrocnémiens"], ["Unilatéral", "un côté à la fois"], ["Nordic curl", "au poids du corps, très difficile"]],
+  hip_thrust: [["Machine hip thrust", "plus simple à installer"], ["Glute bridge au sol", "amplitude plus courte"], ["Unilatéral", "une jambe"], ["Pause en haut", "contraction maximale"]],
+  adductor_machine: [["Buste penché en avant", "change l'angle"], ["Copenhagen plank", "gainage latéral, au poids du corps"]],
+  abductor_machine: [["Buste penché en avant", "plus de moyen fessier"], ["Élastique au-dessus des genoux", "variante sans machine"]],
+  calf_standing: [["Sur une marche à une jambe", "plus d'amplitude"], ["Smith / presse à cuisses", "sans machine dédiée"], ["Pause 2 s en bas", "étirement : plus efficace"]],
+  calf_seated: [["Pause en bas", "étirement du soléaire"], ["Tempo lent", "plus de tension"]],
+  back_ext: [["Dos rond (vise les lombaires)", "érecteurs du rachis"], ["Dos plat, bascule du bassin", "plus de fessiers"], ["Avec poids contre la poitrine", "progression"]]
 };
 
 // ===================== OUTILS =====================
@@ -1387,43 +1431,43 @@ function bodyPartLabel(p) {
 function bodyLoad() {
   if (BODY.loading) return BODY.loading;
   if (!has3D()) return Promise.reject(new Error("3D indisponible"));
-  BODY.loading = Promise.all([fetch(BODY.url + "body.json").then(r => { if (!r.ok) throw new Error("json"); return r.json(); }), fetch(BODY.url + "body.bin").then(r => { if (!r.ok) throw new Error("bin"); return r.arrayBuffer(); })])
+  BODY.loading = Promise.all([fetch(BODY.url + "body2.json").then(r => { if (!r.ok) throw new Error("json"); return r.json(); }), fetch(BODY.url + "body2.bin").then(r => { if (!r.ok) throw new Error("bin"); return r.arrayBuffer(); })])
     .then(([h, buf]) => {
-      const vq = new Int16Array(buf, 0, h.vbytes / 2), iq = new Uint16Array(buf, h.vbytes);
-      const lo = h.lo, sc = h.scale; let minY = Infinity;
-      const parts = h.parts.map(p => {
-        const pos = new Float32Array(p.vc * 3);
+      // positions quantifiées (int16), indices (uint16), puis peau : 2 os + 1 poids par sommet (uint8)
+      const vq = new Int16Array(buf, 0, h.vbytes / 2), iq = new Uint16Array(buf, h.vbytes, h.ibytes / 2), sk = new Uint8Array(buf, h.vbytes + h.ibytes);
+      const lo = h.lo, sc = h.scale;
+      BODY.bones = h.bones; BODY.joints = h.joints;
+      BODY.data = h.parts.map(p => {
+        const pos = new Float32Array(p.vc * 3), si = new Uint16Array(p.vc * 4), sw = new Float32Array(p.vc * 4);
         for (let i = 0; i < p.vc; i++) {
-          const o = (p.vo + i * 3);
-          const x = (vq[o] + 32500) * sc + lo[0], y = (vq[o + 1] + 32500) * sc + lo[1], z = (vq[o + 2] + 32500) * sc + lo[2];
-          // BodyParts3D : x = côté, y = avant(−)/arrière(+), z = haut  →  Three : x, y = haut, z = avant
-          pos[i * 3] = x * 0.001; pos[i * 3 + 1] = z * 0.001; pos[i * 3 + 2] = -y * 0.001;
-          if (pos[i * 3 + 1] < minY) minY = pos[i * 3 + 1];
+          const o = p.vo + i * 3; pos[i * 3] = (vq[o] + 32500) * sc + lo[0]; pos[i * 3 + 1] = (vq[o + 1] + 32500) * sc + lo[1]; pos[i * 3 + 2] = (vq[o + 2] + 32500) * sc + lo[2];
+          const k = p.so + i * 3; si[i * 4] = sk[k]; si[i * 4 + 1] = sk[k + 1]; const w = sk[k + 2] / 255; sw[i * 4] = w; sw[i * 4 + 1] = 1 - w;
         }
-        return { p, pos, idx: iq.subarray(p.io, p.io + p.ic) };
-      });
-      // centrer : pieds au sol, axe du corps en x = 0
-      let sx = 0, sz = 0, n = 0; parts.forEach(({ p, pos }) => { if (p.g !== "_skin") for (let i = 0; i < pos.length; i += 3) { sx += pos[i]; sz += pos[i + 2]; n++; } });
-      sx /= n; sz /= n;
-      BODY.data = parts.map(({ p, pos, idx }) => {
-        for (let i = 0; i < pos.length; i += 3) { pos[i] -= sx; pos[i + 1] -= minY; pos[i + 2] -= sz; }
-        const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(new Uint16Array(idx), 1));
-        g.computeVertexNormals(); g.computeBoundingSphere(); return { p, g };
+        const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(new Uint16Array(iq.subarray(p.io, p.io + p.ic)), 1));
+        g.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute("skinWeight", new THREE.Float32BufferAttribute(sw, 4));
+        g.computeVertexNormals(); g.computeBoundingSphere(); return { p: { n: p.n, g: p.g, s: p.s }, g };
       });
       return BODY.data;
     }).catch(e => { BODY.failed = true; BODY.loading = null; throw e; });
   return BODY.loading;
 }
-// crée un groupe 3D (chaque appel a ses propres matériaux, donc ses propres couleurs)
+// crée un groupe 3D articulé (chaque appel a son propre squelette et ses propres matériaux)
 function bodyGroup(opt = {}) {
   const grp = new THREE.Group(); grp.userData.meshes = [];
+  const bones = BODY.bones.map(b => { const o = new THREE.Bone(); o.name = b.n; return o; });
+  BODY.bones.forEach((b, i) => { const par = b.p >= 0 ? BODY.bones[b.p].pos : [0, 0, 0]; bones[i].position.set(b.pos[0] - par[0], b.pos[1] - par[1], b.pos[2] - par[2]); if (b.p >= 0) bones[b.p].add(bones[i]); });
+  grp.add(bones[0]); grp.updateMatrixWorld(true);
+  const skel = new THREE.Skeleton(bones);
+  grp.userData.bones = Object.fromEntries(bones.map(b => [b.name, b])); grp.userData.rest = Object.fromEntries(bones.map(b => [b.name, b.position.clone()])); grp.userData.skel = skel;
   BODY.data.forEach(({ p, g }) => {
     if (p.g === "_skin" && opt.noSkin) return;
     let mat;
-    if (p.g === "_skin") mat = new THREE.MeshStandardMaterial({ color: BODY_COL.skin, transparent: true, opacity: 0.13, depthWrite: false, roughness: 0.9, side: THREE.FrontSide });
-    else if (p.g === "_b") mat = new THREE.MeshStandardMaterial({ color: BODY_COL.bone, roughness: 0.75 });
-    else mat = new THREE.MeshStandardMaterial({ color: BODY_COL.rest, roughness: 0.55, metalness: 0.02 });
-    mat.color.convertSRGBToLinear(); const m = new THREE.Mesh(g, mat); m.userData.part = p; m.renderOrder = p.g === "_skin" ? 5 : 0;
+    if (p.g === "_skin") mat = new THREE.MeshStandardMaterial({ color: BODY_COL.skin, transparent: true, opacity: 0.13, depthWrite: false, roughness: 0.9 });
+    else if (p.g === "_b") mat = new THREE.MeshStandardMaterial({ color: BODY_COL.bone, roughness: 0.7 });
+    else mat = new THREE.MeshPhysicalMaterial({ color: BODY_COL.rest, roughness: 0.42, metalness: 0.0, clearcoat: 0.35, clearcoatRoughness: 0.5 });
+    mat.color.convertSRGBToLinear();
+    const m = new THREE.SkinnedMesh(g, mat); m.bind(skel, new THREE.Matrix4()); m.frustumCulled = false;
+    m.userData.part = p; m.renderOrder = p.g === "_skin" ? 5 : 0; m.castShadow = p.g !== "_skin";
     m.visible = p.g !== "_skin" || !!opt.skin; grp.add(m); grp.userData.meshes.push(m);
   });
   return grp;
@@ -1501,9 +1545,12 @@ function bodyFlush() {
 BODY.preloaded = thumbPreload();
 
 // ---------- vue 3D interactive (fiche exercice, carte de récupération, atlas) ----------
-function body3DHolderHTML(h = 460) {
-  return `<div id="body3d" style="height:${h}px;border-radius:16px;overflow:hidden;background:var(--bg2,#e9edf3);position:relative">
-    <div class="mut sm c" style="padding-top:${h / 2 - 12}px" id="body3dWait">Chargement du corps 3D…</div></div>
+function body3DHolderHTML(h = 460, anim = false) {
+  const H = typeof h === "number" ? h + "px" : h;
+  return `<div id="body3d" style="height:${H};border-radius:16px;overflow:hidden;background:var(--bg2,#e9edf3);position:relative">
+    <div class="mut sm c" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center" id="body3dWait"><span class="spin"></span>&nbsp;Chargement du corps 3D…</div>
+    ${anim ? `<div id="animPhase" class="xs" style="position:absolute;left:10px;bottom:10px;z-index:4;background:rgba(17,24,39,.72);color:#fff;border-radius:10px;padding:5px 9px;pointer-events:none"></div>` : ""}</div>
+    ${anim ? `<div class="chips" style="justify-content:center;margin-top:8px"><button class="chip on" data-act="animPlay">${ANIM.playing ? "⏸ Pause" : "▶ Lecture"}</button>${[[0.5, "Lent"], [1, "Normal"]].map(([v, l]) => `<button class="chip ${ANIM.speed === v ? "on" : ""}" data-act="animSpeed" data-v="${v}">${l}</button>`).join("")}</div>` : ""}
     <div class="chips" style="justify-content:center;margin-top:8px">
       <button class="chip" data-act="bodyView" data-v="front">Face</button><button class="chip" data-act="bodyView" data-v="back">Dos</button><button class="chip" data-act="bodyView" data-v="side">Profil</button>
       <button class="chip ${S.bodySkin ? "on" : ""}" data-act="bodyToggle" data-v="skin">Peau</button><button class="chip ${S.bodyBones === false ? "" : "on"}" data-act="bodyToggle" data-v="bones">Os</button>
@@ -1528,12 +1575,17 @@ function bodyMount(holder, o) {
         if (S3.tip) { S3.tip.style.display = m ? "block" : "none"; if (m) { S3.tip.textContent = bodyPartLabel(m.userData.part); S3.tip.style.left = (e.offsetX + 14) + "px"; S3.tip.style.top = (e.offsetY + 10) + "px"; } } });
       el.addEventListener("pointerleave", () => { bodyHover(S3, null); if (S3.tip) S3.tip.style.display = "none"; });
       el.addEventListener("pointerup", e => { if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8) return; down = null; const m = pick(e); bodyHover(S3, m); bodyInfo(m && m.userData.part); });
-      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(0xff1744); m.material.emissiveIntensity = k * 0.8; } }); };
+      S3.renderer.shadowMap.enabled = true;
+      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(0xff1744); m.material.emissiveIntensity = k * 0.8; } }); if (S3.animOn) animTick(S3, t * 1000); };
     }
     S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3);
     const w = holder.querySelector("#body3dWait"); if (w) w.remove();
     V3.prevActive = V3.active && V3.active !== S3 ? V3.active : V3.prevActive;
     mount3D("body", holder, () => S3);
+    // animation de l'exercice (ou pose neutre)
+    if (o.anim) { S3.animOn = true; animSetup(S3, o.anim); ANIM.phaseEl = holder.querySelector("#animPhase"); bodyFitAnim(S3, o.view); return; }
+    S3.animOn = false; ANIM.pat = null; ANIM.phaseEl = null; (S3.grp.userData.eq || []).forEach(x => x.parent && x.parent.remove(x)); if (S3.props) { S3.scene.remove(S3.props); S3.props = null; }
+    Object.values(S3.grp.userData.bones).forEach(b => b.quaternion.identity()); S3.grp.userData.bones.root.position.copy(S3.grp.userData.rest.root);
     if (o.view) bodyView(o.view, true);
     if (o.prim && o.prim.length) { // cadrer sur les muscles travaillés
       const bb = new THREE.Box3(); S3.grp.userData.meshes.forEach(m => { if (o.prim.includes(m.userData.part.g)) bb.expandByObject(m); });
@@ -1562,6 +1614,17 @@ function bodyApplyToggles(S3) {
     else m.visible = !(S.bodyIso && hl.size && !hl.has(g));
   });
 }
+// cadre la caméra sur tout le mouvement (positions de départ et d'arrivée)
+function bodyFitAnim(S3, view) {
+  const bb = new THREE.Box3(); const tmp = new THREE.Vector3();
+  [0, 1].forEach(t => { applyPose(S3.grp, ANIM.A, ANIM.B, t); S3.grp.updateMatrixWorld(true); Object.values(S3.grp.userData.bones).forEach(b => bb.expandByPoint(b.getWorldPosition(tmp))); });
+  applyPose(S3.grp, ANIM.A, ANIM.B, 0); bb.expandByScalar(0.14); bb.min.y = Math.min(bb.min.y, 0);
+  const c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3()); const d = Math.max(1.4, Math.max(sz.y, sz.x, sz.z) * 1.35);
+  const side = ANIM.pat && ["bench", "incline", "prone", "seatRecl", "kneel", "bentOver"].includes(ANIM.pat.base) || ["rdl", "row", "rowWide", "legPress", "dbRow", "seatedCurl", "lyingCurl", "calfSeat", "abductor", "backExt", "hipThrust", "dips", "squat", "hack", "lunge", "bulgarian", "seatedCurl", "legExt", "cableCrunch", "overheadExt", "pushdown"].includes(EX_ANIM[ANIM.exId]);
+  const seated = ANIM.pat && ["seat", "seatRecl"].includes(ANIM.pat.base) && !side;
+  const dir = side ? new THREE.Vector3(1, 0.22, 0.55) : seated ? new THREE.Vector3(0.75, 0.25, 1) : view === "back" ? new THREE.Vector3(-0.35, 0.18, -1) : new THREE.Vector3(0.45, 0.18, 1);
+  S3.controls.target.copy(c); S3.cam.position.copy(c).add(dir.normalize().multiplyScalar(d)); S3.controls.update(); S3.dirty = performance.now() + 500;
+}
 function bodyView(v, instant) {
   const S3 = V3.scenes.body; if (!S3) return; const t = new THREE.Vector3(0, 0.9, 0);
   const p = v === "back" ? new THREE.Vector3(0, 1.0, -2.15) : v === "side" ? new THREE.Vector3(2.15, 1.0, 0) : new THREE.Vector3(0, 1.0, 2.15);
@@ -1571,6 +1634,9 @@ function bodyView(v, instant) {
 const BODY_BACK = new Set(["delt_post", "rot_cuff", "triceps_long", "triceps_latmed", "lats", "teres", "traps_mid", "traps_low", "erectors", "glutes_max", "glutes_med", "hamstrings", "calves"]);
 function bodyBestView(prim) { const b = prim.filter(m => BODY_BACK.has(m)).length; return b > prim.length / 2 ? "back" : "front"; }
 const BODY_ACT = {
+  bodyMode: el => { S.bodyAnim = el.dataset.v === "1"; const c = $("#body3d canvas"); renderSheet(); },
+  animPlay: el => { ANIM.playing = !ANIM.playing; ANIM.t0 = performance.now() - (ANIM.pausedAt || 0); el.textContent = ANIM.playing ? "⏸ Pause" : "▶ Lecture"; if (!ANIM.playing) ANIM.pausedAt = performance.now() - ANIM.t0; },
+  animSpeed: el => { ANIM.speed = +el.dataset.v; ANIM.t0 = performance.now(); $$('[data-act="animSpeed"]').forEach(b => b.classList.toggle("on", b === el)); },
   bodyView: el => bodyView(el.dataset.v),
   bodyToggle: el => { const k = el.dataset.v; if (k === "skin") S.bodySkin = !S.bodySkin; else if (k === "bones") S.bodyBones = S.bodyBones === false; else S.bodyIso = !S.bodyIso;
     el.classList.toggle("on"); const S3 = V3.scenes.body; if (S3) bodyApplyToggles(S3); },
@@ -1591,8 +1657,170 @@ function bodyAfterSheet() {
   const h = $("#body3d"); if (!h || h.querySelector("canvas")) return;
   const f = S.sheet; let o = {};
   if (f === bodyRecoverySheet) { const rec = muscleFatigue(); o.colors = {}; Object.entries(rec).forEach(([m, r]) => o.colors[m] = recColor(r)); }
-  else if (S.bodyEx) { const x = getEx(S.bodyEx); o = { prim: x.prim, sec: x.sec, focus: x.focus, view: bodyBestView(x.prim) }; }
+  else if (S.bodyEx) { const x = getEx(S.bodyEx); o = { prim: x.prim, sec: x.sec, focus: x.focus, view: bodyBestView(x.prim), anim: S.bodyAnim === false ? null : S.bodyEx }; }
   bodyMount(h, o);
+}
+
+// ===================== MANNEQUIN ANIMÉ : comment faire l'exercice =====================
+// Le modèle anatomique est articulé (19 os placés sur les vraies articulations du squelette BodyParts3D).
+// Chaque exercice = une position de départ (A) et une position d'arrivée (B), en angles articulaires,
+// jouées en boucle : phase concentrique ≈ 1 s, excentrique ≈ 1,6 s, petite pause en haut et en bas.
+// Conventions (corps tourné vers +Z, gauche = +X) :
+//   épaule : flex (bras vers l'avant), abd (bras sur le côté), rot (rotation externe) · coude : elbow (flexion)
+//   hanche : hip (flexion), habd (écartement) · genou : knee (flexion) · cheville : ank (+ = pointe vers le haut)
+//   tronc : spine / chest (penché en avant +), neck · clav (épaules qui montent)
+//   base : rx (corps basculé : -90 = couché sur le dos, +90 = sur le ventre), ry, dy / dz (déplacement du bassin)
+const D2R = Math.PI / 180;
+const BASES = {
+  stand: {},
+  seat: { hip: 90, knee: 90, dy: -0.36, dz: -0.02 },
+  seatRecl: { hip: 80, knee: 90, dy: -0.36, rx: -12 },
+  bench: { rx: -90, dy: -0.26, hip: 15, knee: 95 },
+  incline: { rx: -55, dy: -0.32, hip: 60, knee: 95 },
+  prone: { rx: 90, dy: -0.32 },
+  kneel: { knee: 90, ank: -40, dy: -0.47 },
+  hang: { dy: 0.25 },
+  bentOver: { rx: 70, hip: 70, knee: 18, dy: -0.12 },
+  thrust: {},
+};
+// équipement : db = haltère dans chaque main, bar = barre, handle = poignées, rope = corde, none
+const PATTERNS = {
+  latRaise: { base: "stand", eq: "db", A: { abd: 12, elbow: 15, flex: 8 }, B: { abd: 88, elbow: 15, flex: 12 } },
+  latRaiseCable: { base: "stand", eq: "handle", side: "L", A: { abd: 0, elbow: 15, flex: 10 }, B: { abd: 88, elbow: 15, flex: 12 } },
+  shoulderPress: { base: "seat", eq: "handle", A: { abd: 80, rot: 90, elbow: 100 }, B: { abd: 165, rot: 90, elbow: 15 } },
+  facePull: { base: "stand", eq: "rope", A: { flex: 85, elbow: 5 }, B: { abd: 80, flex: 10, rot: 40, elbow: 115 } },
+  rearFly: { base: "seat", eq: "handle", A: { flex: 85, elbow: 10 }, B: { abd: 85, flex: 0, elbow: 10 } },
+  pecFly: { base: "seat", eq: "handle", A: { abd: 80, elbow: 25 }, B: { flex: 85, abd: 0, elbow: 25 } },
+  pushdown: { base: "stand", eq: "rope", A: { spine: 10, flex: 15, elbow: 100 }, B: { spine: 10, flex: 5, elbow: 3 } },
+  pushdownUni: { base: "stand", eq: "handle", side: "L", A: { spine: 8, flex: 12, elbow: 100 }, B: { spine: 8, flex: 3, elbow: 3 } },
+  overheadExt: { base: "stand", eq: "rope", A: { spine: 18, flex: 165, elbow: 145 }, B: { spine: 18, flex: 165, elbow: 10 } },
+  dips: { base: "hang", eq: "none", A: { dy: -0.05, flex: -45, elbow: 95, spine: 15, knee: 70 }, B: { dy: 0.25, flex: 0, elbow: 5, spine: 8, knee: 70 } },
+  curl: { base: "stand", eq: "db", A: { elbow: 8, flex: 0 }, B: { elbow: 140, flex: 10 } },
+  hammer: { base: "stand", eq: "rope", A: { elbow: 8, rot: -60 }, B: { elbow: 135, rot: -60, flex: 8 } },
+  bayesian: { base: "stand", eq: "handle", side: "L", A: { flex: -30, elbow: 5, spine: 5 }, B: { flex: -25, elbow: 135, spine: 5 } },
+  inclineCurl: { base: "incline", eq: "db", A: { flex: -35, elbow: 5 }, B: { flex: -30, elbow: 140 } },
+  preacher: { base: "seat", eq: "bar", A: { flex: 50, elbow: 20, spine: 15 }, B: { flex: 50, elbow: 135, spine: 15 } },
+  cableCrunch: { base: "kneel", eq: "rope", A: { spine: 10, chest: 0, flex: 150, elbow: 130, hip: 10 }, B: { spine: 45, chest: 30, flex: 150, elbow: 130, hip: 35 } },
+  benchPress: { base: "bench", eq: "bar", A: { abd: 65, elbow: 100, flex: 15 }, B: { flex: 88, abd: 12, elbow: 5 } },
+  inclinePress: { base: "incline", eq: "handle", A: { abd: 65, elbow: 100, flex: 15 }, B: { flex: 95, abd: 12, elbow: 5 } },
+  dbIncline: { base: "incline", eq: "db", A: { abd: 70, elbow: 100, flex: 10 }, B: { flex: 95, abd: 8, elbow: 5 } },
+  chestPress: { base: "seat", eq: "handle", A: { abd: 65, elbow: 100, flex: 10 }, B: { flex: 85, abd: 12, elbow: 5 } },
+  pulldown: { base: "seat", eq: "bar", A: { abd: 160, rot: 90, elbow: 10 }, B: { abd: 55, rot: 90, elbow: 125, spine: -8 } },
+  pullup: { base: "hang", eq: "bar", A: { abd: 165, rot: 90, elbow: 5, dy: 0.05, knee: 60 }, B: { abd: 50, rot: 90, elbow: 125, dy: 0.45, knee: 60 } },
+  row: { base: "seat", eq: "handle", A: { flex: 80, elbow: 5, spine: 18, knee: 30, hip: 80 }, B: { flex: -15, elbow: 100, spine: 0, knee: 30, hip: 80 } },
+  rowWide: { base: "seat", eq: "bar", A: { flex: 80, elbow: 5, spine: 18, knee: 30, hip: 80 }, B: { abd: 70, flex: -8, elbow: 95, spine: 0, knee: 30, hip: 80 } },
+  dbRow: { base: "bentOver", eq: "db", side: "L", A: { flex: 75, elbow: 5 }, B: { flex: -15, elbow: 100 } },
+  shrug: { base: "stand", eq: "db", A: { clav: 0, elbow: 3 }, B: { clav: 14, elbow: 3 } },
+  squat: { base: "stand", eq: "barBack", A: { abd: 62, rot: 90, elbow: 150, flex: -18 }, B: { hip: 105, knee: 115, ank: 28, spine: 30, dy: -0.38, abd: 62, rot: 90, elbow: 150, flex: -18 } },
+  hack: { base: "stand", eq: "none", A: { abd: 20, flex: 25, elbow: 135 }, B: { hip: 105, knee: 115, ank: 25, spine: 10, dy: -0.36, abd: 20, flex: 25, elbow: 135 } },
+  legPress: { base: "seatRecl", eq: "none", A: { hip: 120, knee: 100, rx: -40, dy: -0.4 }, B: { hip: 50, knee: 8, rx: -40, dy: -0.4 } },
+  legExt: { base: "seat", eq: "none", A: { knee: 90 }, B: { knee: 5 } },
+  seatedCurl: { base: "seat", eq: "none", A: { knee: 10 }, B: { knee: 105 } },
+  lyingCurl: { base: "prone", eq: "none", A: { knee: 5 }, B: { knee: 115 } },
+  rdl: { base: "stand", eq: "bar", A: { elbow: 3 }, B: { rx: 78, hip: 72, knee: 18, ank: 5, spine: 6, flex: 82, elbow: 3, dy: -0.1, dz: -0.05 } },
+  hipThrust: { base: "thrust", eq: "barHip", A: { rx: -58, dy: -0.66, hip: 58, knee: 95, flex: 35, elbow: 70 }, B: { rx: -90, dy: -0.44, hip: 2, knee: 90, flex: 35, elbow: 70 } },
+  calfStand: { base: "stand", eq: "none", A: { ank: 15 }, B: { ank: -35, dy: 0.07 } },
+  calfSeat: { base: "seat", eq: "none", A: { ank: 15 }, B: { ank: -35 } },
+  lunge: { base: "stand", eq: "db", A: { L: { hip: 25 }, R: { hip: -15 } }, B: { L: { hip: 85, knee: 90, ank: 15 }, R: { hip: -15, knee: 95 }, dy: -0.38, spine: 5 } },
+  bulgarian: { base: "stand", eq: "db", A: { L: { hip: 20, knee: 10 }, R: { hip: -30, knee: 80 } }, B: { L: { hip: 85, knee: 95, ank: 18 }, R: { hip: -25, knee: 115 }, dy: -0.4, spine: 15 } },
+  adductor: { base: "seat", eq: "none", A: { habd: 40 }, B: { habd: 3 } },
+  abductor: { base: "seat", eq: "none", A: { habd: 3 }, B: { habd: 40, spine: 10 } },
+  backExt: { base: "stand", eq: "none", A: { rx: 125, hip: 80, dy: -0.25, flex: 25, abd: 15, elbow: 140 }, B: { rx: 45, hip: 0, dy: -0.25, flex: 25, abd: 15, elbow: 140 } },
+};
+const EX_ANIM = {
+  lat_raise_cable: "latRaiseCable", lat_raise_db: "latRaise", shoulder_press: "shoulderPress", face_pull: "facePull", rear_delt_fly: "rearFly",
+  tri_oh_cable: "overheadExt", tri_push_uni: "pushdownUni", tri_push_rope: "pushdown", dips: "dips", hammer_rope: "hammer", bayesian_curl: "bayesian",
+  incline_db_curl: "inclineCurl", preacher_curl: "preacher", cable_crunch: "cableCrunch", incline_press_machine: "inclinePress", bench_press: "benchPress",
+  db_incline_press: "dbIncline", chest_press: "chestPress", pec_fly_machine: "pecFly", lat_pulldown_pron: "pulldown", pull_up: "pullup",
+  row_neutral_close: "row", row_pron_wide: "rowWide", db_row: "dbRow", shrug: "shrug", squat: "squat", leg_press: "legPress", hack_squat: "hack",
+  leg_ext: "legExt", bulgarian: "bulgarian", lunges: "lunge", rdl: "rdl", seated_leg_curl: "seatedCurl", lying_leg_curl: "lyingCurl", hip_thrust: "hipThrust",
+  adductor_machine: "adductor", abductor_machine: "abductor", calf_standing: "calfStand", calf_seated: "calfSeat", back_ext: "backExt"
+};
+function animFor(exId) { const x = getEx(exId); if (EX_ANIM[exId]) return PATTERNS[EX_ANIM[exId]];
+  // exercices perso : on devine d'après le muscle principal
+  const m = x.prim[0] || ""; return PATTERNS[{ delt_lat: "latRaise", delt_ant: "shoulderPress", delt_post: "rearFly", pec_mid: "chestPress", pec_up: "inclinePress", lats: "pulldown", traps_mid: "row",
+    biceps_long: "curl", biceps_short: "curl", triceps_long: "overheadExt", triceps_latmed: "pushdown", quads: "legExt", hamstrings: "seatedCurl", glutes_max: "hipThrust", calves: "calfStand", abs: "cableCrunch" }[m] || "curl"]; }
+// paramètres → rotations des os
+function poseParams(pat, which) {
+  const P = Object.assign({}, BASES[pat.base] || {}, pat[which]); const side = s => Object.assign({}, P, P[s] || {});
+  const out = {}; const L = side("L"), R = side("R");
+  // exercice unilatéral : le bras inactif reste le long du corps
+  if (pat.side === "L") ["flex", "abd", "rot", "elbow"].forEach(k => { R[k] = (pat.A[k] != null && k !== "elbow") ? 0 : (k === "elbow" ? 10 : 0); });
+  out.L = L; out.R = R; out.g = P; return out;
+}
+const _q = new THREE.Quaternion(), _e = new THREE.Euler();
+function qOf(x, y, z, order = "ZXY") { _e.set(x * D2R, y * D2R, z * D2R, order); return new THREE.Quaternion().setFromEuler(_e); }
+function bonesPose(pp) {
+  const Q = {}; const g = pp.g;
+  Q.root = qOf(g.rx || 0, g.ry || 0, 0, "YXZ"); Q.spine = qOf(g.spine || 0, 0, 0); Q.chest = qOf(g.chest || 0, 0, 0); Q.neck = qOf(-(g.spine || 0) * 0.3 + (g.neck || 0), 0, 0);
+  [["L", 1], ["R", -1]].forEach(([S, sg]) => { const p = pp[S];
+    Q["clav" + S] = qOf(0, 0, sg * (p.clav || 0));
+    // bras : Rz(abd) · Rx(-flex) · Ry(rot)
+    Q["ua" + S] = new THREE.Quaternion().setFromEuler(new THREE.Euler(-(p.flex || 0) * D2R, sg * (p.rot || 0) * D2R, sg * (p.abd || 0) * D2R, "ZXY"));
+    Q["fa" + S] = qOf(-(p.elbow || 0), 0, 0); Q["hd" + S] = qOf(0, 0, 0);
+    Q["th" + S] = new THREE.Quaternion().setFromEuler(new THREE.Euler(-(p.hip || 0) * D2R, 0, sg * (p.habd || 0) * D2R, "ZXY"));
+    Q["sh" + S] = qOf(p.knee || 0, 0, 0); Q["ft" + S] = qOf(-(p.ank || 0), 0, 0);
+  });
+  return { Q, dy: g.dy || 0, dz: g.dz || 0 };
+}
+function applyPose(grp, A, B, t) {
+  const bones = grp.userData.bones, rest = grp.userData.rest;
+  Object.keys(bones).forEach(n => { const qa = A.Q[n], qb = B.Q[n]; if (qa && qb) bones[n].quaternion.copy(qa).slerp(qb, t); else bones[n].quaternion.identity(); });
+  bones.root.position.copy(rest.root).add(new THREE.Vector3(0, A.dy + (B.dy - A.dy) * t, A.dz + (B.dz - A.dz) * t));
+  updateTwoHand(grp);
+}
+// ---------- matériel tenu en main / décor ----------
+function equipMeshes(grp, pat) {
+  (grp.userData.eq || []).forEach(o => o.parent && o.parent.remove(o)); grp.userData.eq = [];
+  const G = gm(); const B = grp.userData.bones; const J = BODY.joints;
+  const handOff = S => new THREE.Vector3(...J["hd" + S]).sub(new THREE.Vector3(...J["wr" + S])).multiplyScalar(0.5);
+  const add = (S, obj) => { obj.position.copy(handOff(S)); B["hd" + S].add(obj); grp.userData.eq.push(obj); };
+  const sides = pat.side === "L" ? ["L"] : ["L", "R"];
+  const db = () => { const d = new THREE.Group(); d.add(tubeAB([-0.07, 0, 0], [0.07, 0, 0], 0.014, G.chrome)); [-0.09, 0.09].forEach(x => { const h = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 6), G.plate); h.rotation.z = Math.PI / 2; h.position.x = x; d.add(h); }); return d; };
+  const handle = () => { const d = new THREE.Group(); d.add(tubeAB([-0.06, 0, 0], [0.06, 0, 0], 0.016, G.black)); d.add(tubeAB([0, 0, 0], [0, 0.6, 0], 0.003, G.cable)); return d; };
+  if (pat.eq === "db") sides.forEach(S => add(S, db()));
+  if (pat.eq === "handle") sides.forEach(S => add(S, handle()));
+  if (pat.eq === "rope") sides.forEach(S => { const d = new THREE.Group(); d.add(tubeAB([0, -0.04, 0], [0, 0.04, 0], 0.018, G.black)); add(S, d); });
+  if (pat.eq === "bar") { const d = new THREE.Group(); const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 14), G.chrome); bar.rotation.z = Math.PI / 2; d.add(bar); grp.add(d); grp.userData.eq.push(d); grp.userData.twoHand = d; }
+  if (pat.eq === "barBack" || pat.eq === "barHip") { const d = new THREE.Group(); d.add(tubeAB([-1.0, 0, 0], [1.0, 0, 0], 0.016, G.chrome)); [-0.85, 0.85].forEach(x => d.add(plateDisc(0.225, x, 0, 0)));
+    if (pat.eq === "barBack") { d.position.set(0, J.nec[1] - J.che[1] - 0.02, -0.08); B.chest.add(d); } else { d.position.set(0, 0.0, 0.14); B.root.add(d); } grp.userData.eq.push(d); }
+}
+const _a = new THREE.Vector3(), _b = new THREE.Vector3();
+function updateTwoHand(grp) { const d = grp.userData.twoHand; if (!d || !d.parent) return; const B = grp.userData.bones, J = BODY.joints;
+  grp.updateMatrixWorld(true);
+  const grip = (S, v) => { v.set(...J["hd" + S]).sub(new THREE.Vector3(...J["wr" + S])).multiplyScalar(0.5); B["hd" + S].localToWorld(v.add(new THREE.Vector3(0, 0, 0))); return v; };
+  // localToWorld attend un point local : décalage depuis le pivot du poignet
+  _a.set(...J.hdL).sub(new THREE.Vector3(...J.wrL)).multiplyScalar(0.5); B.hdL.localToWorld(_a);
+  _b.set(...J.hdR).sub(new THREE.Vector3(...J.wrR)).multiplyScalar(0.5); B.hdR.localToWorld(_b);
+  d.position.copy(_a).add(_b).multiplyScalar(0.5); d.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), _a.clone().sub(_b).normalize()); }
+function propsFor(pat) { // décor fixe : siège, banc, poulie…
+  const G = gm(); const g = new THREE.Group(); const base = pat.base;
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(1.1, 48), new THREE.MeshStandardMaterial({ color: 0x9aa3ad, transparent: true, opacity: 0.25 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; g.add(floor);
+  if (base === "seat" || base === "seatRecl") { g.add(rbox(0.45, 0.09, 0.45, G.red, 0, 0.43, 0.04)); g.add(box(0.06, 0.4, 0.06, G.silver, 0, 0.2, 0.04)); if ([PATTERNS.shoulderPress, PATTERNS.chestPress, PATTERNS.pecFly, PATTERNS.legExt, PATTERNS.seatedCurl, PATTERNS.adductor, PATTERNS.abductor, PATTERNS.legPress].includes(pat)) { const b = rbox(0.42, 0.08, 0.7, G.red, 0, 0, 0); b.rotation.x = Math.PI / 2 + (base === "seatRecl" ? 0.5 : 0.08); b.position.set(0, 0.85, -0.17); g.add(b); } }
+  if (base === "bench") { g.add(rbox(0.3, 0.08, 1.3, G.red, 0, 0.47, -0.35)); g.add(box(0.06, 0.43, 0.06, G.silver, 0, 0.21, -0.35)); }
+  if (base === "incline") { g.add(rbox(0.35, 0.08, 0.4, G.red, 0, 0.45, 0.1)); const b = rbox(0.32, 0.08, 0.9, G.red, 0, 0, 0); b.rotation.x = -0.75 + Math.PI / 2 - Math.PI / 2; b.rotation.x = 0.85; b.position.set(0, 0.78, -0.25); g.add(b); }
+  if (base === "thrust") { g.add(rbox(0.9, 0.08, 0.32, G.red, 0, 0.42, -0.55)); g.add(box(0.06, 0.4, 0.06, G.silver, 0, 0.2, -0.55)); }
+  if (pat === PATTERNS.preacher) { const pad = rbox(0.45, 0.07, 0.3, G.red, 0, 0, 0); pad.rotation.x = 0.7; pad.position.set(0, 0.95, 0.35); g.add(pad); }
+  if (pat === PATTERNS.pullup) { g.add(tubeAB([-0.8, 2.4, 0.03], [0.8, 2.4, 0.03], 0.02, G.black)); }
+  if (pat === PATTERNS.backExt) { const pad = rbox(0.36, 0.07, 0.24, G.red, 0, 0, 0); pad.rotation.x = -Math.PI / 4; pad.position.set(0, 0.46, -0.07); g.add(pad); g.add(tubeAB([0, 0, -0.75], [0, 0.42, -0.12], 0.025, G.silver)); g.add(tubeAB([0, 0, -0.75], [0, 0.2, -0.68], 0.025, G.silver)); g.add(tubeAB([-0.14, 0.21, -0.67], [0.14, 0.21, -0.67], 0.045, G.red)); }
+  if (base === "prone") { g.add(rbox(0.38, 0.08, 1.4, G.red, 0, 0.5, 0.05)); }
+  return g;
+}
+// ---------- visionneuse ----------
+const ANIM = { exId: null, playing: true, speed: 1, t0: 0 };
+function animSetup(S3, exId) {
+  const pat = animFor(exId); ANIM.exId = exId; ANIM.pat = pat;
+  ANIM.A = bonesPose(poseParams(pat, "A")); ANIM.B = bonesPose(poseParams(pat, "B")); ANIM.t0 = performance.now();
+  equipMeshes(S3.grp, pat); if (S3.props) S3.scene.remove(S3.props); S3.props = propsFor(pat); S3.scene.add(S3.props);
+  applyPose(S3.grp, ANIM.A, ANIM.B, 0); S3.dirty = performance.now() + 1000;
+}
+// profil de vitesse d'une répétition : pause, montée (1 s), pause, descente (1,6 s)
+function repPhase(sec) { const T = 3.2, x = sec % T; if (x < 0.3) return 0; if (x < 1.3) return ease((x - 0.3) / 1.0); if (x < 1.6) return 1; return 1 - ease((x - 1.6) / 1.6); }
+function ease(u) { return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2; }
+function animTick(S3, now) {
+  if (!ANIM.pat || !S3.grp) return; if (!ANIM.playing) return;
+  const sec = (now - ANIM.t0) / 1000 * ANIM.speed; applyPose(S3.grp, ANIM.A, ANIM.B, repPhase(sec));
+  if (ANIM.phaseEl) { const t = repPhase(sec); ANIM.phaseEl.textContent = (sec % 3.2) < 1.6 ? "▲ phase concentrique (on pousse / tire)" : "▼ phase excentrique (on freine, 1,5-2 s)"; }
 }
 
 // ===================== SCANNER CODE-BARRES EN DIRECT (caméra) =====================
@@ -1881,11 +2109,13 @@ function exMuscleSheet(exId) {
   return () => {
     const x = getEx(exId);
     return `<div class="row between"><h2>${esc(x.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-      ${body3DHolderHTML(440)}
+      <div class="chips" style="margin-bottom:8px"><button class="chip ${S.bodyAnim === false ? "" : "on"}" data-act="bodyMode" data-v="1">🎬 Mouvement</button><button class="chip ${S.bodyAnim === false ? "on" : ""}" data-act="bodyMode" data-v="0">💪 Muscles (statique)</button></div>
+      ${body3DHolderHTML("min(64vh, 620px)", S.bodyAnim !== false)}
       <div class="row xs" style="gap:12px;justify-content:center;margin:6px 0"><span><b style="color:#d90429">●</b> principal</span><span><b style="color:#ff8a00">●</b> secondaire</span><span>clignote = partie ciblée</span></div>
       <h3>Muscles principaux</h3><ul class="sm">${x.prim.map(m => `<li>${MUSCLES[m][0]}${x.focus.includes(m) ? " <b>(ciblé)</b>" : ""}</li>`).join("")}</ul>
       ${x.sec.length ? `<h3>Secondaires</h3><ul class="sm">${x.sec.map(m => `<li>${MUSCLES[m][0]}</li>`).join("")}</ul>` : ""}
       ${x.note ? `<div class="reco">${esc(x.note)}</div>` : ""}
+      ${EX_VARIANTS[x.id] ? `<h3>Variantes populaires</h3>${EX_VARIANTS[x.id].map(([n, d]) => `<div class="entry" style="align-items:flex-start"><div><div class="sm b">${esc(n)}</div><div class="xs mut">${esc(d)}</div></div></div>`).join("")}` : ""}
       ${EX_CUES[x.id] ? `<h3>Exécution</h3><ol class="sm">${EX_CUES[x.id].map(c => `<li>${esc(c)}</li>`).join("")}</ol>` : ""}
       <h3>Rôle des muscles travaillés</h3>${x.prim.concat(x.sec).filter((m, k, a) => a.indexOf(m) === k && MUSCLE_INFO[m]).map(m => `<p class="sm" style="margin:4px 0"><b>${esc(MUSCLES[m][0])}</b> — ${esc(MUSCLE_INFO[m])}</p>`).join("")}
       ${(() => { const alts = typeof replacementsFor === "function" ? replacementsFor(x.id).slice(0, 3) : []; return alts.length ? `<h3>Alternatives dans ta salle</h3><p class="sm">${alts.map(a => esc(getEx(a).name)).join(" · ")}</p>` : ""; })()}
@@ -1935,7 +2165,7 @@ function exCard(w, e, i) {
   const dr = S.draft[i] || (S.draft[i] = { w: (e.sets || []).filter(s => !s.wu).slice(-1)[0]?.w ?? sug.w ?? "", r: "", rir: 2, wu: false });
   const alts = ALTERNATIVES[e.id] || [];
   const prev = (e.sets || []);
-  return `<div class="card"><div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
+  return `<div class="card"><div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer;text-align:center" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}<div class="xs" style="color:var(--acc,#3b82f6)">🎬 Comment faire</div></div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
     <div class="row" style="gap:2px">${alts.length ? `<button class="ghost small" data-act="swapEx" data-i="${i}" title="Variante">⇄</button>` : ""}<button class="ghost small" data-act="refuse" data-i="${i}" title="Je ne veux pas faire cet exercice">🚫</button><button class="ghost small" data-act="exUp" data-i="${i}" title="Monter">↑</button><button class="danger small" data-act="rmEx" data-i="${i}" title="Retirer">✕</button></div></div>
     <div class="row sm" style="margin:6px 0;gap:6px;flex-wrap:wrap"><span class="mut">Fourchette :</span><select data-act="range" data-v="${e.id}" style="width:auto;padding:4px 6px">${[[6, 8], [6, 10], [8, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) => `<option value="${a}-${b}" ${a === lo && b === hi ? "selected" : ""}>${a}-${b} reps</option>`).join("")}</select></div>
     ${last ? `<div class="xs mut">Dernière fois (${fmtDay(dateKey(new Date(last.date)))}) : ${last.sets.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div>` : ""}
@@ -2199,7 +2429,8 @@ function machineSheet(mid) {
     const m = GYM_MACHINES.find(x => x.id === mid); if (!m) return "";
     return `<div class="row between"><h2>${esc(m.label)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
       ${m.ex.length ? `<p class="sm mut">Quel exercice fais-tu sur cette machine ?</p>` : `<p class="sm">Zone cardio (tapis, vélos, rameurs). Note ton cardio dans Aujourd'hui → « Sport en plus ».</p>`}
-      ${m.ex.map(id => { const x = getEx(id); return `<div class="entry" data-act="gymPickEx" data-v="${id}"><div style="width:96px;flex:none">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div class="grow"><div class="b">${esc(x.name)}</div><div class="xs mut">${x.focus.map(f => MUSCLES[f][0]).join(", ")}</div></div><div class="mut">›</div></div>`; }).join("")}`;
+      ${m.ex.map(id => { const x = getEx(id); return `<div class="entry" data-act="gymPickEx" data-v="${id}"><div style="width:96px;flex:none">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div class="grow"><div class="b">${esc(x.name)}</div><div class="xs mut">${x.focus.map(f => MUSCLES[f][0]).join(", ")}</div></div><button class="sec small" data-act="showMusc" data-v="${id}" title="Voir comment faire">🎬</button><div class="mut">›</div></div>`; }).join("")}
+      ${m.ex.length ? `<p class="xs mut">🎬 = voir le mannequin faire le mouvement, avec les variantes.</p>` : ""}`;
   };
 }
 function gymExSheet(exId) {
