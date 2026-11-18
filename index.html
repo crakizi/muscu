@@ -97,13 +97,16 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .ghostline{background:rgba(124,58,237,.08);color:var(--txt);border-radius:10px;padding:6px 8px;margin-top:6px}
 .pill{font-size:10px;background:#dcfce7;color:#166534;border-radius:8px;padding:1px 6px;margin-left:4px;font-weight:600}
 .bthumb.wait{background:linear-gradient(90deg,var(--chip) 25%,rgba(255,255,255,.35) 50%,var(--chip) 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:12px}@keyframes shim{to{background-position:-200% 0}}
+.dstrip{display:flex;gap:8px;overflow-x:auto;margin:10px 0 8px;padding-bottom:2px;scrollbar-width:none}.dstrip::-webkit-scrollbar{display:none}
+.dpill{flex:none;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:600;box-shadow:var(--shadow)}
+.dpill.empty{color:var(--mut);font-weight:500;border-style:dashed;box-shadow:none;background:transparent}
 
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795019945";
+const BUILD_VERSION = "1795024376";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1721,7 +1724,8 @@ function viewToday() {
   ${onboardingHTML()}
   <div class="qa"><button data-act="openAdd" data-v=""><span>🍽️</span>Aliment</button><button data-act="tab" data-v="workout"><span>🏋️</span>Séance</button><button data-act="quickWeight"><span>⚖️</span>Poids</button><button data-act="tab" data-v="fridge"><span>🧊</span>Frigo</button></div>` : ""}
   <div class="row between"><button class="sec small" data-act="dayNav" data-v="-1">‹</button><h2 class="c" style="margin:0">${k === todayKey() ? "Mon journal du jour" : fmtDay(k)}</h2><button class="sec small" data-act="dayNav" data-v="1" ${k >= todayKey() ? "disabled" : ""}>›</button></div>
-  <div class="card" style="margin-top:10px"><div class="row" style="gap:14px">
+  ${dailyStripHTML(d)}
+  <div class="card" style="margin-top:4px"><div class="row" style="gap:14px">
     <div class="ring">${ring(t.kcal, T.kcal, "var(--acc)")}<div class="in"><div class="big">${r0(Math.abs(left))}</div><div class="xs mut">${left >= 0 ? "kcal restantes" : "kcal en trop"}</div></div></div>
     <div class="grow" style="display:flex;flex-direction:column;gap:9px">
       <div class="xs mut">${r0(t.kcal)} / ${T.kcal} kcal${t.actKcal ? ` · sport +${r0(t.actKcal)} kcal` : ""}</div>
@@ -1729,22 +1733,34 @@ function viewToday() {
     </div></div>
     <div class="chips" style="margin-top:10px">${mini("Fibres", t.fib, 30)}${mini("Sucres", t.sugar, sugarMax, 1)}${mini("Sel", t.salt, 5, 1)}${mini("Saturés", t.satfat, satMax, 1)}</div>
     ${Object.keys(t.micro).length ? `<details style="margin-top:8px"><summary class="xs mut">Micronutriments (estimés pour les aliments analysés par l'IA)</summary><div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag ${t.micro[m] >= ref ? "grn" : ""}">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div><p class="xs mut">Repères EFSA pour un homme adulte.</p></details>` : ""}
-    <button style="width:100%;margin-top:12px" data-act="openAdd" data-v="">+ Ajouter un aliment</button><div class="row" style="margin-top:8px"><button class="sec grow small" data-act="aiFinish">Que manger ce soir ?</button><button class="sec grow small" data-act="aiFridge">Recette avec mon frigo</button></div>
+    <div class="row" style="margin-top:10px;gap:6px"><button class="chip" data-act="aiFinish">💡 Que manger ensuite ?</button><button class="chip" data-act="aiFridge">🧊 Recette avec mon frigo</button></div>
     ${S.aiOut.today ? `<div class="ai-out">${esc(S.aiOut.today)}</div>` : ""}
   </div>
-  ${meals}
-  <div class="card"><h2>Suivi du jour</h2>
-    ${d.health ? `<div class="banner" style="background:#fde8ef;color:#9d174d">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}${d.health.restingHR ? " · FC repos " + d.health.restingHR : ""}</div>` : ""}
-    <div class="row"><div class="grow"><label>Poids (kg, le matin à jeun)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="ex. 80.2"></div>
-    <div class="grow"><label>Pas</label><input id="inSteps" type="number" inputmode="numeric" value="${d.steps || ""}" placeholder="ex. 8500"></div>
-    <div class="grow"><label>Sommeil (h)</label><input id="inSleep" type="number" step="0.25" inputmode="decimal" value="${d.sleep || ""}"></div></div>
-    <button class="small" style="margin-top:8px" data-act="saveDaily">Enregistrer</button>
-    <div style="display:grid;gap:8px;margin-top:12px">${scale("mood", "Humeur (1 = mauvaise, 5 = top)")}${scale("energy", "Énergie")}${scale("stress", "Stress (1 = calme, 5 = très stressé)")}</div>
+  ${meals}`;
+}
+
+// ---- suivi du jour : une seule ligne de pastilles, le détail s'ouvre en feuille ----
+function dailyStripHTML(d) {
+  const p = profile(); const sport = (d.acts || []).reduce((t, a) => t + a.min, 0);
+  const pill = (ico, val, ph) => `<button class="dpill ${val ? "" : "empty"}" data-act="openDaily">${ico} ${val || ph}</button>`;
+  return `<div class="dstrip">${pill("⚖️", d.weight ? r1(d.weight) + " kg" : "", "Poids")}${pill("👣", d.steps ? d.steps.toLocaleString("fr-FR") : "", "Pas")}${pill("😴", d.sleep ? d.sleep + " h" : "", "Sommeil")}${pill("⚽", sport ? sport + " min" : "", "Sport")}${p.moodTrack ? pill("🙂", d.mood ? d.mood + "/5" : "", "Humeur") : ""}</div>`;
+}
+function dailySheet() {
+  const d = day(S.day); const p = profile();
+  const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
+  return `<div class="row between"><h2>Suivi du jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    ${d.health ? `<div class="banner" style="background:#fde8ef;color:#9d174d">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
+    <div class="row"><div class="grow"><label>Poids (matin, à jeun)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="80.2"></div>
+    <div class="grow"><label>Pas</label><input id="inSteps" type="number" inputmode="numeric" value="${d.steps || ""}" placeholder="8500"></div>
+    <div class="grow"><label>Sommeil (h)</label><input id="inSleep" type="number" step="0.25" inputmode="decimal" value="${d.sleep || ""}" placeholder="7.5"></div></div>
+    <button style="width:100%;margin-top:8px" data-act="saveDaily">Enregistrer</button>
     <h3 style="margin-top:14px">Sport en plus (foot, padel…)</h3>
     ${(d.acts || []).map((a, i) => `<div class="entry"><span>${esc(a.type)} · ${a.min} min</span><span>${r0(a.kcal)} kcal <button class="danger small" data-act="delAct" data-v="${i}">✕</button></span></div>`).join("")}
     <div class="row" style="margin-top:6px"><select id="actType">${Object.keys(ACTIVITIES).map(a => `<option>${a}</option>`).join("")}</select><input id="actMin" type="number" inputmode="numeric" placeholder="min" style="width:80px"><button class="small" data-act="addAct">Ajouter</button></div>
-    <label class="row" style="margin-top:12px;gap:6px"><input type="checkbox" style="width:auto" data-act="toggleIncomplete" ${d.incomplete ? "checked" : ""}> Journée mal notée (ignorée par le calcul adaptatif)</label>
-  </div>`;
+    ${p.moodTrack ? `<div style="display:grid;gap:8px;margin-top:14px">${scale("mood", "Humeur")}${scale("energy", "Énergie")}${scale("stress", "Stress")}</div>` : ""}
+    <details style="margin-top:14px"><summary class="xs mut">Options</summary>
+      <label class="row" style="margin-top:8px;gap:6px"><input type="checkbox" style="width:auto" data-act="moodTrack" ${p.moodTrack ? "checked" : ""}> Noter aussi humeur, énergie et stress</label>
+      <label class="row" style="margin-top:8px;gap:6px"><input type="checkbox" style="width:auto" data-act="toggleIncomplete" ${d.incomplete ? "checked" : ""}> Journée mal notée (ignorée par le calcul adaptatif)</label></details>`;
 }
 
 function onboardingHTML() {
@@ -2780,10 +2796,11 @@ const ACT = {
   addFav: el => { const f = (Store.get("favs", { items: [] }).items || []).find(x => x.id === el.dataset.v); if (!f) return; updDay(d => f.entries.forEach(e => d.entries.push(makeEntry(e, e.g, S.add.meal)))); f.entries.forEach(e => fridgeConsume(e.name, e.g)); toast("Favori ajouté"); closeSheet(); },
   delFav: el => { const doc = clone(Store.get("favs", { items: [] })); doc.items = (doc.items || []).filter(x => x.id !== el.dataset.v); Store.set("favs", doc); renderSheet(); },
   // ----- suivi du jour
-  saveDaily: () => { updDay(d => { const w = parseFloat($("#inW").value), st = parseInt($("#inSteps").value), sl = parseFloat($("#inSleep").value); d.weight = w > 0 ? w : null; d.steps = st > 0 ? st : null; d.sleep = sl > 0 ? sl : null; }); toast("Enregistré"); },
-  setScale: el => updDay(d => d[el.dataset.k] = d[el.dataset.k] === +el.dataset.v ? null : +el.dataset.v),
-  addAct: () => { const type = $("#actType").value, min = +$("#actMin").value; if (!min) return; const kcal = ACTIVITIES[type] * latestWeight() * min / 60 * 0.85; updDay(d => d.acts.push({ type, min, kcal })); },
-  delAct: el => updDay(d => d.acts.splice(+el.dataset.v, 1)),
+  openDaily: () => openSheet(dailySheet),
+  saveDaily: () => { updDay(d => { const w = parseFloat($("#inW").value), st = parseInt($("#inSteps").value), sl = parseFloat($("#inSleep").value); d.weight = w > 0 ? w : null; d.steps = st > 0 ? st : null; d.sleep = sl > 0 ? sl : null; }); toast("Enregistré"); if (S.sheet === dailySheet) closeSheet(); },
+  setScale: el => { updDay(d => d[el.dataset.k] = d[el.dataset.k] === +el.dataset.v ? null : +el.dataset.v); if (S.sheet) renderSheet(); },
+  addAct: () => { const type = $("#actType").value, min = +$("#actMin").value; if (!min) return; const kcal = ACTIVITIES[type] * latestWeight() * min / 60 * 0.85; updDay(d => d.acts.push({ type, min, kcal })); if (S.sheet) renderSheet(); },
+  delAct: el => { updDay(d => d.acts.splice(+el.dataset.v, 1)); if (S.sheet) renderSheet(); },
   toggleIncomplete: el => updDay(d => d.incomplete = el.checked),
   aiFinish: async () => {
     const t = dayTotals(S.day), T = targets(); const eaten = day(S.day).entries.map(e => `${e.meal}: ${e.name} ${e.g} g`).join("; ") || "rien";
@@ -2983,6 +3000,7 @@ document.addEventListener("change", ev => {
   if (el.dataset.file) { if (el.dataset.file === "prodphotos") onProductPhotos([...(el.files || [])].slice(0, 3)); else if (el.dataset.file === "fridgephotos") onFridgePhotos([...(el.files || [])].slice(0, 3)); else onFile(el.dataset.file, el.files?.[0]); el.value = ""; return; }
   if (el.dataset.act === "range") { const [a, b] = el.value.split("-").map(Number); const doc = clone(Store.get("program", {})); doc.ranges = doc.ranges || {}; doc.ranges[el.dataset.v] = [a, b]; Store.set("program", doc); return; }
   if (el.dataset.act === "progEx") { S.progEx = el.value; render(); return; }
+  if (el.dataset.act === "moodTrack") { const pr = clone(Store.get("profile", {})); pr.moodTrack = el.checked; Store.set("profile", pr); renderSheet(); return; }
   if (el.dataset.act === "gymGoto") { if (el.value) gymGoto(el.value); el.value = ""; return; }
   if (el.dataset.act === "copyChk") { S.copySel[+el.dataset.v] = el.checked; renderSheet(); return; }
   if (el.id === "copyDate" && el.value) { S.copyFrom = el.value; S.copySel = null; renderSheet(); return; }
