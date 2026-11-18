@@ -96,13 +96,14 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .gh{font-size:11px;margin-left:4px}.gh.up{color:#16a34a}.gh.down{color:#dc2626}.gh.eq{color:var(--mut)}
 .ghostline{background:rgba(124,58,237,.08);color:var(--txt);border-radius:10px;padding:6px 8px;margin-top:6px}
 .pill{font-size:10px;background:#dcfce7;color:#166534;border-radius:8px;padding:1px 6px;margin-left:4px;font-weight:600}
+.bthumb.wait{background:linear-gradient(90deg,var(--chip) 25%,rgba(255,255,255,.35) 50%,var(--chip) 75%);background-size:200% 100%;animation:shim 1.2s infinite;border-radius:12px}@keyframes shim{to{background-position:-200% 0}}
 
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794966062";
+const BUILD_VERSION = "1795019945";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -952,7 +953,10 @@ function rotateView(S3, a) {
 }
 const ROT_SIGN = 1;
 // surbrillance : la couleur d'origine est mémorisée une seule fois, donc plusieurs clics rapides ne laissent plus de machine « bloquée » en couleur
-function tint(o, hex, k = 0.6) { Object.values(V3.scenes).forEach(s3 => s3.dirty = performance.now() + 300); o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
+function tint(o, hex, k = 0.6) { Object.values(V3.scenes).forEach(s3 => s3.dirty = performance.now() + 300);
+  // chaque objet reçoit ses propres copies de matériaux : sinon le survol colorait toutes les machines qui partagent le même matériau
+  if (!o.userData.matsOwned) { const map = new Map(); o.traverse(m => { if (m.isMesh && m.material && !Array.isArray(m.material)) { if (!map.has(m.material)) map.set(m.material, m.material.clone()); m.material = map.get(m.material); } }); o.userData.matsOwned = true; }
+  o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
 function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, 0x2563eb, 0.75); }
 V3.clearSel = () => Object.values(V3.scenes).forEach(S3 => { if (S3.selected) { tint(S3.selected, null); S3.selected = null; } if (S3.hover) { tint(S3.hover, null); S3.hover = null; } });
 function mount3D(key, holder, build) {
@@ -1458,7 +1462,7 @@ function bodyThumbRender(o) {
     cam.position.set(Math.sin(rot) * 3, 0.94, Math.cos(rot) * 3); cam.lookAt(0, 0.94, 0); cam.updateProjectionMatrix(); r.render(scene, cam);
   });
   r.setScissorTest(false);
-  return r.domElement.toDataURL("image/png");
+  const u = r.domElement.toDataURL("image/webp", 0.9); return u.startsWith("data:image/webp") ? u : r.domElement.toDataURL("image/png");
 }
 function bodyThumbHTML(o = {}, mini = true) {
   const key = bodyKey(o); const url = BODY.thumbs[key];
@@ -1466,22 +1470,32 @@ function bodyThumbHTML(o = {}, mini = true) {
   if (url) return `<img class="bthumb" src="${url}" alt="muscles" style="${style}">`;
   if (!BODY.failed && has3D()) {
     BODY.pending.add(key); setTimeout(bodyFlush, 0);
-    return `<div class="bthumb wait" data-bkey="${esc(key)}" style="${style}">${muscleSVG(o.prim, o.sec, o.focus, true, o.colors)}</div>`;
+    return `<div class="bthumb wait" data-bkey="${esc(key)}" style="${style}"></div>`;
   }
   return muscleSVG(o.prim, o.sec, o.focus, mini, o.colors);
 }
+// miniatures gardées entre deux lancements (IndexedDB) → affichage instantané
+function thumbDB() { return BODY.tdb || (BODY.tdb = new Promise((res, rej) => { const r = indexedDB.open("muscu_thumbs", 1); r.onupgradeneeded = () => r.result.createObjectStore("t"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); })); }
+function thumbSave(key, url) { if (!window.indexedDB) return; thumbDB().then(db => db.transaction("t", "readwrite").objectStore("t").put(url, key)).catch(() => {}); }
+function thumbPreload() { if (!window.indexedDB) return Promise.resolve(); return thumbDB().then(db => new Promise(res => { const st = db.transaction("t").objectStore("t"); const c = st.openCursor(); c.onsuccess = () => { const cur = c.result; if (cur) { BODY.thumbs[cur.key] = cur.value; cur.continue(); } else res(); }; c.onerror = () => res(); })).catch(() => {}); }
 let bodyFlushing = false;
+function bodyPlace(key) { document.querySelectorAll(".bthumb.wait").forEach(el => { if (el.dataset.bkey === key) el.outerHTML = `<img class="bthumb" src="${BODY.thumbs[key]}" alt="muscles" style="${el.getAttribute("style")}">`; }); }
 function bodyFlush() {
   if (bodyFlushing || !BODY.pending.size) return; bodyFlushing = true;
-  bodyLoad().then(() => {
-    const keys = [...BODY.pending]; BODY.pending.clear();
-    keys.forEach(key => {
-      const [prim, sec, focus, colors] = JSON.parse(key);
-      try { BODY.thumbs[key] = bodyThumbRender({ prim, sec, focus, colors }); } catch (e) { return; }
-      document.querySelectorAll(".bthumb.wait").forEach(el => { if (el.dataset.bkey === key) { el.outerHTML = `<img class="bthumb" src="${BODY.thumbs[key]}" alt="muscles" style="${el.getAttribute("style")}">`; } });
+  BODY.preloaded.then(() => {
+    // 1) celles déjà en cache : tout de suite, sans charger le modèle
+    [...BODY.pending].forEach(key => { if (BODY.thumbs[key]) { BODY.pending.delete(key); bodyPlace(key); } });
+    if (!BODY.pending.size) return;
+    // 2) les nouvelles : rendu 3D
+    return bodyLoad().then(() => {
+      const keys = [...BODY.pending]; BODY.pending.clear();
+      keys.forEach(key => { const [prim, sec, focus, colors] = JSON.parse(key);
+        if (!BODY.thumbs[key]) { try { BODY.thumbs[key] = bodyThumbRender({ prim, sec, focus, colors }); thumbSave(key, BODY.thumbs[key]); } catch (e) { return; } }
+        bodyPlace(key); });
     });
   }).catch(() => {}).finally(() => { bodyFlushing = false; if (BODY.pending.size) setTimeout(bodyFlush, 0); });
 }
+BODY.preloaded = thumbPreload();
 
 // ---------- vue 3D interactive (fiche exercice, carte de récupération, atlas) ----------
 function body3DHolderHTML(h = 460) {
