@@ -86,12 +86,20 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .scanmodes{display:flex;gap:8px;justify-content:center;margin-top:10px}
 .scanmodes label,.scanmodes button{background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:10px 14px;font:600 14px -apple-system,system-ui;cursor:pointer}
 
+.restbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:min(560px,94vw);background:#111827;color:#fff;border-radius:16px;overflow:hidden;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.restbar .restfill{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#2563eb,#7c3aed);opacity:.55;transition:width .25s linear}
+.restbar.over .restfill{background:#16a34a;opacity:.8}
+.restbar .restin{position:relative;display:flex;align-items:center;gap:8px;padding:10px 12px}
+.restbar .restin span{font-size:13px;opacity:.85}.restbar .restin b{font-size:22px;font-variant-numeric:tabular-nums;margin-right:auto}
+.restbar button{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:10px;padding:7px 10px;font-size:13px}
+.bthumb{border-radius:10px}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794955922";
+const BUILD_VERSION = "1794963911";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -774,7 +782,7 @@ function spBoot() { const p = LS.get("sp_pending", null); if (p && Date.now() - 
 // ===================== MOTEUR 3D (Three.js) =====================
 const V3 = { scenes: {}, active: null, raf: null };
 const has3D = () => typeof THREE !== "undefined";
-function M(color, o = {}) { return new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6, metalness: 0.1 }, o)); }
+function M(color, o = {}) { const m = new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6, metalness: 0.1 }, o)); m.color.convertSRGBToLinear(); return m; }
 function box(w, h, d, mat, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; }
 function cyl(rt, rb, h, mat, x = 0, y = 0, z = 0, seg = 20) { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat); m.position.set(x, y, z); m.castShadow = true; return m; }
 function sph(r, mat, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 14), mat); m.position.set(x, y, z); m.castShadow = true; return m; }
@@ -810,7 +818,7 @@ function makeScene(key, opts) {
       off.setLength(Math.max(controls.minDistance, Math.min(controls.maxDistance, off.length() * k)));
     } else {
       const sp = new THREE.Spherical().setFromVector3(off);
-      sp.theta -= e.deltaX * 0.006; sp.phi = Math.max(0.12, Math.min(controls.maxPolarAngle, sp.phi + e.deltaY * 0.004));
+      sp.theta += (localStorage.getItem("muscu_inv3d") === "1" ? -1 : 1) * e.deltaX * 0.006; sp.phi = Math.max(0.12, Math.min(controls.maxPolarAngle, sp.phi + e.deltaY * 0.004));
       off.setFromSpherical(sp);
     }
     cam.position.copy(t).add(off); controls.update();
@@ -846,10 +854,12 @@ function makeScene(key, opts) {
     if (S && S.sheet) return; // une seule machine à la fois
     const o = hit(e); if (o) { select3D(S3, o); S3.onPick && S3.onPick(o.userData.pick); }
   });
+  const wake = () => { S3.dirty = performance.now() + 600; };
+  controls.addEventListener("change", wake); ["pointermove", "pointerdown", "wheel", "gesturechange"].forEach(ev => renderer.domElement.addEventListener(ev, wake, { passive: true }));
   V3.scenes[key] = S3; return S3;
 }
 // surbrillance : la couleur d'origine est mémorisée une seule fois, donc plusieurs clics rapides ne laissent plus de machine « bloquée » en couleur
-function tint(o, hex, k = 0.6) { o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
+function tint(o, hex, k = 0.6) { Object.values(V3.scenes).forEach(s3 => s3.dirty = performance.now() + 300); o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
 function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, 0x2563eb, 0.75); }
 V3.clearSel = () => Object.values(V3.scenes).forEach(S3 => { if (S3.selected) { tint(S3.selected, null); S3.selected = null; } if (S3.hover) { tint(S3.hover, null); S3.hover = null; } });
 function mount3D(key, holder, build) {
@@ -858,12 +868,12 @@ function mount3D(key, holder, build) {
   holder.style.position = "relative"; holder.appendChild(S3.renderer.domElement);
   if (!S3.tip) { S3.tip = document.createElement("div"); S3.tip.style.cssText = "position:absolute;pointer-events:none;background:rgba(17,24,39,.88);color:#fff;font:600 13px -apple-system,system-ui;padding:6px 10px;border-radius:10px;display:none;white-space:nowrap;z-index:2"; }
   holder.appendChild(S3.tip);
-  if (!holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
+  if (key !== "body" && !holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
     const hint = document.createElement("div"); hint.style.cssText = "position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
     hint.textContent = key === "gym" ? "Trackpad : 2 doigts = tourner · pincer = zoom · glisser = se déplacer · double-clic = aller à la machine" : "Trackpad : 2 doigts = tourner · pincer = zoom · glisser = tourner"; holder.appendChild(hint); }
   if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
-  V3.active = S3; if (!V3.raf) loop3D(); return S3;
+  S3.dirty = performance.now() + 1500; V3.active = S3; if (!V3.raf) loop3D(); return S3;
 }
 // ---- déplacements par boutons / animations ----
 function flyTo(S3, target, camPos) {
@@ -894,111 +904,216 @@ function loop3D() {
   const S3 = V3.active; if (!S3 || !S3.renderer.domElement.isConnected) return;
   if (S3.anim) { const a = S3.anim; let k = Math.min(1, (performance.now() - a.s) / a.d); k = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
     S3.controls.target.lerpVectors(a.t0, a.t1, k); S3.cam.position.lerpVectors(a.c0, a.c1, k); if (k >= 1) S3.anim = null; }
-  S3.controls.update(); if (S3.tick) S3.tick(performance.now() / 1000); S3.renderer.render(S3.scene, S3.cam);
+  S3.controls.update();
+  // rendu à la demande : on ne redessine que pendant un mouvement / une animation (économise la batterie)
+  const now = performance.now(); if (!S3.tick && !S3.anim && now > (S3.dirty || 0)) return;
+  if (S3.tick) S3.tick(now / 1000); S3.renderer.render(S3.scene, S3.cam);
 }
 
 // ===================== SALLE DE SPORT 3D =====================
-// Salle reconstituée d'après les photos officielles de l'UAX Fitness Center (Villanueva de la Cañada) :
-// grande halle aux murs gris foncé, lettrage « UAX FITNESS CENTER », sol caoutchouc noir avec marquages blancs,
-// plateforme parquet avec machines à charge libre (cadres argent, assises rouges), machines guidées le long du mur,
-// tour à poulies BH au centre, bancs + râteliers d'haltères au fond à droite, racks à droite, piste en gazon vert,
-// zone cardio vitrée. Positions approximatives : à ajuster avec les infos de Vuthy.
+// Reconstitution de l'UAX Fitness Center (Villanueva de la Cañada), d'après les photos officielles UAX et BH Fitness
+// (équipementier de la salle) : halle aux murs gris anthracite et charpente apparente, lettrage « UAX FITNESS CENTER »
+// au fond, sol caoutchouc noir avec marquages blancs (cercles, échelles), piste en gazon vert à gauche,
+// plateforme parquet au premier plan avec les machines à disques BH (cadres argent, assises rouges),
+// machines guidées BH à carter gris le long du mur gauche + 2 multi-postes à bras blancs,
+// rack fonctionnel noir (RFT) + poulie double au centre, grand portique gris à crochets rouges + espaliers au fond,
+// râteliers d'haltères hexagonales devant le miroir (fond droit), racks gris à droite, tapis courbes / air bike / rameurs.
 const GYM_MACHINES = [
-  // machines guidées (le long du mur gauche)
-  { id: "pulldown", label: "Tirage vertical", pos: [-10.6, 0, -6], rot: Math.PI / 2, build: "pulldown", ex: ["lat_pulldown_pron", "pull_up"] },
-  { id: "row", label: "Tirage horizontal", pos: [-10.6, 0, -3.4], rot: Math.PI / 2, build: "row", ex: ["row_neutral_close", "row_pron_wide"] },
-  { id: "pecdeck", label: "Pec fly / Oiseau", pos: [-10.6, 0, -0.8], rot: Math.PI / 2, build: "pecdeck", ex: ["pec_fly_machine", "rear_delt_fly"] },
-  { id: "legext", label: "Leg extension / curl", pos: [-10.6, 0, 1.8], rot: Math.PI / 2, build: "legext", ex: ["leg_ext", "seated_leg_curl", "lying_leg_curl"] },
-  { id: "adductor", label: "Adducteurs / abducteurs", pos: [-10.6, 0, 4.4], rot: Math.PI / 2, build: "seat", ex: ["adductor_machine", "abductor_machine"] },
-  // plateforme parquet : machines à charge libre (argent / rouge)
-  { id: "incline", label: "Développé incliné (disques)", pos: [-6.5, 0.08, 4.2], rot: Math.PI, build: "plate_press", ex: ["incline_press_machine", "chest_press"] },
-  { id: "prow", label: "Rowing (disques)", pos: [-4, 0.08, 4.2], rot: Math.PI, build: "plate_row", ex: ["row_neutral_close", "row_pron_wide", "db_row"] },
-  { id: "pshoulder", label: "Développé épaules (disques)", pos: [-1.5, 0.08, 4.2], rot: Math.PI, build: "plate_press", ex: ["shoulder_press"] },
-  { id: "ppulldown", label: "Tirage iso-latéral (disques)", pos: [1, 0.08, 4.2], rot: Math.PI, build: "plate_pulldown", ex: ["lat_pulldown_pron"] },
-  { id: "legpress", label: "Presse à cuisses", pos: [-5.2, 0.08, 6.6], rot: Math.PI / 2, build: "legpress", ex: ["leg_press", "calf_seated"] },
-  { id: "hack", label: "Hack squat", pos: [-1.8, 0.08, 6.6], rot: Math.PI, build: "hack", ex: ["hack_squat", "calf_standing"] },
-  // centre : tour à poulies BH + rig fonctionnel
-  { id: "cable", label: "Poulies (tour BH)", pos: [-1.5, 0, -3.2], rot: 0, build: "cable", ex: ["lat_raise_cable", "tri_oh_cable", "tri_push_uni", "tri_push_rope", "hammer_rope", "bayesian_curl", "cable_crunch", "face_pull"] },
-  { id: "rig", label: "Rig fonctionnel / tractions", pos: [-5.5, 0, -3.6], rot: 0, build: "pullup", ex: ["pull_up", "dips", "back_ext"] },
-  // bancs + haltères (fond droit, miroir)
-  { id: "benches", label: "Bancs réglables", pos: [2.6, 0, -2.2], rot: 0, build: "benches", ex: ["db_incline_press", "incline_db_curl", "lat_raise_db", "db_row", "shoulder_press", "preacher_curl", "bulgarian", "hip_thrust"] },
-  { id: "dumbbells", label: "Haltères", pos: [4.5, 0, -6.6], rot: 0, build: "dumbbells", ex: ["db_incline_press", "incline_db_curl", "lat_raise_db", "db_row", "rdl", "lunges"] },
-  // racks (côté droit)
-  { id: "rack", label: "Rack + banc", pos: [9.8, 0, -4.5], rot: -Math.PI / 2, build: "rack", ex: ["squat", "bench_press", "hip_thrust"] },
-  { id: "rack2", label: "Smith / rack 2", pos: [9.8, 0, -1.2], rot: -Math.PI / 2, build: "rack", ex: ["squat", "bench_press", "rdl"] },
-  // zone cardio vitrée
-  { id: "cardio", label: "Zone cardio", pos: [8.5, 0, 5], rot: 0, build: "cardio", ex: [] }
+  // mur gauche : machines guidées BH (carter gris, assises rouges)
+  { id: "pulldown", label: "Tirage vertical", pos: [-11, 0, -5.6], rot: Math.PI / 2, build: "sel_pulldown", ex: ["lat_pulldown_pron", "pull_up"] },
+  { id: "row", label: "Tirage horizontal", pos: [-11, 0, -3.6], rot: Math.PI / 2, build: "sel_row", ex: ["row_neutral_close", "row_pron_wide"] },
+  { id: "pecdeck", label: "Pec fly / Oiseau", pos: [-11, 0, -1.6], rot: Math.PI / 2, build: "sel_pecdeck", ex: ["pec_fly_machine", "rear_delt_fly"] },
+  { id: "legext", label: "Leg extension", pos: [-11, 0, 0.4], rot: Math.PI / 2, build: "sel_legext", ex: ["leg_ext"] },
+  { id: "legcurl", label: "Leg curl assis", pos: [-11, 0, 2.3], rot: Math.PI / 2, build: "sel_legcurl", ex: ["seated_leg_curl", "lying_leg_curl"] },
+  { id: "adductor", label: "Adducteurs / abducteurs", pos: [-11, 0, 4.2], rot: Math.PI / 2, build: "sel_adductor", ex: ["adductor_machine", "abductor_machine"] },
+  { id: "multi1", label: "Multi-poste poulies", pos: [-9.3, 0, 6.3], rot: Math.PI / 2, build: "multistation", ex: ["lat_raise_cable", "tri_push_rope", "tri_push_uni", "face_pull", "hammer_rope", "cable_crunch"] },
+  // plateforme parquet : machines à disques BH
+  { id: "incline", label: "Développé incliné (disques)", pos: [-6.4, 0.08, 3.6], rot: Math.PI, build: "pl_incline", ex: ["incline_press_machine", "chest_press"] },
+  { id: "chestpl", label: "Développé couché (disques)", pos: [-4.0, 0.08, 3.6], rot: Math.PI, build: "pl_chest", ex: ["chest_press", "incline_press_machine"] },
+  { id: "pshoulder", label: "Développé épaules (disques)", pos: [-1.6, 0.08, 3.6], rot: Math.PI, build: "pl_shoulder", ex: ["shoulder_press"] },
+  { id: "ppulldown", label: "Tirage iso-latéral (disques)", pos: [0.8, 0.08, 3.6], rot: Math.PI, build: "pl_pulldown", ex: ["lat_pulldown_pron"] },
+  { id: "prow", label: "Rowing iso-latéral (disques)", pos: [-6.4, 0.08, 6.2], rot: Math.PI, build: "pl_row", ex: ["row_neutral_close", "row_pron_wide", "db_row"] },
+  { id: "legpress", label: "Presse à cuisses 45°", pos: [-3.8, 0.08, 6.4], rot: Math.PI, build: "pl_legpress", ex: ["leg_press", "calf_seated"] },
+  { id: "hack", label: "Hack squat", pos: [-1.3, 0.08, 6.4], rot: Math.PI, build: "pl_hack", ex: ["hack_squat", "calf_standing"] },
+  { id: "preacher", label: "Pupitre biceps", pos: [1.0, 0.08, 6.4], rot: Math.PI, build: "pl_preacher", ex: ["preacher_curl"] },
+  // centre : zone fonctionnelle
+  { id: "cable", label: "Poulie double réglable", pos: [-2.2, 0, -1.6], rot: 0, build: "dual_cable", ex: ["lat_raise_cable", "tri_oh_cable", "tri_push_uni", "tri_push_rope", "hammer_rope", "bayesian_curl", "cable_crunch", "face_pull"] },
+  { id: "rig", label: "Rack fonctionnel (tractions, dips)", pos: [-5.2, 0, -1.8], rot: 0, build: "rft", ex: ["pull_up", "dips", "back_ext"] },
+  { id: "multi2", label: "Multi-poste poulies 2", pos: [-9.3, 0, -7.0], rot: 0, build: "multistation", ex: ["lat_raise_cable", "tri_oh_cable", "bayesian_curl", "face_pull"] },
+  { id: "benches", label: "Bancs réglables", pos: [2.4, 0, -0.6], rot: 0, build: "benches", ex: ["db_incline_press", "incline_db_curl", "lat_raise_db", "db_row", "shoulder_press", "bulgarian", "hip_thrust"] },
+  { id: "backext", label: "Banc lombaires 45°", pos: [-0.2, 0, 0.9], rot: -Math.PI / 4, build: "hyper", ex: ["back_ext"] },
+  // fond : portique gris + espaliers, haltères devant le miroir
+  { id: "overrig", label: "Portique + espaliers", pos: [0.5, 0, -6.6], rot: 0, build: "overrig", ex: ["pull_up"] },
+  { id: "dumbbells", label: "Haltères + bancs", pos: [6.2, 0, -6.3], rot: 0, build: "dumbbells", ex: ["db_incline_press", "incline_db_curl", "lat_raise_db", "db_row", "rdl", "lunges", "shrug"] },
+  // droite : racks
+  { id: "rack", label: "Rack + banc", pos: [10.6, 0, -1.6], rot: -Math.PI / 2, build: "rack", ex: ["squat", "bench_press", "hip_thrust", "shrug"] },
+  { id: "rack2", label: "Rack 2 (squat / soulevé)", pos: [10.6, 0, 1.4], rot: -Math.PI / 2, build: "rack", ex: ["squat", "rdl", "bench_press"] },
+  // fond gauche : tapis courbes, air bike, rameur
+  { id: "sleds", label: "Tapis courbes + air bike", pos: [-5.4, 0, -6.9], rot: 0, build: "sleds", ex: [] },
+  { id: "cardio", label: "Zone cardio", pos: [7.6, 0, 5.2], rot: 0, build: "cardio", ex: [] }
 ];
+// ---------- matériaux communs ----------
+const GYMMAT = {};
+function gm() {
+  if (GYMMAT.ok) return GYMMAT;
+  Object.assign(GYMMAT, { ok: true,
+    silver: M(0xc5cad1, { metalness: 0.75, roughness: 0.28 }), grey: M(0x8d949c, { metalness: 0.5, roughness: 0.4 }), shroud: M(0x757c85, { metalness: 0.35, roughness: 0.45 }),
+    black: M(0x1b1c1f, { metalness: 0.4, roughness: 0.5 }), red: M(0xb81f2a, { roughness: 0.62 }), plate: M(0x141516, { roughness: 0.55 }), white: M(0xf2f2f2, { metalness: 0.3, roughness: 0.3 }),
+    chrome: M(0xe2e5e9, { metalness: 0.9, roughness: 0.15 }), cable: M(0x0e0e0e), rubber: M(0x222326, { roughness: 0.9 }), yellow: M(0xf4c20d, { roughness: 0.5 }) });
+  return GYMMAT;
+}
+// tube rond entre deux points
+function tubeAB(a, b, r, mat) { const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b); const len = A.distanceTo(B);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 14), mat); m.position.copy(A).add(B).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); m.castShadow = true; return m; }
+// tube carré entre deux points (cadres)
+function barAB(a, b, w, mat) { const A = new THREE.Vector3(...a), B = new THREE.Vector3(...b); const len = A.distanceTo(B);
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, len, w), mat); m.position.copy(A).add(B).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); m.castShadow = true; return m; }
+function rbox(w, h, d, mat, x, y, z, r = 0.03) { // coussin arrondi
+  const sh = new THREE.Shape(); const ww = w / 2 - r, hh = d / 2 - r;
+  sh.moveTo(-ww, -d / 2); sh.lineTo(ww, -d / 2); sh.quadraticCurveTo(w / 2, -d / 2, w / 2, -hh); sh.lineTo(w / 2, hh); sh.quadraticCurveTo(w / 2, d / 2, ww, d / 2);
+  sh.lineTo(-ww, d / 2); sh.quadraticCurveTo(-w / 2, d / 2, -w / 2, hh); sh.lineTo(-w / 2, -hh); sh.quadraticCurveTo(-w / 2, -d / 2, -ww, -d / 2);
+  const g = new THREE.ExtrudeGeometry(sh, { depth: h, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 2, curveSegments: 4 });
+  g.rotateX(-Math.PI / 2); g.translate(0, -h / 2, 0); const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; return m; }
+function plateDisc(r, x, y, z, axis = "x") { const G = gm(); const g = new THREE.Group();
+  const d = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.05, 28), G.plate); const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.06, 14), G.chrome);
+  g.add(d, hub); if (axis === "x") g.rotation.z = Math.PI / 2; else if (axis === "z") g.rotation.x = Math.PI / 2; g.position.set(x, y, z); d.castShadow = true; return g; }
+function stickerTex(text, bg = "#5f666e", fg = "#ffffff") { const c = document.createElement("canvas"); c.width = 256; c.height = 128; const x = c.getContext("2d");
+  x.fillStyle = bg; x.fillRect(0, 0, 256, 128); x.fillStyle = fg; x.font = "bold 70px Georgia,serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText(text, 128, 68); return new THREE.CanvasTexture(c); }
+let UAX_TEX = null;
+// carter de pile de charges BH (gris, fenêtre noire, autocollant UAX)
+function shroud(g, x, z, h = 1.9, rot = 0) { const G = gm(); const t = new THREE.Group();
+  t.add(box(0.5, h, 0.34, G.shroud, 0, h / 2, 0)); t.add(box(0.12, h * 0.8, 0.012, G.black, 0, h * 0.48, 0.172)); t.add(box(0.52, 0.06, 0.36, G.black, 0, h, 0));
+  if (!UAX_TEX) UAX_TEX = stickerTex("UAX"); const st = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.17), new THREE.MeshBasicMaterial({ map: UAX_TEX })); st.position.set(0, h - 0.22, 0.172); t.add(st);
+  t.position.set(x, 0, z); t.rotation.y = rot; g.add(t); return t; }
 function buildMachine(type) {
-  const g = new THREE.Group(); const metal = M(0x3a3f47, { metalness: 0.6, roughness: 0.35 }); const pad = M(0x16181c, { roughness: 0.8 });
-  const accent = M(0xd8342c, { roughness: 0.5 }); const stack = M(0x8a9099, { metalness: 0.7, roughness: 0.3 }); const cable = M(0x111111);
-  const post = (x, z, h = 2.2) => box(0.1, h, 0.1, metal, x, h / 2, z);
-  const weightStack = (x, z) => { const s = new THREE.Group(); for (let i = 0; i < 10; i++) s.add(box(0.36, 0.05, 0.22, stack, x, 0.12 + i * 0.065, z)); s.add(box(0.03, 1.6, 0.03, metal, x - 0.1, 0.9, z)); s.add(box(0.03, 1.6, 0.03, metal, x + 0.1, 0.9, z)); return s; };
-  const seat = (x, y, z, w = 0.45, d = 0.45) => box(w, 0.09, d, pad, x, y, z);
-  const back = (x, y, z, ang = 0, h = 0.7) => { const b = box(0.45, h, 0.09, pad, x, y, z); b.rotation.x = ang; return b; };
+  const g = new THREE.Group(); const G = gm();
+  const seat = (x, y, z, w = 0.42, d = 0.4, mat = G.red) => g.add(rbox(w, 0.09, d, mat, x, y, z));
+  const backPad = (x, y, z, ang, h = 0.7, w = 0.42) => { const b = rbox(w, 0.09, h, G.red, 0, 0, 0); const p = new THREE.Group(); b.rotation.x = Math.PI / 2; p.add(b); p.rotation.x = ang; p.position.set(x, y, z); g.add(p); return p; };
+  const roller = (x, y, z, len = 0.42) => { const r = tubeAB([x - len / 2, y, z], [x + len / 2, y, z], 0.065, G.red); g.add(r); };
+  const foot = (w, d, x = 0, z = 0, mat = G.silver) => { [-1, 1].forEach(sd => g.add(box(0.07, 0.06, d, mat, x + sd * (w / 2 - 0.035), 0.03, z))); [-1, 1].forEach(sd => g.add(box(w, 0.06, 0.07, mat, x, 0.03, z + sd * (d / 2 - 0.035)))); };
   switch (type) {
-    case "cable":
-      [-0.9, 0.9].forEach(x => { g.add(post(x - 0.15, 0, 2.3), post(x + 0.15, 0, 2.3), weightStack(x, 0)); g.add(box(0.4, 0.08, 0.3, metal, x, 2.3, 0));
-        const pul = cyl(0.07, 0.07, 0.04, accent, x, 1.3, 0.2); pul.rotation.z = Math.PI / 2; g.add(pul); g.add(box(0.02, 1.1, 0.02, cable, x, 0.8, 0.22)); });
-      g.add(box(2.1, 0.08, 0.1, metal, 0, 2.35, 0)); g.add(box(1.4, 0.06, 0.06, accent, 0, 2.2, 0.05)); break;
-    case "pulldown":
-      g.add(post(-0.3, -0.3, 2.3), post(0.3, -0.3, 2.3), weightStack(0, -0.3), box(0.8, 0.08, 0.8, metal, 0, 2.3, 0.1));
-      g.add(box(1.2, 0.04, 0.04, metal, 0, 1.85, 0.45)); g.add(box(0.02, 0.4, 0.02, cable, 0, 2.05, 0.45)); g.add(seat(0, 0.5, 0.55)); g.add(box(0.06, 0.45, 0.06, metal, 0, 0.25, 0.55));
-      g.add(cyl(0.07, 0.07, 0.5, pad, 0, 0.75, 0.42).rotateZ(Math.PI / 2)); break;
-    case "row":
-      g.add(post(-0.3, -0.6, 1.6), post(0.3, -0.6, 1.6), weightStack(0, -0.6), box(2.2, 0.06, 0.3, metal, 0, 0.1, 0.4).rotateY(Math.PI / 2));
-      g.add(seat(0, 0.45, 0.6)); g.add(box(0.4, 0.4, 0.08, pad, 0, 0.7, 0.05)); g.add(box(0.02, 0.02, 0.6, cable, 0, 0.75, -0.25)); g.add(box(0.35, 0.05, 0.05, accent, 0, 0.75, 0.4)); break;
-    case "press":
-      g.add(box(0.9, 0.1, 1.2, metal, 0, 0.05, 0)); g.add(seat(0, 0.5, 0.2)); g.add(back(0, 0.95, -0.1, 0.45, 0.85)); weightStack && g.add(weightStack(0, -0.65));
-      g.add(post(-0.4, -0.4, 1.6), post(0.4, -0.4, 1.6)); [-0.35, 0.35].forEach(x => { const a = box(0.06, 0.06, 0.7, accent, x, 1.25, 0.2); a.rotation.x = -0.5; g.add(a); g.add(box(0.06, 0.18, 0.06, pad, x, 1.4, 0.5)); }); break;
-    case "pecdeck":
-      g.add(box(0.9, 0.1, 1, metal, 0, 0.05, 0)); g.add(seat(0, 0.55, 0.1)); g.add(back(0, 1.05, -0.12, 0, 0.9)); g.add(post(0, -0.35, 2)); g.add(weightStack(0, -0.45));
-      [-1, 1].forEach(s => { const arm = box(0.55, 0.06, 0.06, accent, s * 0.45, 1.6, 0.05); g.add(arm); g.add(box(0.06, 0.5, 0.06, pad, s * 0.72, 1.35, 0.15)); }); break;
-    case "rack":
-      [[-0.65, -0.55], [0.65, -0.55], [-0.65, 0.55], [0.65, 0.55]].forEach(([x, z]) => g.add(post(x, z, 2.3)));
-      g.add(box(1.4, 0.08, 0.08, metal, 0, 2.3, -0.55), box(1.4, 0.08, 0.08, metal, 0, 2.3, 0.55));
-      const bar = cyl(0.025, 0.025, 2.1, stack, 0, 1.4, 0.4); bar.rotation.z = Math.PI / 2; g.add(bar);
-      [-0.9, 0.9].forEach(x => { const p = cyl(0.22, 0.22, 0.06, accent, x, 1.4, 0.4); p.rotation.z = Math.PI / 2; g.add(p); });
-      g.add(box(0.3, 0.08, 1.2, pad, 0, 0.45, 0.05)); g.add(box(0.08, 0.4, 0.08, metal, 0, 0.22, -0.4), box(0.08, 0.4, 0.08, metal, 0, 0.22, 0.5)); break;
-    case "dumbbells":
-      g.add(box(2.2, 0.06, 0.5, metal, 0, 0.5, -0.5), box(2.2, 0.06, 0.5, metal, 0, 0.85, -0.5)); [-1.05, 1.05].forEach(x => g.add(box(0.06, 0.9, 0.5, metal, x, 0.45, -0.5)));
-      for (let i = 0; i < 8; i++) [0.55, 0.9].forEach(y => { const x = -0.9 + i * 0.26; const db = new THREE.Group(); const h = cyl(0.02, 0.02, 0.22, stack); h.rotation.x = Math.PI / 2; db.add(h);
-        [-0.1, 0.1].forEach(z => { const b = cyl(0.045 + i * 0.004, 0.045 + i * 0.004, 0.05, pad, 0, 0, z); b.rotation.x = Math.PI / 2; db.add(b); }); db.position.set(x, y + 0.06, -0.5); g.add(db); });
-      g.add(box(0.32, 0.08, 1.1, pad, 0, 0.45, 0.6)); const ib = box(0.32, 0.6, 0.08, pad, 0, 0.75, 0.15); ib.rotation.x = -0.6; g.add(ib); g.add(box(0.08, 0.42, 0.08, metal, 0, 0.21, 0.6)); break;
-    case "legpress":
-      g.add(box(0.9, 0.12, 2, metal, 0, 0.06, 0)); const rail = box(0.7, 0.06, 1.6, metal, 0, 0.7, -0.2); rail.rotation.x = 0.7; g.add(rail);
-      const plate = box(0.7, 0.6, 0.06, accent, 0, 1.15, -0.65); plate.rotation.x = 0.7; g.add(plate); g.add(seat(0, 0.35, 0.65, 0.5, 0.5)); g.add(back(0, 0.6, 0.95, -0.9, 0.7));
-      [-0.35, 0.35].forEach(x => { const p = cyl(0.2, 0.2, 0.05, pad, x * 1.25, 1.0, -0.4); p.rotation.z = Math.PI / 2; g.add(p); }); break;
-    case "legext":
-      g.add(box(0.8, 0.1, 1, metal, 0, 0.05, 0)); g.add(seat(0, 0.55, 0.05)); g.add(back(0, 0.95, -0.2, 0, 0.7)); g.add(weightStack(0, -0.5)); g.add(post(0, -0.42, 1.8));
-      const roll = cyl(0.06, 0.06, 0.45, pad, 0, 0.35, 0.45); roll.rotation.z = Math.PI / 2; g.add(roll); g.add(box(0.05, 0.4, 0.05, accent, 0.25, 0.5, 0.35)); break;
-    case "pullup":
-      g.add(post(-0.6, 0, 2.4), post(0.6, 0, 2.4), box(1.3, 0.05, 0.05, stack, 0, 2.3, 0.15), box(1.3, 0.08, 0.08, metal, 0, 2.4, 0));
-      [-0.3, 0.3].forEach(x => g.add(box(0.05, 0.05, 0.5, accent, x, 1.25, 0.3))); g.add(box(0.5, 0.8, 0.08, pad, 0, 1.0, -0.08)); break;
-    case "seat":
-      g.add(box(0.8, 0.1, 0.9, metal, 0, 0.05, 0)); g.add(seat(0, 0.5, 0.05, 0.5, 0.5)); g.add(back(0, 0.9, -0.2, 0, 0.7)); g.add(weightStack(0, -0.42)); g.add(post(0, -0.35, 1.6));
-      [-1, 1].forEach(s => g.add(box(0.08, 0.35, 0.08, accent, s * 0.3, 0.5, 0.35))); break;
-    case "plate_press": case "plate_row": case "plate_pulldown": {
-      const silver = M(0xc3c8cf, { metalness: 0.7, roughness: 0.3 }); const red = M(0xc0262d, { roughness: 0.6 }); const plateM = M(0x141414, { roughness: 0.5 });
-      const tube = (w, h, d, x, y, z, rx = 0, rz = 0) => { const t = box(w, h, d, silver, x, y, z); t.rotation.x = rx; t.rotation.z = rz; g.add(t); };
-      tube(0.9, 0.06, 1.3, 0, 0.03, 0); tube(0.07, 1.5, 0.07, 0, 0.75, -0.5);
-      if (type === "plate_pulldown") { tube(0.07, 2.2, 0.07, 0, 1.1, -0.55); [-1, 1].forEach(s2 => { tube(0.06, 0.06, 1, s2 * 0.35, 1.95, -0.1, 0.5); g.add(box(0.05, 0.25, 0.05, red, s2 * 0.45, 1.75, 0.35)); }); g.add(box(0.45, 0.09, 0.4, red, 0, 0.5, 0.25)); g.add(cyl(0.07, 0.07, 0.45, red, 0, 0.75, 0.15).rotateZ(Math.PI / 2)); }
-      else if (type === "plate_row") { g.add(box(0.4, 0.09, 0.35, red, 0, 0.5, 0.35)); const chest = box(0.4, 0.45, 0.08, red, 0, 0.95, 0.05); chest.rotation.x = 0.2; g.add(chest); [-1, 1].forEach(s2 => { tube(0.06, 0.06, 0.9, s2 * 0.35, 1.0, -0.2, -0.2); g.add(box(0.05, 0.3, 0.05, red, s2 * 0.38, 0.95, -0.6)); }); }
-      else { g.add(box(0.45, 0.09, 0.4, red, 0, 0.5, 0.3)); const bk = box(0.45, 0.8, 0.09, red, 0, 0.95, 0.5); bk.rotation.x = -0.4; g.add(bk); [-1, 1].forEach(s2 => { tube(0.06, 0.06, 0.9, s2 * 0.36, 1.25, 0.0, 0.6); g.add(box(0.05, 0.22, 0.05, red, s2 * 0.38, 1.4, -0.3)); }); }
-      [-1, 1].forEach(s2 => { const p = cyl(0.23, 0.23, 0.05, plateM, s2 * 0.55, 1.05, -0.35); p.rotation.z = Math.PI / 2; g.add(p); const p2 = cyl(0.18, 0.18, 0.05, plateM, s2 * 0.6, 1.05, -0.35); p2.rotation.z = Math.PI / 2; g.add(p2); tube(0.25, 0.04, 0.04, s2 * 0.5, 1.05, -0.35); });
+    // ---------- machines guidées BH ----------
+    case "sel_pulldown":
+      foot(0.9, 1.4, 0, 0.1); shroud(g, 0, -0.45, 2.2); g.add(barAB([0, 2.25, -0.45], [0, 2.25, 0.45], 0.09, G.silver)); g.add(barAB([0, 0.05, 0.55], [0, 1.0, 0.5], 0.08, G.silver));
+      g.add(tubeAB([-0.6, 1.95, 0.45], [0.6, 1.95, 0.45], 0.018, G.chrome)); g.add(tubeAB([-0.6, 1.95, 0.45], [-0.75, 1.82, 0.45], 0.018, G.chrome)); g.add(tubeAB([0.6, 1.95, 0.45], [0.75, 1.82, 0.45], 0.018, G.chrome));
+      g.add(tubeAB([0, 1.95, 0.45], [0, 2.22, 0.45], 0.008, G.cable)); seat(0, 0.5, 0.62); roller(0, 0.78, 0.5, 0.5); break;
+    case "sel_row":
+      foot(0.9, 1.5, 0, 0.1); shroud(g, 0, -0.5, 1.7); g.add(barAB([0, 0.05, 0.55], [0, 0.45, 0.6], 0.08, G.silver)); seat(0, 0.5, 0.6);
+      g.add(barAB([0, 0.45, 0.25], [0, 0.95, 0.2], 0.07, G.silver)); backPad(0, 1.05, 0.22, 0.15, 0.5); g.add(tubeAB([-0.28, 1.02, -0.05], [0.28, 1.02, -0.05], 0.02, G.chrome));
+      g.add(tubeAB([-0.28, 1.02, -0.05], [-0.28, 0.9, -0.05], 0.02, G.chrome), tubeAB([0.28, 1.02, -0.05], [0.28, 0.9, -0.05], 0.02, G.chrome)); break;
+    case "sel_pecdeck":
+      foot(1.0, 1.2); shroud(g, 0, -0.45, 2.0); seat(0, 0.55, 0.15); backPad(0, 1.05, -0.08, 0, 0.75);
+      [-1, 1].forEach(s => { g.add(tubeAB([s * 0.12, 1.75, -0.2], [s * 0.62, 1.75, 0.0], 0.03, G.silver)); g.add(tubeAB([s * 0.62, 1.75, 0.0], [s * 0.62, 1.2, 0.05], 0.025, G.silver)); g.add(tubeAB([s * 0.62, 1.55, 0.05], [s * 0.62, 1.25, 0.05], 0.04, G.black)); }); break;
+    case "sel_legext":
+      foot(0.9, 1.2); shroud(g, -0.45, -0.4, 1.7); seat(0.05, 0.55, 0.05, 0.46, 0.46); backPad(0.05, 0.95, -0.22, -0.12, 0.65);
+      g.add(barAB([0.05, 0.05, 0.05], [0.05, 0.5, 0.05], 0.08, G.silver)); g.add(tubeAB([0.32, 0.6, 0.25], [0.32, 0.22, 0.42], 0.025, G.silver)); roller(0.05, 0.25, 0.43, 0.48); [-1, 1].forEach(s => g.add(tubeAB([0.05 + s * 0.3, 0.7, -0.05], [0.05 + s * 0.3, 0.7, 0.2], 0.02, G.black))); break;
+    case "sel_legcurl":
+      foot(0.9, 1.3); shroud(g, -0.45, -0.45, 1.7); seat(0.05, 0.55, 0.0, 0.46, 0.46); backPad(0.05, 0.95, -0.25, -0.12, 0.65);
+      g.add(barAB([0.05, 0.05, 0.0], [0.05, 0.5, 0.0], 0.08, G.silver)); roller(0.05, 0.68, 0.35, 0.48); roller(0.05, 0.5, 0.55, 0.48); g.add(tubeAB([0.32, 0.72, 0.3], [0.32, 0.5, 0.55], 0.025, G.silver)); break;
+    case "sel_adductor":
+      foot(1.0, 1.1); shroud(g, 0, -0.45, 1.7); seat(0, 0.5, 0.1, 0.48, 0.45); backPad(0, 0.88, -0.15, -0.35, 0.6);
+      [-1, 1].forEach(s => { g.add(tubeAB([s * 0.2, 0.45, 0.1], [s * 0.35, 0.55, 0.55], 0.03, G.silver)); g.add(rbox(0.06, 0.06, 0.28, G.red, s * 0.38, 0.62, 0.5)); }); break;
+    case "multistation": {
+      foot(2.6, 1.6, 0, 0, G.black);
+      [-0.95, 0.95].forEach(x => { shroud(g, x, -0.55, 2.15); g.add(barAB([x, 2.2, -0.55], [x, 2.2, 0.3], 0.1, G.black)); });
+      g.add(barAB([-0.95, 2.25, -0.2], [0.95, 2.25, -0.2], 0.1, G.black));
+      [-1, 1].forEach(s => { const c = new THREE.QuadraticBezierCurve3(new THREE.Vector3(s * 0.95, 2.2, 0.3), new THREE.Vector3(s * 1.15, 2.35, 0.9), new THREE.Vector3(s * 1.25, 1.6, 1.1));
+        const arm = new THREE.Mesh(new THREE.TubeGeometry(c, 20, 0.035, 10), G.white); arm.castShadow = true; g.add(arm); g.add(tubeAB([s * 1.25, 1.6, 1.1], [s * 1.25, 1.2, 1.1], 0.006, G.cable)); });
+      seat(0, 0.48, 0.35, 0.5, 0.4); g.add(barAB([0, 0.05, 0.35], [0, 0.45, 0.35], 0.07, G.black)); backPad(0, 0.95, 0.12, 0.0, 0.7);
+      g.add(rbox(0.4, 0.08, 1.0, G.red, 0, 0.42, 1.1)); g.add(barAB([0, 0.05, 1.1], [0, 0.38, 1.1], 0.07, G.black)); break; }
+    // ---------- machines à disques BH (cadres argent ronds, assises rouges) ----------
+    case "pl_incline": case "pl_chest": case "pl_shoulder": {
+      const ang = type === "pl_incline" ? -0.75 : type === "pl_chest" ? -0.25 : -0.12; const sy = type === "pl_shoulder" ? 0.55 : 0.5;
+      foot(1.1, 1.5, 0, 0); g.add(tubeAB([0, 0.05, 0.55], [0, sy - 0.05, 0.45], 0.045, G.silver)); seat(0, sy, 0.45, 0.42, 0.42);
+      g.add(tubeAB([0, 0.05, 0.3], [0, 1.25, 0.65], 0.045, G.silver)); backPad(0, sy + 0.45, 0.62, ang, 0.75);
+      g.add(tubeAB([0, 0.05, -0.55], [0, 1.6, -0.5], 0.05, G.silver)); g.add(tubeAB([-0.55, 0.05, -0.55], [0.55, 0.05, -0.55], 0.045, G.silver));
+      [-1, 1].forEach(s => { const p0 = [s * 0.1, 1.55, -0.5], p1 = [s * 0.42, type === "pl_shoulder" ? 1.55 : 1.1, 0.05], p2 = [s * 0.55, 0.85, -0.6];
+        g.add(tubeAB(p0, p1, 0.035, G.silver)); g.add(tubeAB(p0, p2, 0.035, G.silver)); g.add(tubeAB([s * 0.42, p1[1], 0.05], [s * 0.42, p1[1] - 0.25, 0.12], 0.025, G.black));
+        g.add(tubeAB([s * 0.52, 0.85, -0.6], [s * 0.72, 0.85, -0.6], 0.025, G.chrome)); g.add(plateDisc(0.23, s * 0.6, 0.85, -0.6)); g.add(plateDisc(0.17, s * 0.66, 0.85, -0.6)); });
       break; }
+    case "pl_pulldown":
+      foot(1.1, 1.5); g.add(tubeAB([0, 0.05, -0.55], [0, 2.25, -0.4], 0.055, G.silver)); g.add(tubeAB([0, 0.05, 0.55], [0, 0.45, 0.4], 0.045, G.silver)); seat(0, 0.5, 0.4); roller(0, 0.78, 0.25, 0.5);
+      [-1, 1].forEach(s => { g.add(tubeAB([0, 2.2, -0.4], [s * 0.55, 1.95, 0.35], 0.035, G.silver)); g.add(tubeAB([s * 0.55, 1.95, 0.35], [s * 0.55, 1.65, 0.38], 0.025, G.black));
+        g.add(tubeAB([0, 2.2, -0.4], [s * 0.5, 1.3, -0.7], 0.035, G.silver)); g.add(plateDisc(0.23, s * 0.62, 1.3, -0.7)); }); break;
+    case "pl_row":
+      foot(1.1, 1.6); g.add(tubeAB([0, 0.05, 0.6], [0, 0.45, 0.55], 0.045, G.silver)); seat(0, 0.5, 0.55); g.add(tubeAB([0, 0.05, 0.1], [0, 1.05, 0.12], 0.045, G.silver));
+      const chest = backPad(0, 1.05, 0.15, 0.2, 0.45); chest.rotation.x = 0.2;
+      [-1, 1].forEach(s => { g.add(tubeAB([s * 0.12, 1.3, -0.65], [s * 0.42, 1.0, -0.15], 0.035, G.silver)); g.add(tubeAB([s * 0.42, 1.05, -0.15], [s * 0.42, 0.75, -0.12], 0.025, G.black));
+        g.add(tubeAB([s * 0.12, 1.3, -0.65], [s * 0.55, 0.8, -0.75], 0.035, G.silver)); g.add(plateDisc(0.23, s * 0.66, 0.8, -0.75)); });
+      g.add(tubeAB([0, 0.05, -0.65], [0, 1.35, -0.65], 0.05, G.silver)); break;
+    case "pl_legpress": {
+      foot(1.2, 2.3, 0, 0); [-0.3, 0.3].forEach(x => g.add(tubeAB([x, 0.25, 1.0], [x, 1.7, -0.75], 0.05, G.silver)));
+      const sledP = new THREE.Group(); sledP.add(box(0.75, 0.62, 0.05, G.black, 0, 0, 0)); sledP.add(box(0.8, 0.06, 0.25, G.silver, 0, -0.3, 0.1)); sledP.rotation.x = 0.78; sledP.position.set(0, 1.25, -0.35); g.add(sledP);
+      [-1, 1].forEach(s => { g.add(tubeAB([s * 0.4, 1.1, -0.55], [s * 0.62, 1.1, -0.55], 0.025, G.chrome)); g.add(plateDisc(0.23, s * 0.5, 1.1, -0.55)); g.add(plateDisc(0.23, s * 0.56, 1.1, -0.55)); });
+      seat(0, 0.35, 0.75, 0.5, 0.5); backPad(0, 0.65, 1.05, -0.85, 0.75, 0.5); [-1, 1].forEach(s => g.add(tubeAB([s * 0.3, 0.4, 0.75], [s * 0.3, 0.4, 0.5], 0.02, G.black))); break; }
+    case "pl_hack": {
+      foot(1.1, 1.8); [-0.3, 0.3].forEach(x => g.add(tubeAB([x, 0.1, 0.65], [x, 2.05, -0.15], 0.045, G.silver)));
+      g.add(rbox(0.75, 0.06, 0.55, G.rubber, 0, 0.12, 0.55)); const sl = backPad(0, 1.3, 0.3, -0.38, 0.8, 0.45); [-1, 1].forEach(s => { g.add(rbox(0.12, 0.08, 0.25, G.red, s * 0.17, 1.82, 0.12)); g.add(tubeAB([s * 0.32, 1.45, 0.25], [s * 0.6, 1.45, 0.25], 0.025, G.chrome)); g.add(plateDisc(0.23, s * 0.48, 1.45, 0.25)); });
+      break; }
+    case "pl_preacher":
+      foot(0.8, 1.1); g.add(tubeAB([0, 0.05, 0.25], [0, 0.48, 0.25], 0.045, G.silver)); seat(0, 0.52, 0.28); g.add(tubeAB([0, 0.05, -0.1], [0, 1.0, -0.15], 0.045, G.silver));
+      const pp = backPad(0, 1.05, -0.12, -0.7, 0.4, 0.55); g.add(tubeAB([-0.3, 0.95, -0.42], [0.3, 0.95, -0.42], 0.018, G.chrome)); break;
+    // ---------- zone fonctionnelle ----------
+    case "dual_cable":
+      foot(1.6, 0.7, 0, 0, G.black);
+      [-0.7, 0.7].forEach(x => { g.add(box(0.12, 2.35, 0.12, G.black, x, 1.18, 0)); for (let i = 0; i < 20; i++) g.add(box(0.13, 0.025, 0.02, G.chrome, x, 0.3 + i * 0.1, 0.065));
+        g.add(box(0.36, 1.15, 0.24, G.black, x, 0.6, -0.25)); const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.04, 20), G.chrome); wh.rotation.x = Math.PI / 2; wh.position.set(x, 1.4, 0.12); g.add(wh);
+        g.add(tubeAB([x, 1.4, 0.15], [x, 1.0, 0.18], 0.006, G.cable)); g.add(box(0.1, 0.03, 0.02, G.yellow, x, 1.4, 0.16)); });
+      g.add(box(1.52, 0.12, 0.14, G.black, 0, 2.35, 0)); g.add(tubeAB([-0.6, 2.2, 0.25], [0.6, 2.2, 0.25], 0.02, G.chrome)); break;
+    case "rft": {
+      foot(1.6, 1.4, 0, 0, G.black); [[-0.7, -0.6], [0.7, -0.6], [-0.7, 0.6], [0.7, 0.6]].forEach(([x, z]) => g.add(box(0.1, 2.5, 0.1, G.black, x, 1.25, z)));
+      g.add(box(1.5, 0.1, 0.1, G.black, 0, 2.5, -0.6), box(1.5, 0.1, 0.1, G.black, 0, 2.5, 0.6), box(0.1, 0.1, 1.3, G.black, -0.7, 2.5, 0), box(0.1, 0.1, 1.3, G.black, 0.7, 2.5, 0));
+      g.add(tubeAB([-0.7, 2.35, 0.68], [0.7, 2.35, 0.68], 0.022, G.chrome)); g.add(box(0.6, 0.25, 0.04, G.black, 0, 2.2, -0.62));
+      for (let i = 0; i < 5; i++) g.add(tubeAB([-0.7, 0.45 + i * 0.38, -0.62], [-0.1, 0.45 + i * 0.38, -0.62], 0.018, G.black));
+      [-1, 1].forEach(s => g.add(tubeAB([0.7, 1.25, s * 0.15], [1.1, 1.25, s * 0.2], 0.022, G.chrome))); // barres de dips
+      const balls = [0x2563eb, 0xef4444, 0xf59e0b, 0x16a34a]; balls.forEach((c, i) => g.add(sph(0.12, M(c, { roughness: 0.6 }), -0.45 + i * 0.3, 0.45, 0.45)));
+      g.add(box(1.3, 0.04, 0.35, G.black, 0, 0.32, 0.45)); break; }
+    case "overrig": {
+      const LG = M(0x9aa0a8, { metalness: 0.6, roughness: 0.35 });
+      [-3.6, 0, 3.6].forEach(x => { g.add(box(0.16, 2.9, 0.16, LG, x, 1.45, 0)); const tri = box(0.5, 0.35, 0.18, M(0x2b2e33), x, 2.75, 0); g.add(tri); });
+      g.add(box(7.6, 0.18, 0.2, LG, 0, 2.9, 0)); for (let i = 0; i < 14; i++) g.add(box(0.06, 0.16, 0.12, G.red, -3.4 + i * 0.52, 2.73, 0.12));
+      g.add(tubeAB([-3.5, 2.55, 0.35], [3.5, 2.55, 0.35], 0.02, G.chrome));
+      [-2.5, -1.7, 1.7, 2.5].forEach(x => { [-0.38, 0.38].forEach(dx => g.add(box(0.06, 2.4, 0.06, M(0x5a4636), x + dx, 1.2, -0.25))); for (let i = 0; i < 14; i++) g.add(tubeAB([x - 0.38, 0.2 + i * 0.16, -0.25], [x + 0.38, 0.2 + i * 0.16, -0.25], 0.015, M(0xc8a27a))); });
+      break; }
+    case "hyper": foot(0.7, 1.3); g.add(tubeAB([0, 0.05, 0.55], [0, 0.95, -0.25], 0.045, G.silver)); const hp = backPad(0, 0.95, -0.2, -0.8, 0.35, 0.45); roller(0, 0.32, 0.45, 0.35); g.add(rbox(0.5, 0.05, 0.25, G.rubber, 0, 0.12, 0.6)); break;
     case "benches":
-      for (let i = 0; i < 4; i++) { const x = (i - 1.5) * 0.9; g.add(box(0.3, 0.07, 1.15, M(0xc0262d), x, 0.45, 0)); const bk = box(0.3, 0.55, 0.07, M(0xc0262d), x, 0.72, -0.45); bk.rotation.x = 0.7; g.add(bk); g.add(box(0.08, 0.42, 0.9, M(0xc3c8cf, { metalness: 0.6 }), x, 0.21, 0)); }
+      for (let i = 0; i < 4; i++) { const x = (i - 1.5) * 0.95; const ang = [0.0, -0.5, -0.9, 0.0][i];
+        g.add(box(0.08, 0.06, 1.25, G.silver, x, 0.06, 0)); g.add(tubeAB([x, 0.06, 0.3], [x, 0.42, 0.25], 0.04, G.silver)); g.add(tubeAB([x, 0.06, -0.35], [x, 0.38, -0.25], 0.04, G.silver));
+        g.add(rbox(0.28, 0.07, 0.45, G.red, x, 0.47, 0.32)); const bp = new THREE.Group(); const pd = rbox(0.28, 0.07, 0.8, G.red, 0, 0, -0.4); bp.add(pd); bp.position.set(x, 0.47, 0.08); bp.rotation.x = -ang; g.add(bp);
+        g.add(tubeAB([x - 0.2, 0.06, 0.62], [x + 0.2, 0.06, 0.62], 0.03, G.silver)); }
+      break;
+    case "dumbbells": {
+      g.add(box(7.2, 2.4, 0.04, M(0xa9c0d3, { metalness: 0.95, roughness: 0.05 }), 0, 1.4, -0.75)); // miroir
+      [-2.4, 0, 2.4].forEach(cx => { [[-1.1], [1.1]].forEach(([dx]) => g.add(tubeAB([cx + dx, 0.05, -0.15], [cx + dx * 0.95, 0.85, -0.4], 0.04, G.silver)));
+        [[0.48, -0.05], [0.82, -0.38]].forEach(([y, z], row) => { g.add(box(2.2, 0.04, 0.3, G.silver, cx, y, z)); for (let i = 0; i < 9; i++) { const kg = (row * 9 + i); const r = 0.055 + kg * 0.0025;
+          const db = new THREE.Group(); db.add(tubeAB([-0.1, 0, 0], [0.1, 0, 0], 0.016, G.chrome)); [-0.12, 0.12].forEach(z2 => { const hb = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.07, 6), G.plate); hb.rotation.z = Math.PI / 2; hb.position.x = z2; hb.castShadow = true; db.add(hb); });
+          db.rotation.y = Math.PI / 2; db.position.set(cx - 0.95 + i * 0.24, y + 0.03 + r, z); g.add(db); } }); });
+      [-1.5, 1.5].forEach(x => { g.add(box(0.08, 0.06, 1.2, G.silver, x, 0.06, 1.3)); g.add(tubeAB([x, 0.06, 1.3], [x, 0.42, 1.3], 0.04, G.silver)); g.add(rbox(0.28, 0.07, 1.15, G.red, x, 0.47, 1.3)); });
+      break; }
+    case "rack": {
+      const RG = M(0x8f969e, { metalness: 0.6, roughness: 0.35 });
+      foot(1.3, 1.5, 0, 0, G.black); [[-0.6, -0.5], [0.6, -0.5], [-0.6, 0.45], [0.6, 0.45]].forEach(([x, z]) => { g.add(box(0.08, 2.4, 0.08, RG, x, 1.2, z)); for (let i = 0; i < 18; i++) g.add(box(0.02, 0.02, 0.02, G.black, x, 0.4 + i * 0.1, z + 0.041)); });
+      g.add(box(1.28, 0.08, 0.08, RG, 0, 2.4, -0.5), box(1.28, 0.08, 0.08, RG, 0, 2.4, 0.45), box(0.08, 0.08, 1.0, RG, -0.6, 2.4, 0), box(0.08, 0.08, 1.0, RG, 0.6, 2.4, 0));
+      g.add(tubeAB([-0.62, 2.28, 0.5], [0.62, 2.28, 0.5], 0.018, G.chrome));
+      g.add(tubeAB([-1.1, 1.38, 0.45], [1.1, 1.38, 0.45], 0.016, G.chrome)); [-1, 1].forEach(s => { g.add(plateDisc(0.225, s * 0.85, 1.38, 0.45)); g.add(plateDisc(0.225, s * 0.9, 1.38, 0.45)); g.add(box(0.06, 0.04, 0.12, G.black, s * 0.6, 1.33, 0.5)); });
+      [-1, 1].forEach(s => { g.add(tubeAB([s * 0.75, 0.3, -0.55], [s * 0.75, 0.3, -0.85], 0.02, G.chrome)); g.add(plateDisc(0.225, s * 0.75, 0.3, -0.62, "z")); g.add(plateDisc(0.16, s * 0.75, 0.3, -0.7, "z")); });
+      g.add(box(0.08, 0.06, 1.2, G.silver, 0, 0.06, 0.0)); g.add(tubeAB([0, 0.06, 0], [0, 0.42, 0], 0.04, G.silver)); g.add(rbox(0.28, 0.07, 1.15, G.red, 0, 0.47, 0)); break; }
+    case "sleds":
+      for (let i = 0; i < 3; i++) { const x = -1.6 + i * 1.0; const deck = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.55, 40, 1, false, -0.3, 0.6), G.black); deck.rotation.z = Math.PI / 2; deck.rotation.y = Math.PI / 2; deck.position.set(x, 3.15, 0); deck.rotation.order = "YZX"; g.add(box(0.62, 0.15, 1.7, G.black, x, 0.18, 0));
+        g.add(tubeAB([x - 0.32, 0.25, -0.75], [x - 0.32, 1.25, -0.4], 0.025, G.black), tubeAB([x + 0.32, 0.25, -0.75], [x + 0.32, 1.25, -0.4], 0.025, G.black), tubeAB([x - 0.32, 1.25, -0.4], [x + 0.32, 1.25, -0.4], 0.025, G.black)); }
+      { const x = 1.9; g.add(box(0.15, 0.6, 1.0, G.black, x, 0.35, 0)); const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.18, 24), G.black); fan.rotation.z = Math.PI / 2; fan.position.set(x, 0.55, -0.35); g.add(fan); g.add(rbox(0.25, 0.07, 0.3, G.black, x, 0.95, 0.25)); g.add(tubeAB([x - 0.25, 0.6, -0.1], [x - 0.25, 1.25, 0.05], 0.02, G.black), tubeAB([x + 0.25, 0.6, -0.1], [x + 0.25, 1.25, 0.05], 0.02, G.black)); }
+      { const x = 3.0; g.add(box(0.08, 0.06, 2.4, G.black, x, 0.3, 0.2)); const fw = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.12, 24), G.black); fw.rotation.z = Math.PI / 2; fw.position.set(x, 0.55, -0.95); g.add(fw); g.add(rbox(0.25, 0.06, 0.28, G.black, x, 0.4, 0.4)); }
       break;
     case "cardio": {
-      const glass = M(0xcfe8ff, { transparent: true, opacity: 0.18, roughness: 0.05 });
-      g.add(box(6, 2.6, 0.05, glass, 0, 1.3, -2.6)); g.add(box(0.05, 2.6, 5.2, glass, -3, 1.3, 0));
-      for (let i = 0; i < 5; i++) { const x = -2.2 + i * 1.05; g.add(box(0.7, 0.18, 1.6, pad, x, 0.12, -1.2)); g.add(box(0.06, 1.2, 0.06, metal, x - 0.3, 0.7, -1.95)); g.add(box(0.06, 1.2, 0.06, metal, x + 0.3, 0.7, -1.95)); g.add(box(0.6, 0.35, 0.08, pad, x, 1.35, -1.95)); }
-      for (let i = 0; i < 5; i++) { const x = -2.2 + i * 1.05; g.add(box(0.12, 0.7, 0.9, metal, x, 0.35, 1.2)); g.add(box(0.28, 0.07, 0.3, pad, x, 0.75, 1.5)); g.add(box(0.45, 0.06, 0.06, metal, x, 1.05, 0.85)); const fw = cyl(0.25, 0.25, 0.06, accent, x, 0.35, 0.8); fw.rotation.z = Math.PI / 2; g.add(fw); }
+      const glass = M(0xcfe8ff, { transparent: true, opacity: 0.16, roughness: 0.05 }); const wf = M(0xe9e6e0, { roughness: 0.9 });
+      g.add(box(7.2, 0.02, 5.4, wf, 0, 0.01, 0)); g.add(box(7.2, 2.7, 0.05, glass, 0, 1.35, -2.7)); g.add(box(0.05, 2.7, 5.4, glass, -3.6, 1.35, 0));
+      for (let i = 0; i < 6; i++) { const x = -2.9 + i * 1.12; g.add(rbox(0.75, 0.16, 1.8, G.black, x, 0.12, -1.4)); g.add(tubeAB([x - 0.33, 0.2, -2.15], [x - 0.33, 1.25, -2.0], 0.03, G.grey)); g.add(tubeAB([x + 0.33, 0.2, -2.15], [x + 0.33, 1.25, -2.0], 0.03, G.grey));
+        const sc = box(0.55, 0.36, 0.05, G.black, x, 1.42, -2.0); sc.rotation.x = -0.35; g.add(sc); const sc2 = box(0.48, 0.28, 0.01, M(0x3b82f6, { emissive: 0x1d4ed8, emissiveIntensity: 0.6 }), x, 1.43, -1.97); sc2.rotation.x = -0.35; g.add(sc2); }
+      for (let i = 0; i < 6; i++) { const x = -2.9 + i * 1.12; g.add(box(0.12, 0.65, 0.95, G.black, x, 0.35, 1.25)); g.add(rbox(0.26, 0.07, 0.3, G.black, x, 0.8, 1.55)); g.add(tubeAB([x - 0.22, 1.1, 0.85], [x + 0.22, 1.1, 0.85], 0.025, G.black));
+        const fw = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.07, 24), M(0xc98a2b, { metalness: 0.6 })); fw.rotation.z = Math.PI / 2; fw.position.set(x, 0.35, 0.82); g.add(fw); }
       break; }
-    case "hack":
-      g.add(box(1, 0.12, 1.4, metal, 0, 0.06, 0)); [-0.35, 0.35].forEach(x => { const r = box(0.08, 2, 0.08, metal, x, 1, -0.2); r.rotation.x = -0.35; g.add(r); });
-      const sled = box(0.5, 0.8, 0.1, pad, 0, 1.0, 0.0); sled.rotation.x = -0.35; g.add(sled); g.add(box(0.8, 0.06, 0.5, accent, 0, 0.18, 0.45)); break;
   }
   return g;
 }
@@ -1007,30 +1122,34 @@ function textPlane(text, w, h, color = "#d9d4c7", size = 120) {
   ctx.fillStyle = color; ctx.font = `600 ${size}px Georgia, "Times New Roman", serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, 1024, 140);
   const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true })); return m;
 }
+function parquetTex() { const c = document.createElement("canvas"); c.width = 512; c.height = 512; const x = c.getContext("2d");
+  for (let r = 0; r < 16; r++) for (let k = 0; k < 4; k++) { const off = (r % 2) * 64; const v = 190 + Math.floor(Math.random() * 30); x.fillStyle = `rgb(${v},${v - 28},${v - 62})`; x.fillRect(k * 128 + off - 128, r * 32, 128, 32); x.fillRect(k * 128 + off, r * 32, 128, 32); x.strokeStyle = "rgba(90,60,30,.35)"; x.strokeRect(k * 128 + off, r * 32, 128, 32); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 2); t.encoding = THREE.sRGBEncoding; return t; }
 function buildGym() {
-  const S3 = makeScene("gym", { map: true, bounds: [-12, 12, -8, 8], cam: [10, 9.5, 11], target: [-0.5, 0, 0.5], minD: 2.5, maxD: 34, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
-  const sc = S3.scene; const W = 24, D = 16;
-  const rubber = M(0x1c1e22, { roughness: 0.95 });
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), rubber); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
-  // plateforme parquet (machines à disques)
-  sc.add(box(9.6, 0.08, 4.6, M(0xc9a97c, { roughness: 0.8 }), -2.8, 0.04, 5.4));
-  // piste gazon
-  const turf = box(2.2, 0.03, 7, M(0x2f8f3a, { roughness: 1 }), -7.6, 0.015, -1.5); sc.add(turf);
-  [-1, 1].forEach(s2 => sc.add(box(0.05, 0.035, 7, M(0xffffff), -7.6 + s2 * 0.9, 0.02, -1.5)));
-  // marquages blancs au sol (zone fonctionnelle)
+  const S3 = makeScene("gym", { map: true, bounds: [-12, 12, -8, 8], cam: [9, 10, 13], target: [-1, 0, 0.5], minD: 2.5, maxD: 34, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
+  const sc = S3.scene; const W = 24, D = 16; const G = gm();
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), M(0x1e2024, { roughness: 0.95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+  // plateforme parquet au premier plan (machines à disques)
+  sc.add(box(10.2, 0.08, 5.4, new THREE.MeshStandardMaterial({ map: parquetTex(), roughness: 0.75 }), -2.7, 0.04, 5.2));
+  // piste en gazon (gauche) + lignes blanches
+  sc.add(box(2.4, 0.03, 9, M(0x2f8f3a, { roughness: 1 }), -7.9, 0.015, -2.3)); [-1, 0, 1].forEach(s2 => sc.add(box(0.05, 0.035, 9, M(0xffffff), -7.9 + s2 * 1.1, 0.02, -2.3)));
+  for (let i = 0; i < 5; i++) sc.add(box(2.3, 0.035, 0.05, M(0xffffff), -7.9, 0.02, -6.5 + i * 2));
+  // marquages au sol (cercles, échelles d'agilité)
   const white = new THREE.MeshBasicMaterial({ color: 0xe8e8e8 });
-  [[-3.5, -0.6], [-2, 0.2], [-0.5, -0.7], [-4.2, 1.1]].forEach(([x, z]) => { const r = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.42, 40), white); r.rotation.x = -Math.PI / 2; r.position.set(x, 0.01, z); sc.add(r); });
-  for (let i = 0; i < 4; i++) { const l = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 2), white); l.rotation.x = -Math.PI / 2; l.position.set(-1 + i * 0.5, 0.01, 1.4); sc.add(l); }
-  // murs gris foncé + lettrage
-  const wallM = M(0x3a3e45, { roughness: 0.9 }); const H = 5;
+  [[-3.6, 0.6, 0.5], [-1.0, 0.9, 0.42], [0.6, -2.6, 0.75], [2.4, -2.9, 0.75], [4.2, -2.6, 0.75], [-4.2, -4.4, 0.4]].forEach(([x, z, r]) => { const ring = new THREE.Mesh(new THREE.RingGeometry(r - 0.06, r, 48), white); ring.rotation.x = -Math.PI / 2; ring.position.set(x, 0.01, z); sc.add(ring); });
+  for (let i = 0; i < 6; i++) { [0, 0.7].forEach(dz => { const l = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.05), white); l.rotation.x = -Math.PI / 2; l.position.set(-5.8 + i * 0.6, 0.01, 0.9 + dz); sc.add(l); }); const v = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.7), white); v.rotation.x = -Math.PI / 2; v.position.set(-6.1 + i * 0.6, 0.01, 1.25); sc.add(v); }
+  // murs anthracite, charpente, lettrage, tableaux blancs, porte, fenêtres hautes
+  const wallM = M(0x34373d, { roughness: 0.9 }); const H = 6;
   sc.add(box(W, H, 0.15, wallM, 0, H / 2, -D / 2)); sc.add(box(0.15, H, D, wallM, -W / 2, H / 2, 0));
-  const t = textPlane("UAX FITNESS CENTER", 11, 1.4); t.position.set(1.5, 3.7, -D / 2 + 0.09); sc.add(t);
-  sc.add(box(5, 2.2, 0.04, M(0x9fb6c9, { metalness: 0.9, roughness: 0.08 }), 4.5, 1.4, -D / 2 + 0.1));
-  // poutres métalliques (charpente)
-  sc.add(new THREE.AmbientLight(0xffffff, 0.15));
+  sc.add(box(W, 0.06, 0.16, M(0x2a2c30), 0, 1.25, -D / 2 + 0.09));
+  const t = textPlane("UAX FITNESS CENTER", 12, 1.5); t.position.set(1.5, 4.4, -D / 2 + 0.09); sc.add(t);
+  [[-3.6, 2.3], [-2.4, 2.0]].forEach(([x, y]) => sc.add(box(0.95, 0.7, 0.03, M(0xf4f4f4), x, y, -D / 2 + 0.1)));
+  sc.add(box(1.6, 2.3, 0.05, M(0x1b1c1f), 9.5, 1.15, -D / 2 + 0.1)); sc.add(box(0.5, 0.18, 0.02, new THREE.MeshBasicMaterial({ color: 0x16a34a }), 9.5, 2.55, -D / 2 + 0.11));
+  for (let i = 0; i < 6; i++) sc.add(box(2.6, 0.7, 0.04, M(0xbfd6ea, { metalness: 0.8, roughness: 0.1, emissive: 0x6b8fb3, emissiveIntensity: 0.25 }), -9.6 + i * 3.8, 5.3, -D / 2 + 0.1));
+  sc.add(new THREE.AmbientLight(0xffffff, 0.18));
   GYM_MACHINES.forEach(m => {
     const g = buildMachine(m.build); g.position.set(...m.pos); g.rotation.y = m.rot; g.userData.pick = m.id; g.userData.label = m.label + (m.ex.length ? " · " + m.ex.length + " exercice" + (m.ex.length > 1 ? "s" : "") : "");
-    const lab = labelSprite(m.label, 1); lab.position.set(0, m.build === "cardio" ? 3 : 2.75, 0); g.add(lab);
+    const lab = labelSprite(m.label, 1); lab.position.set(0, m.build === "cardio" ? 3.1 : m.build === "overrig" ? 3.3 : 2.75, 0); g.add(lab);
     sc.add(g); S3.pickables.push(g);
   });
   return S3;
@@ -1119,7 +1238,7 @@ function zoneSlot(it) {
   if (it.zone === "congel") return "freezer"; if (it.zone === "placard") return "placard";
   const c = it.cat || guessCat(it.name); return c === "boisson" || c === "sauce" ? "door" : c === "legume" || c === "fruit" ? "drawer" : c === "viande" || c === "poisson" ? "mid" : "top";
 }
-function updateFridge3D(items) {
+function updateFridge3D(items) { if (V3.scenes.fridge) V3.scenes.fridge.dirty = performance.now() + 800;
   const S3 = V3.scenes.fridge; if (!S3) return;
   const sig = JSON.stringify(items.map(i => [i.id, i.name, i.cat, i.zone, i.qty > 0])); if (sig === S3.sig) return; S3.sig = sig;
   Object.values(S3.slots).forEach(s => (s.used || []).forEach(o => s.g.remove(o))); S3.pickables = [];
@@ -1131,6 +1250,226 @@ function updateFridge3D(items) {
   });
 }
 let ACT_PICK_FRIDGE = () => {};
+
+// ===================== CORPS 3D ANATOMIQUE =====================
+// Modèle : BodyParts3D (© The Database Center for Life Science, licence CC BY-SA 2.1 Japon),
+// 214 pièces (muscles séparés par faisceau, os, peau), simplifiées et compressées pour le téléphone.
+const BODY = { url: "anatomy/", data: null, loading: null, thumbs: {}, pending: new Set(), tr: null, scenes: {}, failed: false };
+const BODY_COL = { prim: 0xd90429, sec: 0xff8a00, rest: 0xc09086, restDark: 0x8d625a, bone: 0xece5d3, skin: 0xf2c9a8 };
+// noms français des muscles « neutres » (ceux qui ne sont rattachés à aucun groupe de l'app)
+const BODY_FR = { "sternocleidomastoid": "Sterno-cléido-mastoïdien", "serratus anterior": "Dentelé antérieur", "sartorius": "Sartorius (couturier)", "tensor fasciae latae": "Tenseur du fascia lata",
+  "tibialis anterior": "Tibial antérieur", "fibularis longus": "Long fibulaire", "fibularis brevis": "Court fibulaire", "extensor digitorum longus": "Long extenseur des orteils",
+  "extensor carpi radialis longus": "Long extenseur radial du carpe", "extensor carpi radialis brevis": "Court extenseur radial du carpe", "extensor digitorum": "Extenseur des doigts",
+  "extensor digiti minimi": "Extenseur du petit doigt", "extensor carpi ulnaris": "Extenseur ulnaire du carpe", "splenius capitis": "Splénius de la tête", "levator scapulae": "Élévateur de la scapula",
+  "coracobrachialis": "Coraco-brachial", "internal oblique": "Oblique interne", "iliotibial tract": "Bandelette ilio-tibiale", "gluteus minimus": "Petit fessier",
+  "extensor pollicis brevis": "Court extenseur du pouce", "extensor pollicis longus": "Long extenseur du pouce", "flexor digitorum longus": "Long fléchisseur des orteils",
+  "tibialis posterior": "Tibial postérieur", "flexor hallucis longus": "Long fléchisseur de l'hallux", "extensor hallucis longus": "Long extenseur de l'hallux", "platysma": "Platysma" };
+function bodyPartLabel(p) {
+  if (p.g && MUSCLES[p.g]) return MUSCLES[p.g][0];
+  if (p.g === "_b") return "Os";
+  const n = p.n.replace(/\b(left|right)\b ?/g, "").replace(/humeral head of /, "").trim();
+  return BODY_FR[n] || n;
+}
+function bodyLoad() {
+  if (BODY.loading) return BODY.loading;
+  if (!has3D()) return Promise.reject(new Error("3D indisponible"));
+  BODY.loading = Promise.all([fetch(BODY.url + "body.json").then(r => { if (!r.ok) throw new Error("json"); return r.json(); }), fetch(BODY.url + "body.bin").then(r => { if (!r.ok) throw new Error("bin"); return r.arrayBuffer(); })])
+    .then(([h, buf]) => {
+      const vq = new Int16Array(buf, 0, h.vbytes / 2), iq = new Uint16Array(buf, h.vbytes);
+      const lo = h.lo, sc = h.scale; let minY = Infinity;
+      const parts = h.parts.map(p => {
+        const pos = new Float32Array(p.vc * 3);
+        for (let i = 0; i < p.vc; i++) {
+          const o = (p.vo + i * 3);
+          const x = (vq[o] + 32500) * sc + lo[0], y = (vq[o + 1] + 32500) * sc + lo[1], z = (vq[o + 2] + 32500) * sc + lo[2];
+          // BodyParts3D : x = côté, y = avant(−)/arrière(+), z = haut  →  Three : x, y = haut, z = avant
+          pos[i * 3] = x * 0.001; pos[i * 3 + 1] = z * 0.001; pos[i * 3 + 2] = -y * 0.001;
+          if (pos[i * 3 + 1] < minY) minY = pos[i * 3 + 1];
+        }
+        return { p, pos, idx: iq.subarray(p.io, p.io + p.ic) };
+      });
+      // centrer : pieds au sol, axe du corps en x = 0
+      let sx = 0, sz = 0, n = 0; parts.forEach(({ p, pos }) => { if (p.g !== "_skin") for (let i = 0; i < pos.length; i += 3) { sx += pos[i]; sz += pos[i + 2]; n++; } });
+      sx /= n; sz /= n;
+      BODY.data = parts.map(({ p, pos, idx }) => {
+        for (let i = 0; i < pos.length; i += 3) { pos[i] -= sx; pos[i + 1] -= minY; pos[i + 2] -= sz; }
+        const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(new Uint16Array(idx), 1));
+        g.computeVertexNormals(); g.computeBoundingSphere(); return { p, g };
+      });
+      return BODY.data;
+    }).catch(e => { BODY.failed = true; BODY.loading = null; throw e; });
+  return BODY.loading;
+}
+// crée un groupe 3D (chaque appel a ses propres matériaux, donc ses propres couleurs)
+function bodyGroup(opt = {}) {
+  const grp = new THREE.Group(); grp.userData.meshes = [];
+  BODY.data.forEach(({ p, g }) => {
+    if (p.g === "_skin" && opt.noSkin) return;
+    let mat;
+    if (p.g === "_skin") mat = new THREE.MeshStandardMaterial({ color: BODY_COL.skin, transparent: true, opacity: 0.13, depthWrite: false, roughness: 0.9, side: THREE.FrontSide });
+    else if (p.g === "_b") mat = new THREE.MeshStandardMaterial({ color: BODY_COL.bone, roughness: 0.75 });
+    else mat = new THREE.MeshStandardMaterial({ color: BODY_COL.rest, roughness: 0.55, metalness: 0.02 });
+    mat.color.convertSRGBToLinear(); const m = new THREE.Mesh(g, mat); m.userData.part = p; m.renderOrder = p.g === "_skin" ? 5 : 0;
+    m.visible = p.g !== "_skin" || !!opt.skin; grp.add(m); grp.userData.meshes.push(m);
+  });
+  return grp;
+}
+// colorie : prim / sec / focus (clignote) ou une couleur par muscle (récupération)
+function bodyPaint(grp, o = {}) {
+  const prim = o.prim || [], sec = o.sec || [], focus = o.focus || [], colors = o.colors;
+  const dark = isDark(); grp.userData.focus = [];
+  grp.userData.meshes.forEach(m => {
+    const g = m.userData.part.g; const mt = m.material; if (g === "_skin" || g === "_b") return;
+    let c = dark ? BODY_COL.restDark : BODY_COL.rest, e = 0x000000;
+    if (colors && colors[g]) c = new THREE.Color(colors[g]);
+    else if (prim.includes(g)) { c = BODY_COL.prim; e = 0x5a0010; }
+    else if (sec.includes(g)) { c = BODY_COL.sec; e = 0x3a2200; }
+    (typeof c === "number" ? mt.color.setHex(c) : mt.color.copy(c)).convertSRGBToLinear(); mt.emissive.setHex(e); mt.emissiveIntensity = 1; mt.userData.e0 = e;
+    if (!colors && focus.includes(g)) grp.userData.focus.push(m);
+  });
+}
+function bodyAddLights(scene) {
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x6b6b7a, 0.55));
+  const k = new THREE.DirectionalLight(0xffffff, 0.6); k.position.set(1.5, 3, 3); scene.add(k);
+  const b = new THREE.DirectionalLight(0xffffff, 0.35); b.position.set(-2, 2.5, -3); scene.add(b);
+}
+
+// ---------- miniatures (une seule scène hors écran, rendue en image et mise en cache) ----------
+function bodyKey(o) { return JSON.stringify([o.prim || [], o.sec || [], o.focus || [], o.colors || null, isDark()]); }
+function bodyThumbRender(o) {
+  if (!BODY.tr) {
+    const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setPixelRatio(1); r.setSize(440, 470); r.outputEncoding = THREE.sRGBEncoding;
+    const scene = new THREE.Scene(); bodyAddLights(scene); const grp = bodyGroup({ noSkin: true }); scene.add(grp);
+    const cam = new THREE.OrthographicCamera(-0.465, 0.465, 0.99, -0.99, 0.1, 10);
+    BODY.tr = { r, scene, grp, cam };
+  }
+  const { r, scene, grp, cam } = BODY.tr; bodyPaint(grp, o);
+  grp.userData.focus.forEach(m => { m.material.emissive.setHex(0xff2a55); m.material.emissiveIntensity = 0.55; });
+  r.setScissorTest(true); r.setClearColor(0x000000, 0);
+  [[0, 0], [220, Math.PI]].forEach(([x, rot]) => {
+    r.setViewport(x, 0, 220, 470); r.setScissor(x, 0, 220, 470); r.clear();
+    cam.position.set(Math.sin(rot) * 3, 0.94, Math.cos(rot) * 3); cam.lookAt(0, 0.94, 0); cam.updateProjectionMatrix(); r.render(scene, cam);
+  });
+  r.setScissorTest(false);
+  return r.domElement.toDataURL("image/png");
+}
+function bodyThumbHTML(o = {}, mini = true) {
+  const key = bodyKey(o); const url = BODY.thumbs[key];
+  const style = `width:100%;display:block;margin:auto;max-width:${mini ? 200 : 420}px;aspect-ratio:440/470`;
+  if (url) return `<img class="bthumb" src="${url}" alt="muscles" style="${style}">`;
+  if (!BODY.failed && has3D()) {
+    BODY.pending.add(key); setTimeout(bodyFlush, 0);
+    return `<div class="bthumb wait" data-bkey="${esc(key)}" style="${style}">${muscleSVG(o.prim, o.sec, o.focus, true, o.colors)}</div>`;
+  }
+  return muscleSVG(o.prim, o.sec, o.focus, mini, o.colors);
+}
+let bodyFlushing = false;
+function bodyFlush() {
+  if (bodyFlushing || !BODY.pending.size) return; bodyFlushing = true;
+  bodyLoad().then(() => {
+    const keys = [...BODY.pending]; BODY.pending.clear();
+    keys.forEach(key => {
+      const [prim, sec, focus, colors] = JSON.parse(key);
+      try { BODY.thumbs[key] = bodyThumbRender({ prim, sec, focus, colors }); } catch (e) { return; }
+      document.querySelectorAll(".bthumb.wait").forEach(el => { if (el.dataset.bkey === key) { el.outerHTML = `<img class="bthumb" src="${BODY.thumbs[key]}" alt="muscles" style="${el.getAttribute("style")}">`; } });
+    });
+  }).catch(() => {}).finally(() => { bodyFlushing = false; if (BODY.pending.size) setTimeout(bodyFlush, 0); });
+}
+
+// ---------- vue 3D interactive (fiche exercice, carte de récupération, atlas) ----------
+function body3DHolderHTML(h = 460) {
+  return `<div id="body3d" style="height:${h}px;border-radius:16px;overflow:hidden;background:var(--bg2,#e9edf3);position:relative">
+    <div class="mut sm c" style="padding-top:${h / 2 - 12}px" id="body3dWait">Chargement du corps 3D…</div></div>
+    <div class="chips" style="justify-content:center;margin-top:8px">
+      <button class="chip" data-act="bodyView" data-v="front">Face</button><button class="chip" data-act="bodyView" data-v="back">Dos</button><button class="chip" data-act="bodyView" data-v="side">Profil</button>
+      <button class="chip ${S.bodySkin ? "on" : ""}" data-act="bodyToggle" data-v="skin">Peau</button><button class="chip ${S.bodyBones === false ? "" : "on"}" data-act="bodyToggle" data-v="bones">Os</button>
+      <button class="chip ${S.bodyIso ? "on" : ""}" data-act="bodyToggle" data-v="iso">Isoler</button></div>
+    <div id="bodyInfo" class="sm" style="min-height:22px;text-align:center;margin-top:6px"></div>`;
+}
+function bodyMount(holder, o) {
+  bodyLoad().then(() => {
+    if (!holder.isConnected) return;
+    let S3 = V3.scenes.body;
+    if (!S3) {
+      S3 = makeScene("body", { cam: [0, 0.95, 2.15], target: [0, 0.9, 0], bg: 0x1d2128, bgLight: 0xeef1f6, minD: 0.35, maxD: 4.5 });
+      S3.scene.children.filter(c => c.isLight).forEach(l => S3.scene.remove(l)); bodyAddLights(S3.scene);
+      S3.controls.maxPolarAngle = Math.PI; S3.controls.screenSpacePanning = true;
+      S3.grp = bodyGroup({ skin: true }); S3.scene.add(S3.grp);
+      const ray = new THREE.Raycaster(), v = new THREE.Vector2(); let down = null;
+      const pick = e => { const r = S3.renderer.domElement.getBoundingClientRect(); v.set((e.clientX - r.left) / r.width * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(v, S3.cam);
+        const hits = ray.intersectObjects(S3.grp.userData.meshes.filter(m => m.visible && m.userData.part.g !== "_skin"), false); return hits[0] ? hits[0].object : null; };
+      const el = S3.renderer.domElement;
+      el.addEventListener("pointerdown", e => down = [e.clientX, e.clientY]);
+      el.addEventListener("pointermove", e => { if (e.pointerType === "touch" || e.buttons) return; const m = pick(e); bodyHover(S3, m);
+        if (S3.tip) { S3.tip.style.display = m ? "block" : "none"; if (m) { S3.tip.textContent = bodyPartLabel(m.userData.part); S3.tip.style.left = (e.offsetX + 14) + "px"; S3.tip.style.top = (e.offsetY + 10) + "px"; } } });
+      el.addEventListener("pointerleave", () => { bodyHover(S3, null); if (S3.tip) S3.tip.style.display = "none"; });
+      el.addEventListener("pointerup", e => { if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8) return; down = null; const m = pick(e); bodyHover(S3, m); bodyInfo(m && m.userData.part); });
+      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(0xff1744); m.material.emissiveIntensity = k * 0.8; } }); };
+    }
+    S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3);
+    const w = holder.querySelector("#body3dWait"); if (w) w.remove();
+    V3.prevActive = V3.active && V3.active !== S3 ? V3.active : V3.prevActive;
+    mount3D("body", holder, () => S3);
+    if (o.view) bodyView(o.view, true);
+    if (o.prim && o.prim.length) { // cadrer sur les muscles travaillés
+      const bb = new THREE.Box3(); S3.grp.userData.meshes.forEach(m => { if (o.prim.includes(m.userData.part.g)) bb.expandByObject(m); });
+      if (!bb.isEmpty()) { const c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3()); const d = Math.max(0.9, Math.min(2.1, Math.max(sz.x, sz.y) * 1.9));
+        const back = o.view === "back"; S3.controls.target.set(0, c.y, 0); S3.cam.position.set(0, c.y + 0.05, back ? -d : d); S3.controls.update(); }
+    }
+  }).catch(() => { holder.innerHTML = `<div style="padding:16px">${muscleSVG(o.prim, o.sec, o.focus, false, o.colors)}<p class="xs mut c">Corps 3D indisponible hors connexion la première fois.</p></div>`; });
+}
+function bodyHover(S3, m) {
+  if (S3.hov === m) return;
+  if (S3.hov) { const mt = S3.hov.material; mt.emissive.setHex(mt.userData.e0 || 0); mt.emissiveIntensity = 1; }
+  S3.hov = m; if (m) { m.material.emissive.setHex(0x2563eb); m.material.emissiveIntensity = 0.45; }
+}
+function bodyInfo(p) {
+  const el = $("#bodyInfo"); if (!el) return;
+  if (!p || p.g === "_b") { el.innerHTML = p ? "Os" : ""; return; }
+  if (!MUSCLES[p.g]) { el.innerHTML = `<b>${esc(bodyPartLabel(p))}</b>`; return; }
+  const exs = Object.values(EX).filter(x => x.prim.includes(p.g)).slice(0, 6);
+  el.innerHTML = `<b>${esc(MUSCLES[p.g][0])}</b>${exs.length ? `<div class="xs mut" style="margin-top:3px">Exercices : ${exs.map(x => esc(x.name)).join(" · ")}</div>` : ""}`;
+}
+function bodyApplyToggles(S3) {
+  const o = S3.opts || {}; const hl = new Set([...(o.prim || []), ...(o.sec || [])]);
+  S3.grp.userData.meshes.forEach(m => { const g = m.userData.part.g;
+    if (g === "_skin") m.visible = !!S.bodySkin;
+    else if (g === "_b") m.visible = S.bodyBones !== false;
+    else m.visible = !(S.bodyIso && hl.size && !hl.has(g));
+  });
+}
+function bodyView(v, instant) {
+  const S3 = V3.scenes.body; if (!S3) return; const t = new THREE.Vector3(0, 0.9, 0);
+  const p = v === "back" ? new THREE.Vector3(0, 1.0, -2.15) : v === "side" ? new THREE.Vector3(2.15, 1.0, 0) : new THREE.Vector3(0, 1.0, 2.15);
+  if (instant) { S3.controls.target.copy(t); S3.cam.position.copy(p); S3.controls.update(); } else flyTo(S3, t, p);
+}
+// vue conseillée selon les muscles (dos pour dos/ischios/triceps…)
+const BODY_BACK = new Set(["delt_post", "rot_cuff", "triceps_long", "triceps_latmed", "lats", "teres", "traps_mid", "traps_low", "erectors", "glutes_max", "glutes_med", "hamstrings", "calves"]);
+function bodyBestView(prim) { const b = prim.filter(m => BODY_BACK.has(m)).length; return b > prim.length / 2 ? "back" : "front"; }
+const BODY_ACT = {
+  bodyView: el => bodyView(el.dataset.v),
+  bodyToggle: el => { const k = el.dataset.v; if (k === "skin") S.bodySkin = !S.bodySkin; else if (k === "bones") S.bodyBones = S.bodyBones === false; else S.bodyIso = !S.bodyIso;
+    el.classList.toggle("on"); const S3 = V3.scenes.body; if (S3) bodyApplyToggles(S3); },
+  bodyAtlas: () => openSheet(bodyAtlasSheet),
+  bodyRecovery: () => openSheet(bodyRecoverySheet),
+};
+function bodyAtlasSheet() {
+  return `<div class="row between"><h2>Anatomie 3D</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <p class="xs mut">Touche un muscle pour voir son nom et les exercices qui le travaillent.</p>${body3DHolderHTML(520)}
+    <p class="xs mut c" style="margin-top:8px">Modèle anatomique BodyParts3D © DBCLS, CC BY-SA 2.1 JP.</p>`;
+}
+function bodyRecoverySheet() {
+  return `<div class="row between"><h2>Récupération en 3D</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>${body3DHolderHTML(500)}
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>`;
+}
+// appelé après chaque affichage de feuille : monte la vue 3D si la feuille en contient une
+function bodyAfterSheet() {
+  const h = $("#body3d"); if (!h || h.querySelector("canvas")) return;
+  const f = S.sheet; let o = {};
+  if (f === bodyRecoverySheet) { const rec = muscleFatigue(); o.colors = {}; Object.entries(rec).forEach(([m, r]) => o.colors[m] = recColor(r)); }
+  else if (S.bodyEx) { const x = getEx(S.bodyEx); o = { prim: x.prim, sec: x.sec, focus: x.focus, view: bodyBestView(x.prim) }; }
+  bodyMount(h, o);
+}
 
 // ===================== SCANNER CODE-BARRES EN DIRECT (caméra) =====================
 const Scanner = {
@@ -1206,9 +1545,10 @@ function renderSheet() {
   const el = $("#sheet");
   if (!S.sheet) { el.innerHTML = ""; return; }
   el.innerHTML = `<div class="sheet-bg" data-act="closeSheetBg"><div class="sheet">${S.sheet()}</div></div>`;
+  if (typeof bodyAfterSheet === "function") bodyAfterSheet();
 }
 function openSheet(fn) { S.sheet = fn; renderSheet(); }
-function closeSheet() { S.sheet = null; renderSheet(); if (typeof V3 !== "undefined" && V3.clearSel) V3.clearSel(); }
+function closeSheet() { S.sheet = null; S.bodyEx = null; renderSheet(); if (typeof V3 !== "undefined" && V3.active && V3.active.key === "body") { V3.active = V3.prevActive && V3.prevActive.renderer.domElement.isConnected ? V3.prevActive : null; } if (typeof V3 !== "undefined" && V3.clearSel) V3.clearSel(); }
 document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender && !isEditing()) render(); }, 50));
 
 const ICONS = {
@@ -1404,8 +1744,8 @@ function exMuscleSheet(exId) {
   return () => {
     const x = getEx(exId);
     return `<div class="row between"><h2>${esc(x.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-      ${muscleSVG(x.prim, x.sec, x.focus)}
-      <div class="row xs" style="gap:12px;justify-content:center;margin:6px 0"><span><b style="color:var(--red)">●</b> principal</span><span><b style="color:var(--org)">●</b> secondaire</span><span>clignote = partie ciblée</span></div>
+      ${body3DHolderHTML(440)}
+      <div class="row xs" style="gap:12px;justify-content:center;margin:6px 0"><span><b style="color:#d90429">●</b> principal</span><span><b style="color:#ff8a00">●</b> secondaire</span><span>clignote = partie ciblée</span></div>
       <h3>Muscles principaux</h3><ul class="sm">${x.prim.map(m => `<li>${MUSCLES[m][0]}${x.focus.includes(m) ? " <b>(ciblé)</b>" : ""}</li>`).join("")}</ul>
       ${x.sec.length ? `<h3>Secondaires</h3><ul class="sm">${x.sec.map(m => `<li>${MUSCLES[m][0]}</li>`).join("")}</ul>` : ""}
       ${x.note ? `<div class="reco">${esc(x.note)}</div>` : ""}`;
@@ -1450,7 +1790,7 @@ function exCard(w, e, i) {
   const dr = S.draft[i] || (S.draft[i] = { w: (e.sets || []).filter(s => !s.wu).slice(-1)[0]?.w ?? sug.w ?? "", r: "", rir: 2, wu: false });
   const alts = ALTERNATIVES[e.id] || [];
   const prev = (e.sets || []);
-  return `<div class="card"><div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none" data-act="showMusc" data-v="${e.id}">${muscleSVG(x.prim, x.sec, x.focus, true)}</div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
+  return `<div class="card"><div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
     <div class="row" style="gap:2px">${alts.length ? `<button class="ghost small" data-act="swapEx" data-i="${i}" title="Variante">⇄</button>` : ""}<button class="ghost small" data-act="exUp" data-i="${i}" title="Monter">↑</button><button class="danger small" data-act="rmEx" data-i="${i}" title="Retirer">✕</button></div></div>
     <div class="row sm" style="margin:6px 0;gap:6px;flex-wrap:wrap"><span class="mut">Fourchette :</span><select data-act="range" data-v="${e.id}" style="width:auto;padding:4px 6px">${[[6, 8], [6, 10], [8, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) => `<option value="${a}-${b}" ${a === lo && b === hi ? "selected" : ""}>${a}-${b} reps</option>`).join("")}</select></div>
     ${last ? `<div class="xs mut">Dernière fois (${fmtDay(dateKey(new Date(last.date)))}) : ${last.sets.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div>` : ""}
@@ -1459,7 +1799,7 @@ function exCard(w, e, i) {
     ${prev.map((s, j) => { const rest = j > 0 ? s.t - prev[j - 1].t : null; const n = prev.slice(0, j + 1).filter(z => !z.wu).length;
       return `<div class="set ${s.wu ? "wu" : ""}"><span class="mut">${s.wu ? "É" : n}</span><span class="b">${s.w}</span><span class="b">${s.r}</span><span class="xs">${s.rir != null && !s.wu ? "RIR " + s.rir : ""}${rest ? ` · ${fmtDur(rest)}` : ""}</span><button class="danger small" data-act="delSet" data-i="${i}" data-j="${j}">✕</button></div>`; }).join("")}
     <div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">
-      <div class="row"><div class="grow"><div class="xs mut">Charge (kg)</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="w" data-v="-${profile().increment}">−</button><input type="number" inputmode="decimal" value="${dr.w}" data-input="draft" data-i="${i}" data-k="w"><button data-act="dStep" data-i="${i}" data-k="w" data-v="${profile().increment}">+</button></div></div>
+      <div class="row"><div class="grow"><div class="xs mut">Charge (kg)</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="w" data-v="-${profile().increment}">−</button><input type="number" inputmode="decimal" value="${dr.w}" data-input="draft" data-i="${i}" data-k="w"><button data-act="dStep" data-i="${i}" data-k="w" data-v="${profile().increment}">+</button></div>${BARBELL.has(e.id) && dr.w ? plateHTML(+dr.w) : ""}</div>
       <div class="grow"><div class="xs mut">Reps</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="r" data-v="-1">−</button><input type="number" inputmode="numeric" value="${dr.r}" data-input="draft" data-i="${i}" data-k="r" placeholder="${hi}"><button data-act="dStep" data-i="${i}" data-k="r" data-v="1">+</button></div></div></div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="xs mut">RIR (reps en réserve)</span>${[0, 1, 2, 3, 4].map(v => `<button class="chip ${dr.rir === v && !dr.wu ? "on" : ""}" data-act="dRir" data-i="${i}" data-v="${v}">${v === 4 ? "4+" : v}</button>`).join("")}<button class="chip ${dr.wu ? "on" : ""}" data-act="dWu" data-i="${i}">Échauff.</button></div>
       <button style="width:100%;margin-top:8px" data-act="logSet" data-i="${i}">Valider la série</button></div></div>`;
@@ -1590,7 +1930,7 @@ function viewProfile() {
       ${f("manualKcal", "Kcal manuelles (vide = auto)", p.manualKcal, "10")}${f("increment", "Cran de charge (kg)", p.increment, "0.5")}</div>
       <button style="margin-top:10px" data-act="saveProfile">Enregistrer</button>
       <p class="xs mut">Cibles actuelles : ${T.kcal} kcal · P ${T.p} g · G ${T.c} g · L ${T.f} g. Le poids utilisé est ta dernière pesée (${r1(T.weight)} kg).</p></div>
-    <div class="card"><h2>Apparence</h2><div class="chips">${[["clair", "☀️ Clair"], ["sombre", "🌙 Sombre"], ["auto", "Auto (comme le Mac/iPhone)"]].map(([k, l]) => `<button class="chip ${themePref() === k ? "on" : ""}" data-act="setTheme" data-v="${k}">${l}</button>`).join("")}</div></div>
+    <div class="card"><h2>Apparence</h2><div class="chips">${[["clair", "☀️ Clair"], ["sombre", "🌙 Sombre"], ["auto", "Auto (comme le Mac/iPhone)"]].map(([k, l]) => `<button class="chip ${themePref() === k ? "on" : ""}" data-act="setTheme" data-v="${k}">${l}</button>`).join("")}</div><div class="row between" style="margin-top:10px"><span class="sm">Inverser le sens de rotation à 2 doigts (3D)</span><button class="chip ${localStorage.getItem("muscu_inv3d") === "1" ? "on" : ""}" data-act="inv3d">${localStorage.getItem("muscu_inv3d") === "1" ? "Inversé" : "Normal"}</button></div></div>
     ${syncCardHTML()}
     ${typeof SP !== "undefined" && SP.clientId() ? `<div class="card"><h2>Spotify</h2>${SP.tok() ? `<p class="sm">Connecté ✓ (contrôle depuis l'onglet Séance)</p><button class="small sec" data-act="spLogout">Déconnecter</button>` : `<button class="small" style="background:#1db954" data-act="spLogin">Connecter Spotify</button>`}</div>` : ""}
     <div class="card"><h2>Données</h2><p class="xs mut">${Store.mode === "cloud" ? "Synchronisées en ligne entre ton iPhone et ton Mac." : "Stockées dans ce navigateur (mode aperçu)."} ${Store.ids("d-").length} jours · ${Store.ids("w-").length} séances · ${Object.keys(myFoods()).length} aliments perso.</p>
@@ -1709,7 +2049,7 @@ function machineSheet(mid) {
     const m = GYM_MACHINES.find(x => x.id === mid); if (!m) return "";
     return `<div class="row between"><h2>${esc(m.label)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
       ${m.ex.length ? `<p class="sm mut">Quel exercice fais-tu sur cette machine ?</p>` : `<p class="sm">Zone cardio (tapis, vélos, rameurs). Note ton cardio dans Aujourd'hui → « Sport en plus ».</p>`}
-      ${m.ex.map(id => { const x = getEx(id); return `<div class="entry" data-act="gymPickEx" data-v="${id}"><div style="width:96px;flex:none">${muscleSVG(x.prim, x.sec, x.focus, true)}</div><div class="grow"><div class="b">${esc(x.name)}</div><div class="xs mut">${x.focus.map(f => MUSCLES[f][0]).join(", ")}</div></div><div class="mut">›</div></div>`; }).join("")}`;
+      ${m.ex.map(id => { const x = getEx(id); return `<div class="entry" data-act="gymPickEx" data-v="${id}"><div style="width:96px;flex:none">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div class="grow"><div class="b">${esc(x.name)}</div><div class="xs mut">${x.focus.map(f => MUSCLES[f][0]).join(", ")}</div></div><div class="mut">›</div></div>`; }).join("")}`;
   };
 }
 function gymExSheet(exId) {
@@ -1790,7 +2130,8 @@ function recoveryCardHTML() {
   const P = program(); const score = n => { const ids = (P[n]?.ex || []).flatMap(id => getEx(id).prim); return ids.length ? ids.reduce((s, m) => s + rec[m], 0) / ids.length : null; };
   const best = Object.keys(P).map(n => [n, score(n)]).filter(x => x[1] != null).sort((a, b) => b[1] - a[1])[0];
   return `<div class="card"><h2>Récupération des muscles</h2>
-    <div style="max-width:320px;margin:auto">${muscleSVG([], [], [], true, colors)}</div>
+    <div style="max-width:300px;margin:auto;cursor:pointer" data-act="bodyRecovery">${bodyThumbHTML({ colors })}</div>
+    <div class="row" style="justify-content:center;gap:8px;margin-top:6px"><button class="sec small" data-act="bodyRecovery">Voir en 3D</button><button class="sec small" data-act="bodyAtlas">Anatomie 3D</button></div>
     <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>
     ${tired.length ? `<p class="sm">À laisser reposer : <b>${tired.map(([g, r]) => `${g} (${Math.round(r * 100)} %)`).join(", ")}</b></p>` : `<p class="sm">Tous tes muscles sont récupérés 💪</p>`}
     ${best ? `<div class="reco good sm">Séance conseillée aujourd'hui : <b>${esc(best[0])}</b> (muscles récupérés à ${Math.round(best[1] * 100)} %)</div>` : ""}
@@ -1817,6 +2158,64 @@ const RECIPE_ACT = {
   copyNav: el => { const k = addDays(S.copyFrom || addDays(S.day, -1), +el.dataset.v); if (k > todayKey()) return; S.copyFrom = k; S.copySel = null; renderSheet(); },
   copyGo: () => { const es = (day(S.copyFrom).entries || []).filter((e, i) => S.copySel[i]); updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) copié(s)`); closeSheet(); }
 };
+
+// ===================== MINUTEUR DE REPOS + ÉCRAN ALLUMÉ =====================
+// Après chaque série validée : compte à rebours flottant (durée selon l'exercice, réglable et mémorisée),
+// vibration + bip à la fin. Pendant une séance, l'écran reste allumé (Wake Lock).
+const COMPOUND = new Set(["squat", "bench_press", "rdl", "leg_press", "hack_squat", "hip_thrust", "pull_up", "lat_pulldown_pron", "row_neutral_close", "row_pron_wide", "incline_press_machine", "chest_press", "db_incline_press", "shoulder_press", "dips", "bulgarian", "db_row"]);
+const REST = { end: 0, total: 0, exId: null, iv: null };
+function restDefault(exId) {
+  try { const m = JSON.parse(localStorage.getItem("muscu_rest") || "{}"); if (m[exId]) return m[exId]; } catch (e) {}
+  return COMPOUND.has(exId) ? 150 : 90;
+}
+function restSave(exId, sec) { try { const m = JSON.parse(localStorage.getItem("muscu_rest") || "{}"); m[exId] = sec; localStorage.setItem("muscu_rest", JSON.stringify(m)); } catch (e) {} }
+function restStart(exId, warmup) {
+  const sec = warmup ? 60 : restDefault(exId);
+  REST.exId = exId; REST.total = sec; REST.end = Date.now() + sec * 1000; REST.done = false; restTick();
+  clearInterval(REST.iv); REST.iv = setInterval(restTick, 250);
+}
+function restStop() { clearInterval(REST.iv); REST.iv = null; REST.end = 0; const el = document.getElementById("restBar"); if (el) el.remove(); }
+function restBeep() {
+  try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {}
+  try { const A = window.AudioContext || window.webkitAudioContext; const ctx = REST.ctx || (REST.ctx = new A());
+    [0, 0.25].forEach(t => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + t); g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.18);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.2); }); } catch (e) {}
+}
+function restTick() {
+  if (!REST.end) return; let el = document.getElementById("restBar");
+  if (!el) { el = document.createElement("div"); el.id = "restBar"; el.className = "restbar"; document.body.appendChild(el);
+    el.addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (!b) return; const k = b.dataset.r;
+      if (k === "x") return restStop();
+      const d = +k; REST.end += d * 1000; REST.total = Math.max(15, REST.total + d); if (REST.exId) restSave(REST.exId, Math.max(15, Math.round((restDefault(REST.exId) + d) / 15) * 15)); restTick(); }); }
+  const left = Math.max(0, Math.round((REST.end - Date.now()) / 1000));
+  if (left === 0 && !REST.done) { REST.done = true; restBeep(); setTimeout(restStop, 4000); }
+  const pct = REST.total ? Math.min(100, 100 * (1 - left / REST.total)) : 100;
+  el.classList.toggle("over", left === 0);
+  el.innerHTML = `<div class="restfill" style="width:${pct}%"></div><div class="restin"><span>${left === 0 ? "C'est reparti 💪" : "Repos"}</span><b>${fmtDur(left * 1000)}</b>
+    <button data-r="-15">−15 s</button><button data-r="15">+15 s</button><button data-r="x" aria-label="Fermer">✕</button></div>`;
+}
+// écran allumé pendant la séance
+let WAKE = null;
+async function wakeSync() {
+  const want = !!(typeof liveWorkout === "function" && liveWorkout()) && document.visibilityState === "visible";
+  try {
+    if (want && !WAKE && navigator.wakeLock) { WAKE = await navigator.wakeLock.request("screen"); WAKE.addEventListener("release", () => { WAKE = null; }); }
+    else if (!want && WAKE) { await WAKE.release(); WAKE = null; }
+  } catch (e) { WAKE = null; }
+}
+document.addEventListener("visibilitychange", () => { wakeSync(); if (REST.end) restTick(); });
+
+// ===================== CALCULATEUR DE DISQUES =====================
+function platesFor(total, bar = 20) {
+  const per = (total - bar) / 2; if (per < 0) return null; const P = [25, 20, 15, 10, 5, 2.5, 1.25]; let r = per; const out = [];
+  P.forEach(p => { while (r >= p - 1e-9) { out.push(p); r = r1(r - p); } }); return { per, out, rest: r };
+}
+function plateHTML(total) {
+  const x = platesFor(total); if (!x) return "";
+  return `<div class="xs mut" style="margin-top:4px">🏋️ Par côté (barre 20 kg) : <b>${x.out.length ? x.out.join(" + ") : "rien"}</b>${x.rest ? ` <span class="mut">(+${x.rest} kg impossible)</span>` : ""}</div>`;
+}
+const BARBELL = new Set(["squat", "bench_press", "rdl", "hip_thrust", "shrug"]);
 
 // ===================== ACTIONS =====================
 function updDay(fn) { const d = clone(day(S.day)); d.entries = d.entries || []; d.acts = d.acts || []; fn(d); saveDay(S.day, d); }
@@ -1916,7 +2315,7 @@ const ACT = {
     Store.set(id, { live: true, name: n, start: Date.now(), ex: P.ex.map(e => ({ id: e, sets: [] })), warm: {}, notes: "" }); scheduleTimer(); },
   toggleWarm: () => { S.warmOpen = !S.warmOpen; render(); },
   warmChk: el => updW(w => { w.warm = w.warm || {}; w.warm[el.dataset.v] = el.checked; }),
-  showMusc: el => openSheet(exMuscleSheet(el.dataset.v)),
+  showMusc: el => { S.bodyEx = el.dataset.v; openSheet(exMuscleSheet(el.dataset.v)); },
   dStep: el => { const i = +el.dataset.i, k = el.dataset.k; const dr = S.draft[i]; const inp = $(`input[data-input=draft][data-i="${i}"][data-k="${k}"]`); let cur = parseFloat(inp?.value); if (isNaN(cur)) cur = k === "r" ? repRange(liveWorkout().ex[i].id)[1] - +el.dataset.v : 0; dr[k] = Math.max(0, r1(cur + +el.dataset.v)); render(); },
   dRir: el => { const dr = S.draft[+el.dataset.i]; dr.rir = +el.dataset.v; dr.wu = false; render(); },
   dWu: el => { const dr = S.draft[+el.dataset.i]; dr.wu = !dr.wu; render(); },
@@ -1924,7 +2323,7 @@ const ACT = {
     const i = +el.dataset.i; const dr = S.draft[i];
     const wv = parseFloat($(`input[data-input=draft][data-i="${i}"][data-k="w"]`).value), rv = parseInt($(`input[data-input=draft][data-i="${i}"][data-k="r"]`).value);
     if (!(rv > 0) || isNaN(wv)) { toast("Indique la charge et les reps"); return; }
-    dr.w = wv; dr.r = "";
+    dr.w = wv; dr.r = ""; restStart(liveWorkout().ex[i].id, !!dr.wu);
     updW(w => w.ex[i].sets.push({ w: wv, r: rv, rir: dr.wu ? null : dr.rir, wu: !!dr.wu, t: Date.now() }));
     if (dr.wu) dr.wu = false;
     const h = exerciseHistory(liveWorkout().ex[i].id, liveWorkout()._id); const best = h.flatMap(x => x.sets).reduce((b, s) => Math.max(b, e1rm(s)), 0);
@@ -1939,7 +2338,7 @@ const ACT = {
   createEx: () => { const name = $("#newExName").value.trim(); if (!name) return; const m = $("#newExMuscle").value; const id = "c_" + uid();
     const doc = clone(Store.get("program", {})); doc.customEx = doc.customEx || {}; doc.customEx[id] = { id, name, cat: "Mes exercices", prim: [m], sec: [], focus: [m] }; Store.set("program", doc);
     updW(w => w.ex.push({ id, sets: [] })); closeSheet(); },
-  finishW: () => { const notes = $("#wNotes")?.value || ""; updW(w => { w.live = false; w.end = Date.now(); w.notes = notes; w.ex = w.ex.filter(e => (e.sets || []).length); }); clearInterval(window._wt); S.draft = {}; toast("Séance enregistrée 💪"); },
+  finishW: () => { const notes = $("#wNotes")?.value || ""; updW(w => { w.live = false; w.end = Date.now(); w.notes = notes; w.ex = w.ex.filter(e => (e.sets || []).length); }); clearInterval(window._wt); S.draft = {}; restStop(); toast("Séance enregistrée 💪"); },
   cancelW: () => openSheet(() => `<h2>Abandonner la séance ?</h2><p class="sm mut">Les séries notées seront supprimées.</p><div class="row"><button class="sec grow" data-act="closeSheet">Non</button><button class="grow" style="background:var(--red)" data-act="cancelWok">Oui, supprimer</button></div>`),
   cancelWok: () => { const w = liveWorkout(); if (w) Store.del(w._id); S.draft = {}; closeSheet(); },
   openHist: el => openSheet(histSheet(el.dataset.v)),
@@ -1984,6 +2383,7 @@ const ACT = {
     <p class="xs mut">Le matin, à jeun, après les toilettes : c'est le plus fiable.</p><input id="qW" type="number" step="0.1" inputmode="decimal" value="${day(todayKey()).weight || ""}" placeholder="ex. 80.2" style="font-size:22px;text-align:center">
     <button style="width:100%;margin-top:10px" data-act="quickWeightGo">Enregistrer</button>`),
   quickWeightGo: () => { const w = parseFloat($("#qW").value); if (!(w > 30)) return; const k = todayKey(); const d = clone(day(k)); d.entries = d.entries || []; d.acts = d.acts || []; d.weight = w; saveDay(k, d); toast(`Poids enregistré : ${w} kg`); closeSheet(); },
+  inv3d: () => { try { localStorage.setItem("muscu_inv3d", localStorage.getItem("muscu_inv3d") === "1" ? "0" : "1"); } catch (e) {} render(); },
   setTheme: el => { try { localStorage.setItem("muscu_theme", el.dataset.v); } catch (e) {} applyTheme(); Object.values(V3.scenes).forEach(s => s.renderer.dispose()); V3.scenes = {}; render(); },
   onbHide: () => { try { localStorage.setItem("muscu_onb_hide", "1"); } catch (e) {} render(); },
   // ----- coach
@@ -2112,10 +2512,10 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT);
+Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
-Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); });
+Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
 if (typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); }
 
 </script></body></html>
