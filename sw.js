@@ -1,4 +1,4 @@
-const C = "muscu-1794966033";
+const C = "muscu-1794966062";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "vendor/three.min.js", "vendor/OrbitControls.js", "vendor/chart.umd.min.js", "vendor/zxing.min.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES.map(f => new Request(f, { cache: "reload" })))).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C && !k.startsWith("muscu-anatomy")).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

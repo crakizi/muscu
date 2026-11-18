@@ -102,7 +102,7 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794966033";
+const BUILD_VERSION = "1794966062";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -962,7 +962,7 @@ function mount3D(key, holder, build) {
   if (!S3.tip) { S3.tip = document.createElement("div"); S3.tip.style.cssText = "position:absolute;pointer-events:none;background:rgba(17,24,39,.88);color:#fff;font:600 13px -apple-system,system-ui;padding:6px 10px;border-radius:10px;display:none;white-space:nowrap;z-index:2"; }
   holder.appendChild(S3.tip);
   if (key !== "body" && !holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
-    const hint = document.createElement("div"); hint.style.cssText = "position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
+    const hint = document.createElement("div"); hint.style.cssText = "pointer-events:none;position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
     hint.textContent = key === "gym" ? "Tourner 2 doigts = pivoter · pincer = zoom · glisser = se déplacer · double-clic = aller à la machine" : "Glisser = tourner · pincer = zoom"; holder.appendChild(hint); }
   if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
