@@ -93,13 +93,16 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .restbar .restin span{font-size:13px;opacity:.85}.restbar .restin b{font-size:22px;font-variant-numeric:tabular-nums;margin-right:auto}
 .restbar button{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:10px;padding:7px 10px;font-size:13px}
 .bthumb{border-radius:10px}
+.gh{font-size:11px;margin-left:4px}.gh.up{color:#16a34a}.gh.down{color:#dc2626}.gh.eq{color:var(--mut)}
+.ghostline{background:rgba(124,58,237,.08);color:var(--txt);border-radius:10px;padding:6px 8px;margin-top:6px}
+.pill{font-size:10px;background:#dcfce7;color:#166534;border-radius:8px;padding:1px 6px;margin-left:4px;font-weight:600}
 
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1794963911";
+const BUILD_VERSION = "1794966033";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -269,6 +272,80 @@ function portionsFor(f) {
   const seen = new Set(); return out.filter(([l, g]) => { const k = l + g; if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
+// ===================== FICHES : rôle des muscles + consignes d'exécution =====================
+const MUSCLE_INFO = {
+  delt_ant: "Lève le bras vers l'avant (flexion de l'épaule). Très sollicité par tous les développés : rarement besoin d'isolation.",
+  delt_lat: "Écarte le bras sur le côté (abduction). C'est lui qui donne la largeur des épaules : élévations latérales, surtout à la poulie.",
+  delt_post: "Tire le bras vers l'arrière (extension horizontale). Posture et épaules « 3D » : oiseau, face pull.",
+  rot_cuff: "Stabilise la tête de l'humérus et fait tourner le bras. Santé de l'épaule : rotations externes, face pull.",
+  pec_up: "Faisceau du haut : rapproche le bras vers le haut et l'intérieur. Accentué par le développé incliné (≈ 30°).",
+  pec_mid: "Faisceaux sternal et abdominal : rapprochent le bras vers l'avant et le bas. Développé couché, dips, écarté.",
+  biceps_long: "Chef long (extérieur) : fléchit le coude et supine l'avant-bras. Étiré quand le coude est derrière le corps (curl incliné, Bayesian).",
+  biceps_short: "Chef court (intérieur) : fléchit le coude. Plus sollicité avec le coude devant le corps (curl pupitre).",
+  brachialis: "Sous le biceps : fléchisseur pur du coude, quelle que soit la prise. Prise marteau ou pronation.",
+  brachioradialis: "Sur l'avant-bras : fléchit le coude en prise neutre. Curl marteau.",
+  forearm: "Fléchisseurs du poignet et des doigts : la poigne. Travaillés par tous les tirages et le soulevé de terre.",
+  triceps_long: "Seul chef qui croise l'épaule : étiré bras au-dessus de la tête. Extensions au-dessus de la tête (Maeo 2023).",
+  triceps_latmed: "Chefs latéral et médial : étendent le coude, bras le long du corps. Pushdown, dips.",
+  lats: "Ramène le bras le long du corps (adduction, extension). La largeur du dos en V : tirage vertical, tractions.",
+  teres: "Grand rond : aide le grand dorsal à ramener le bras. Travaillé avec lui.",
+  traps_up: "Haut des trapèzes : élève les épaules. Shrugs, élévations latérales hautes.",
+  traps_mid: "Trapèze moyen + rhomboïdes : rapprochent les omoplates. L'épaisseur du dos : rowing, coudes ouverts.",
+  traps_low: "Bas des trapèzes : abaisse et stabilise les omoplates. Tirages, Y-raises.",
+  erectors: "Le long de la colonne : la gardent droite. Soulevé de terre, extensions lombaires.",
+  abs: "Grand droit : enroule le buste (flexion du tronc). Crunch à la poulie, relevés de jambes.",
+  obliques: "Rotation et inclinaison du tronc. Gainage, rotations à la poulie.",
+  glutes_max: "Le plus gros muscle du corps : étend la hanche. Hip thrust, squat profond, fentes, soulevé roumain.",
+  glutes_med: "Sur le côté de la hanche : stabilise le bassin, écarte la jambe. Machine abducteurs, fentes.",
+  quads: "4 chefs à l'avant de la cuisse : étendent le genou (le droit fémoral fléchit aussi la hanche). Squat, presse, leg extension.",
+  hamstrings: "Arrière de la cuisse : fléchissent le genou et étendent la hanche. Leg curl assis (meilleur étirement, Maeo 2021) + soulevé roumain.",
+  adductors: "Intérieur de la cuisse : rapprochent les jambes et aident à l'extension de hanche en squat profond.",
+  calves: "Gastrocnémiens (jambe tendue) + soléaire (genou plié) : poussent sur la pointe du pied. Mollets debout et assis."
+};
+// consignes clés (3 points) par exercice
+const EX_CUES = {
+  lat_raise_cable: ["Poulie basse à hauteur de la main, câble qui passe devant ou derrière le corps", "Monte le coude sur le côté jusqu'à l'horizontale, petit doigt pas plus haut que le pouce", "Descente lente (2-3 s) : c'est en bas que la poulie fait la différence"],
+  lat_raise_db: ["Buste légèrement penché vers l'avant, coudes très légèrement fléchis", "Pense « écarter » plutôt que « monter », arrête-toi à l'horizontale", "Pas d'élan : si tu balances, baisse la charge"],
+  shoulder_press: ["Dos collé au dossier, coudes un peu devant le corps (pas complètement sur les côtés)", "Descends jusqu'au niveau du menton", "Pousse en ligne droite sans cambrer"],
+  face_pull: ["Poulie haute, corde, tire vers le front", "Écarte les mains en fin de mouvement, coudes hauts", "Serre les omoplates 1 s"],
+  rear_delt_fly: ["Poitrine contre le dossier, bras presque tendus", "Ouvre en arc de cercle, sans serrer les omoplates à fond (sinon ce sont les trapèzes)", "Unilatéral : tu peux aller plus loin en amplitude"],
+  tri_oh_cable: ["Dos à la poulie haute, coudes vers le plafond, fixes", "Descends les mains derrière la tête au maximum : c'est l'étirement du chef long qui compte", "Tends complètement sans écarter les coudes"],
+  tri_push_uni: ["Coude collé au corps, épaule basse", "Tends complètement en bas, 1 s de contraction", "Remonte jusqu'à ce que l'avant-bras dépasse l'horizontale"],
+  tri_push_rope: ["Coudes collés, buste légèrement penché", "Écarte la corde en bas", "Ne laisse pas les épaules rouler vers l'avant"],
+  dips: ["Buste légèrement penché (pecs) ou droit (triceps)", "Descends jusqu'à ce que l'épaule passe sous le coude, sans douleur", "Remonte sans verrouiller brutalement"],
+  hammer_rope: ["Prise neutre, coudes fixes le long du corps", "Monte jusqu'à l'épaule sans avancer les coudes", "Descente contrôlée jusqu'à l'extension complète"],
+  bayesian_curl: ["Dos à la poulie basse, un pas devant, bras tiré derrière le corps", "Fléchis le coude sans le ramener vers l'avant", "Étirement complet en bas : c'est l'intérêt de l'exercice"],
+  incline_db_curl: ["Banc à 45-60°, bras pendants derrière le corps", "Supine (tourne le poignet) en montant", "Ne décolle pas les épaules du dossier"],
+  preacher_curl: ["Aisselles collées en haut du pupitre", "Descends presque jusqu'à l'extension (sans claquer le coude)", "Monte jusqu'à ce que la tension se relâche, pas plus"],
+  cable_crunch: ["À genoux, corde derrière la nuque, hanches fixes", "Enroule la colonne : rapproche les côtes du bassin", "Ce sont les abdos qui tirent, pas les bras"],
+  incline_press_machine: ["Siège réglé pour que les poignées arrivent au haut des pecs", "Omoplates serrées et basses", "Descends jusqu'à un bon étirement des pecs, pousse sans décoller les épaules"],
+  bench_press: ["Omoplates serrées, pieds ancrés, légère cambrure", "La barre touche le bas des pecs, coudes à ~45-70°", "Pousse en légère diagonale vers les épaules"],
+  db_incline_press: ["Banc à 30°, haltères au niveau du haut des pecs", "Descends profond, coudes sous les poignets", "Rapproche les haltères en haut sans les cogner"],
+  chest_press: ["Poignées au milieu des pecs", "Omoplates en arrière tout le long", "Contrôle la descente, ne laisse pas la pile toucher"],
+  pec_fly_machine: ["Coudes légèrement fléchis et fixes", "Ouvre jusqu'à l'étirement des pecs sans forcer l'épaule", "Ferme en pensant « serrer les bras »"],
+  lat_pulldown_pron: ["Prise un peu plus large que les épaules, cuisses bloquées", "Tire la barre vers le haut des pecs en baissant les coudes", "Remonte jusqu'à l'étirement complet du dos"],
+  pull_up: ["Pars bras tendus, épaules engagées", "Monte jusqu'au menton au-dessus de la barre, coudes vers les hanches", "Descente contrôlée, pas de balancement"],
+  row_neutral_close: ["Buste droit, poitrine sortie", "Tire les poignées vers le nombril, coudes le long du corps", "Laisse les omoplates s'écarter en avant au retour (étirement)"],
+  row_pron_wide: ["Prise large, coudes à ~70° du corps", "Tire vers le bas des pecs, serre les omoplates", "Accent sur le haut du dos et l'arrière d'épaule"],
+  db_row: ["Main et genou sur le banc, dos plat", "Tire l'haltère vers la hanche", "Étirement complet en bas"],
+  shrug: ["Bras tendus, épaules qui montent vers les oreilles", "Pause 1 s en haut", "Pas de rotation des épaules"],
+  squat: ["Pieds largeur d'épaules, pointes un peu ouvertes", "Descends au moins à la parallèle, genoux dans l'axe des pieds", "Dos neutre, pousse le sol en remontant"],
+  leg_press: ["Pieds au milieu du plateau, largeur d'épaules", "Descends tant que le bas du dos reste collé au dossier", "Ne verrouille pas les genoux en haut"],
+  hack_squat: ["Dos collé, pieds un peu en avant", "Descends profond (cuisses sous la parallèle si possible)", "Pousse dans tout le pied"],
+  leg_ext: ["Genou aligné avec l'axe de la machine", "Tends complètement, 1 s en haut", "Descente lente : les quadriceps travaillent aussi en freinant"],
+  bulgarian: ["Pied arrière sur le banc, pied avant assez loin", "Descends jusqu'à ce que le genou arrière frôle le sol", "Buste penché = plus de fessiers ; droit = plus de quadriceps"],
+  lunges: ["Grand pas, buste droit", "Genou arrière vers le sol", "Pousse avec le talon avant"],
+  rdl: ["Genoux légèrement fléchis et fixes", "Recule les hanches, barre collée aux cuisses, dos plat", "Descends jusqu'à l'étirement des ischios (mi-tibias), remonte en serrant les fessiers"],
+  seated_leg_curl: ["Genou aligné avec l'axe, cuisse bien bloquée", "Fléchis complètement, pause 1 s", "Le leg curl ASSIS étire plus les ischios : meilleure hypertrophie que couché (Maeo 2021)"],
+  lying_leg_curl: ["Hanches collées au banc", "Ramène les talons vers les fessiers", "Descente contrôlée jusqu'à presque l'extension"],
+  hip_thrust: ["Haut du dos sur le banc, barre sur le pli de la hanche (avec mousse)", "Monte jusqu'à l'alignement épaules-hanches-genoux, menton rentré", "Serre les fessiers 1 s en haut"],
+  adductor_machine: ["Dos collé, amplitude maximale confortable", "Ferme en contrôlant", "Ouvre lentement jusqu'à l'étirement"],
+  abductor_machine: ["Buste légèrement penché en avant = plus de moyen fessier", "Ouvre au maximum", "Retour lent"],
+  calf_standing: ["Pointe du pied sur la marche, talon dans le vide", "Descends au maximum (étirement 1-2 s en bas)", "Monte le plus haut possible, jambes tendues"],
+  calf_seated: ["Genoux à 90° : vise le soléaire", "Étirement complet en bas", "Pause 1 s en haut"],
+  back_ext: ["Hanches au bord du coussin", "Descends en gardant le dos plat (ou arrondi pour viser les lombaires)", "Remonte jusqu'à l'alignement, pas d'hyperextension"]
+};
+
 // ===================== OUTILS =====================
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -348,6 +425,7 @@ function targets() {
   let tdee = formula, source = "formule (Mifflin-St Jeor × activité)";
   if (ad.ok) { tdee = Math.min(formula * 1.25, Math.max(formula * 0.75, ad.tdee)); source = `adaptative : tes apports réels et l'évolution de ton poids sur ${ad.days} j`; }
   let kcal = tdee * (1 + GOALS[p.goal].factor);
+  if (ad.ok && p.autoAdjust !== false && typeof weeklyAdjust === "function") { const A = weeklyAdjust(tdee, GOALS[p.goal].factor, ad); kcal = A.kcal; source = `ajustée chaque lundi d'après tes vraies données (${ad.days} j)`; }
   if (p.manualKcal) { kcal = +p.manualKcal; source = "valeur manuelle"; }
   const prot = p.protPerKg * w, fat = Math.max(p.fatPerKg * w, kcal * 0.2 / 9);
   const carb = Math.max(0, (kcal - prot * 4 - fat * 9) / 4);
@@ -395,7 +473,7 @@ const mealLabel = m => m || "Sans repas";
 const MEALS = ["Petit-déj", "Déjeuner", "Collation", "Dîner"];
 
 // ===================== SÉANCES =====================
-const program = () => Object.assign({}, clone(PROGRAM_DEFAULT), Store.get("program", {}).templates || {});
+const program = () => { const d = Store.get("program", {}); return d.only ? Object.assign({}, clone(d.templates || {}), { "Séance libre": { warmup: false, ex: [] } }) : Object.assign({}, clone(PROGRAM_DEFAULT), d.templates || {}); };
 const customEx = () => Store.get("program", {}).customEx || {};
 const getEx = id => EX[id] || customEx()[id] || { id, name: id, cat: "Autre", prim: [], sec: [], focus: [] };
 const repRange = id => (Store.get("program", {}).ranges || {})[id] || [6, 8];
@@ -823,9 +901,18 @@ function makeScene(key, opts) {
     }
     cam.position.copy(t).add(off); controls.update();
   }, { passive: false });
-  // Safari : geste « pincer » natif du trackpad
-  let gScale = 1; renderer.domElement.addEventListener("gesturestart", e => { e.preventDefault(); gScale = 1; });
-  renderer.domElement.addEventListener("gesturechange", e => { e.preventDefault(); const off = cam.position.clone().sub(controls.target); off.setLength(Math.max(controls.minDistance, Math.min(controls.maxDistance, off.length() * gScale / e.scale))); gScale = e.scale; cam.position.copy(controls.target).add(off); controls.update(); });
+  // Safari (trackpad Mac / iPhone) : pincer = zoom, TOURNER les 2 doigts = faire pivoter la salle dans le même sens que les doigts
+  let gScale = 1, gRot = 0; renderer.domElement.addEventListener("gesturestart", e => { e.preventDefault(); gScale = 1; gRot = 0; });
+  renderer.domElement.addEventListener("gesturechange", e => { e.preventDefault(); S3.anim = null;
+    const off = cam.position.clone().sub(controls.target); off.setLength(Math.max(controls.minDistance, Math.min(controls.maxDistance, off.length() * gScale / e.scale))); gScale = e.scale; cam.position.copy(controls.target).add(off);
+    const dr = (e.rotation || 0) - gRot; gRot = e.rotation || 0; if (dr) rotateView(S3, dr * Math.PI / 180); controls.update(); });
+  // écran tactile : rotation des 2 doigts (twist)
+  let tAng = null; const ang2 = t => Math.atan2(t[1].clientY - t[0].clientY, t[1].clientX - t[0].clientX);
+  renderer.domElement.addEventListener("touchstart", e => { tAng = e.touches.length === 2 ? ang2(e.touches) : null; }, { passive: true });
+  renderer.domElement.addEventListener("touchmove", e => { if (e.touches.length !== 2 || tAng == null || typeof GestureEvent !== "undefined") return; const a = ang2(e.touches); let d = a - tAng; tAng = a;
+    if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI; rotateView(S3, d); controls.update(); }, { passive: true });
+  renderer.domElement.addEventListener("touchend", () => { tAng = null; }, { passive: true });
+  if (THREE.TOUCH) controls.touches = { ONE: opts.map ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
   if (opts.bounds) controls.addEventListener("change", () => { const b = opts.bounds, t = controls.target; const cx = Math.max(b[0], Math.min(b[1], t.x)), cz = Math.max(b[2], Math.min(b[3], t.z)); if (cx !== t.x || cz !== t.z) { const dx = cx - t.x, dz = cz - t.z; t.x = cx; t.z = cz; cam.position.x += dx; cam.position.z += dz; } });
   scene.add(new THREE.HemisphereLight(0xffffff, 0x444455, 0.75));
   const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(5, 9, 6); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
@@ -858,6 +945,12 @@ function makeScene(key, opts) {
   controls.addEventListener("change", wake); ["pointermove", "pointerdown", "wheel", "gesturechange"].forEach(ev => renderer.domElement.addEventListener(ev, wake, { passive: true }));
   V3.scenes[key] = S3; return S3;
 }
+// fait tourner le contenu de l'écran dans le sens des aiguilles d'une montre de « a » radians (a < 0 : sens inverse)
+function rotateView(S3, a) {
+  const t = S3.controls.target, off = S3.cam.position.clone().sub(t);
+  off.applyAxisAngle(new THREE.Vector3(0, 1, 0), (localStorage.getItem("muscu_inv3d") === "1" ? -1 : 1) * ROT_SIGN * a); S3.cam.position.copy(t).add(off); S3.dirty = performance.now() + 400;
+}
+const ROT_SIGN = 1;
 // surbrillance : la couleur d'origine est mémorisée une seule fois, donc plusieurs clics rapides ne laissent plus de machine « bloquée » en couleur
 function tint(o, hex, k = 0.6) { Object.values(V3.scenes).forEach(s3 => s3.dirty = performance.now() + 300); o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
 function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, 0x2563eb, 0.75); }
@@ -870,7 +963,7 @@ function mount3D(key, holder, build) {
   holder.appendChild(S3.tip);
   if (key !== "body" && !holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
     const hint = document.createElement("div"); hint.style.cssText = "position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
-    hint.textContent = key === "gym" ? "Trackpad : 2 doigts = tourner · pincer = zoom · glisser = se déplacer · double-clic = aller à la machine" : "Trackpad : 2 doigts = tourner · pincer = zoom · glisser = tourner"; holder.appendChild(hint); }
+    hint.textContent = key === "gym" ? "Tourner 2 doigts = pivoter · pincer = zoom · glisser = se déplacer · double-clic = aller à la machine" : "Glisser = tourner · pincer = zoom"; holder.appendChild(hint); }
   if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
   S3.dirty = performance.now() + 1500; V3.active = S3; if (!V3.raf) loop3D(); return S3;
@@ -907,7 +1000,7 @@ function loop3D() {
   S3.controls.update();
   // rendu à la demande : on ne redessine que pendant un mouvement / une animation (économise la batterie)
   const now = performance.now(); if (!S3.tick && !S3.anim && now > (S3.dirty || 0)) return;
-  if (S3.tick) S3.tick(now / 1000); S3.renderer.render(S3.scene, S3.cam);
+  if (S3.tick) S3.tick(now / 1000); if (S3.key === "gym") gymLabels(S3); S3.renderer.render(S3.scene, S3.cam);
 }
 
 // ===================== SALLE DE SPORT 3D =====================
@@ -950,7 +1043,7 @@ const GYM_MACHINES = [
   { id: "rack2", label: "Rack 2 (squat / soulevé)", pos: [10.6, 0, 1.4], rot: -Math.PI / 2, build: "rack", ex: ["squat", "rdl", "bench_press"] },
   // fond gauche : tapis courbes, air bike, rameur
   { id: "sleds", label: "Tapis courbes + air bike", pos: [-5.4, 0, -6.9], rot: 0, build: "sleds", ex: [] },
-  { id: "cardio", label: "Zone cardio", pos: [7.6, 0, 5.2], rot: 0, build: "cardio", ex: [] }
+  { id: "cardio", label: "Tapis + escalier", pos: [6.8, 0, 5.4], rot: 0, build: "cardio", ex: [] }
 ];
 // ---------- matériaux communs ----------
 const GYMMAT = {};
@@ -1106,13 +1199,13 @@ function buildMachine(type) {
       { const x = 1.9; g.add(box(0.15, 0.6, 1.0, G.black, x, 0.35, 0)); const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.18, 24), G.black); fan.rotation.z = Math.PI / 2; fan.position.set(x, 0.55, -0.35); g.add(fan); g.add(rbox(0.25, 0.07, 0.3, G.black, x, 0.95, 0.25)); g.add(tubeAB([x - 0.25, 0.6, -0.1], [x - 0.25, 1.25, 0.05], 0.02, G.black), tubeAB([x + 0.25, 0.6, -0.1], [x + 0.25, 1.25, 0.05], 0.02, G.black)); }
       { const x = 3.0; g.add(box(0.08, 0.06, 2.4, G.black, x, 0.3, 0.2)); const fw = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.12, 24), G.black); fw.rotation.z = Math.PI / 2; fw.position.set(x, 0.55, -0.95); g.add(fw); g.add(rbox(0.25, 0.06, 0.28, G.black, x, 0.4, 0.4)); }
       break;
-    case "cardio": {
-      const glass = M(0xcfe8ff, { transparent: true, opacity: 0.16, roughness: 0.05 }); const wf = M(0xe9e6e0, { roughness: 0.9 });
-      g.add(box(7.2, 0.02, 5.4, wf, 0, 0.01, 0)); g.add(box(7.2, 2.7, 0.05, glass, 0, 1.35, -2.7)); g.add(box(0.05, 2.7, 5.4, glass, -3.6, 1.35, 0));
-      for (let i = 0; i < 6; i++) { const x = -2.9 + i * 1.12; g.add(rbox(0.75, 0.16, 1.8, G.black, x, 0.12, -1.4)); g.add(tubeAB([x - 0.33, 0.2, -2.15], [x - 0.33, 1.25, -2.0], 0.03, G.grey)); g.add(tubeAB([x + 0.33, 0.2, -2.15], [x + 0.33, 1.25, -2.0], 0.03, G.grey));
-        const sc = box(0.55, 0.36, 0.05, G.black, x, 1.42, -2.0); sc.rotation.x = -0.35; g.add(sc); const sc2 = box(0.48, 0.28, 0.01, M(0x3b82f6, { emissive: 0x1d4ed8, emissiveIntensity: 0.6 }), x, 1.43, -1.97); sc2.rotation.x = -0.35; g.add(sc2); }
-      for (let i = 0; i < 6; i++) { const x = -2.9 + i * 1.12; g.add(box(0.12, 0.65, 0.95, G.black, x, 0.35, 1.25)); g.add(rbox(0.26, 0.07, 0.3, G.black, x, 0.8, 1.55)); g.add(tubeAB([x - 0.22, 1.1, 0.85], [x + 0.22, 1.1, 0.85], 0.025, G.black));
-        const fw = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.07, 24), M(0xc98a2b, { metalness: 0.6 })); fw.rotation.z = Math.PI / 2; fw.position.set(x, 0.35, 0.82); g.add(fw); }
+    case "cardio": { // 1 tapis de course + 1 escalier (stepmill)
+      g.add(rbox(0.8, 0.18, 1.9, G.black, -0.7, 0.12, 0.1)); g.add(box(0.62, 0.02, 1.5, G.rubber, -0.7, 0.22, 0.15));
+      g.add(tubeAB([-1.05, 0.2, -0.8], [-1.05, 1.3, -0.65], 0.035, G.grey)); g.add(tubeAB([-0.35, 0.2, -0.8], [-0.35, 1.3, -0.65], 0.035, G.grey));
+      { const sc = box(0.7, 0.42, 0.06, G.black, -0.7, 1.45, -0.65); sc.rotation.x = -0.35; g.add(sc); const sc2 = box(0.6, 0.32, 0.01, M(0x3b82f6, { emissive: 0x1d4ed8, emissiveIntensity: 0.6 }), -0.7, 1.46, -0.61); sc2.rotation.x = -0.35; g.add(sc2); }
+      const sx = 0.8; g.add(box(0.8, 1.6, 0.6, G.black, sx, 0.8, -0.55)); for (let i = 0; i < 6; i++) { const st = box(0.6, 0.05, 0.28, G.grey, sx, 0.25 + i * 0.22, -0.2 + i * -0.06); st.rotation.x = 0.5; g.add(st); }
+      g.add(tubeAB([sx - 0.38, 0.4, 0.2], [sx - 0.38, 1.35, -0.3], 0.025, G.grey)); g.add(tubeAB([sx + 0.38, 0.4, 0.2], [sx + 0.38, 1.35, -0.3], 0.025, G.grey));
+      { const sc = box(0.5, 0.35, 0.06, G.black, sx, 1.85, -0.35); sc.rotation.x = -0.3; g.add(sc); }
       break; }
   }
   return g;
@@ -1126,7 +1219,7 @@ function parquetTex() { const c = document.createElement("canvas"); c.width = 51
   for (let r = 0; r < 16; r++) for (let k = 0; k < 4; k++) { const off = (r % 2) * 64; const v = 190 + Math.floor(Math.random() * 30); x.fillStyle = `rgb(${v},${v - 28},${v - 62})`; x.fillRect(k * 128 + off - 128, r * 32, 128, 32); x.fillRect(k * 128 + off, r * 32, 128, 32); x.strokeStyle = "rgba(90,60,30,.35)"; x.strokeRect(k * 128 + off, r * 32, 128, 32); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 2); t.encoding = THREE.sRGBEncoding; return t; }
 function buildGym() {
-  const S3 = makeScene("gym", { map: true, bounds: [-12, 12, -8, 8], cam: [9, 10, 13], target: [-1, 0, 0.5], minD: 2.5, maxD: 34, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
+  const S3 = makeScene("gym", { map: true, bounds: [-12, 12, -8, 8], cam: [1.5, 19, 15], target: [-0.5, 0, 0], minD: 2.5, maxD: 34, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
   const sc = S3.scene; const W = 24, D = 16; const G = gm();
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), M(0x1e2024, { roughness: 0.95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
   // plateforme parquet au premier plan (machines à disques)
@@ -1149,11 +1242,25 @@ function buildGym() {
   sc.add(new THREE.AmbientLight(0xffffff, 0.18));
   GYM_MACHINES.forEach(m => {
     const g = buildMachine(m.build); g.position.set(...m.pos); g.rotation.y = m.rot; g.userData.pick = m.id; g.userData.label = m.label + (m.ex.length ? " · " + m.ex.length + " exercice" + (m.ex.length > 1 ? "s" : "") : "");
-    const lab = labelSprite(m.label, 1); lab.position.set(0, m.build === "cardio" ? 3.1 : m.build === "overrig" ? 3.3 : 2.75, 0); g.add(lab);
+    const lab = labelSprite(m.label, 1); lab.position.set(0, m.build === "overrig" ? 3.3 : 2.75, 0); lab.visible = false; g.add(lab); g.userData.lab = lab;
     sc.add(g); S3.pickables.push(g);
   });
   return S3;
 }
+// étiquettes : affichées seulement quand on est près de la machine (ou survol / sélection / mode « tous les noms »),
+// et jamais deux étiquettes qui se chevauchent (la plus proche gagne)
+function gymLabels(S3) {
+  const mode = S.gymNames || "auto"; const cam = S3.cam; const shown = []; const W = S3.renderer.domElement.clientWidth || 800, H = S3.renderer.domElement.clientHeight || 600;
+  const items = S3.pickables.map(g => ({ g, lab: g.userData.lab, d: cam.position.distanceTo(g.getWorldPosition(new THREE.Vector3())) })).filter(x => x.lab).sort((a, b) => a.d - b.d);
+  items.forEach(({ g, lab, d }) => {
+    const force = g === S3.hover || g === S3.selected; let vis = force || mode === "all" || mode === "auto";
+    if (vis && !force) { const p = lab.getWorldPosition(new THREE.Vector3()).project(cam); const x = (p.x + 1) / 2 * W, y = (1 - p.y) / 2 * H; const w = lab.scale.x / 0.028 * 22, h = 26;
+      if (p.z > 1 || shown.some(r => Math.abs(r[0] - x) < (r[2] + w) / 2 && Math.abs(r[1] - y) < h)) vis = false; else shown.push([x, y, w]); }
+    lab.visible = vis;
+  });
+}
+function gymGoto(id) { const S3 = V3.scenes.gym; const m = GYM_MACHINES.find(x => x.id === id); if (!S3 || !m) return; const p = new THREE.Vector3(...m.pos);
+  const g = S3.pickables.find(x => x.userData.pick === id); if (g) select3D(S3, g); flyTo(S3, p, p.clone().add(new THREE.Vector3(Math.sin(m.rot) * 4.2, 3.2, Math.cos(m.rot) * 4.2))); }
 let ACT_PICK_MACHINE = () => {};
 
 // ===================== FRIGO 3D =====================
@@ -1427,8 +1534,8 @@ function bodyInfo(p) {
   const el = $("#bodyInfo"); if (!el) return;
   if (!p || p.g === "_b") { el.innerHTML = p ? "Os" : ""; return; }
   if (!MUSCLES[p.g]) { el.innerHTML = `<b>${esc(bodyPartLabel(p))}</b>`; return; }
-  const exs = Object.values(EX).filter(x => x.prim.includes(p.g)).slice(0, 6);
-  el.innerHTML = `<b>${esc(MUSCLES[p.g][0])}</b>${exs.length ? `<div class="xs mut" style="margin-top:3px">Exercices : ${exs.map(x => esc(x.name)).join(" · ")}</div>` : ""}`;
+  const ok = typeof gymExIds === "function" ? gymExIds() : null; const exs = Object.values(EX).filter(x => x.prim.includes(p.g) && (!ok || ok.has(x.id))).slice(0, 6);
+  el.innerHTML = `<b>${esc(MUSCLES[p.g][0])}</b>${MUSCLE_INFO[p.g] ? `<div class="xs" style="margin-top:3px">${esc(MUSCLE_INFO[p.g])}</div>` : ""}${exs.length ? `<div class="xs mut" style="margin-top:3px">Dans ta salle : ${exs.map(x => esc(x.name)).join(" · ")}</div>` : ""}`;
 }
 function bodyApplyToggles(S3) {
   const o = S3.opts || {}; const hl = new Set([...(o.prim || []), ...(o.sec || [])]);
@@ -1527,7 +1634,7 @@ let pendingRender = false;
 function render() {
   if (isEditing()) { pendingRender = true; return; }
   pendingRender = false;
-  const views = { today: viewToday, fridge: viewFridge, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
+  const views = { today: viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
   const sy = window.scrollY;
   $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge");
   $("#app").innerHTML = (views[S.tab] || viewToday)();
@@ -1560,7 +1667,7 @@ const ICONS = {
   profile: '<circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>'
 };
 function navHTML() {
-  const L = { today: "Aujourd'hui", fridge: "Frigo", workout: "Séance", progress: "Progrès", coach: "Coach" };
+  const L = { today: "Aujourd'hui", fridge: "Cuisine", workout: "Séance", progress: "Progrès", coach: "Coach" };
   const btn = k => `<button class="${S.tab === k ? "on" : ""}" data-act="tab" data-v="${k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${L[k]}${k === "workout" && liveWorkout() ? " •" : ""}</button>`;
   const keys = Object.keys(L);
   return keys.slice(0, 2).map(btn).join("") + `<button class="scanbtn" data-act="scanHub" aria-label="Scanner un aliment"><span><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 9v6M10 9v6M13 9v6M17 9v6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Scanner</button>` + keys.slice(2).map(btn).join("");
@@ -1748,7 +1855,11 @@ function exMuscleSheet(exId) {
       <div class="row xs" style="gap:12px;justify-content:center;margin:6px 0"><span><b style="color:#d90429">●</b> principal</span><span><b style="color:#ff8a00">●</b> secondaire</span><span>clignote = partie ciblée</span></div>
       <h3>Muscles principaux</h3><ul class="sm">${x.prim.map(m => `<li>${MUSCLES[m][0]}${x.focus.includes(m) ? " <b>(ciblé)</b>" : ""}</li>`).join("")}</ul>
       ${x.sec.length ? `<h3>Secondaires</h3><ul class="sm">${x.sec.map(m => `<li>${MUSCLES[m][0]}</li>`).join("")}</ul>` : ""}
-      ${x.note ? `<div class="reco">${esc(x.note)}</div>` : ""}`;
+      ${x.note ? `<div class="reco">${esc(x.note)}</div>` : ""}
+      ${EX_CUES[x.id] ? `<h3>Exécution</h3><ol class="sm">${EX_CUES[x.id].map(c => `<li>${esc(c)}</li>`).join("")}</ol>` : ""}
+      <h3>Rôle des muscles travaillés</h3>${x.prim.concat(x.sec).filter((m, k, a) => a.indexOf(m) === k && MUSCLE_INFO[m]).map(m => `<p class="sm" style="margin:4px 0"><b>${esc(MUSCLES[m][0])}</b> — ${esc(MUSCLE_INFO[m])}</p>`).join("")}
+      ${(() => { const alts = typeof replacementsFor === "function" ? replacementsFor(x.id).slice(0, 3) : []; return alts.length ? `<h3>Alternatives dans ta salle</h3><p class="sm">${alts.map(a => esc(getEx(a).name)).join(" · ")}</p>` : ""; })()}
+      ${(() => { const h = exerciseHistory(x.id)[0]; const ws = h ? (h.sets || []).filter(z => !z.wu) : []; if (!ws.length) return ""; return `<p class="xs mut">🔥 Ta dernière fois (${ws.map(z => z.w + "×" + z.r).join(", ")}) ≈ ${r0(exKcal(x.id, ws))} kcal (<a href="#" data-act="energyInfo" style="color:var(--acc)">calcul</a>)</p>`; })()}`;
   };
 }
 
@@ -1759,18 +1870,21 @@ function viewWorkout() {
   const toggle = spb + `<div class="chips" style="margin-bottom:10px"><button class="chip ${mode === "list" ? "on" : ""}" data-act="wMode" data-v="list">Liste</button><button class="chip ${mode === "3d" ? "on" : ""}" data-act="wMode" data-v="3d">Salle 3D</button></div>`;
   if (mode === "3d") return `${statusBanner()}<div class="row between"><h1>${w ? esc(w.name) : "Salle 3D"}</h1>${w ? `<span class="mut" id="wTimer">${fmtDur(Date.now() - w.start)}</span>` : ""}</div>${toggle}
     <div id="scene3d" style="height:calc(100vh - 250px);min-height:420px;border-radius:18px;overflow:hidden;background:var(--chip)"></div>
-    <p class="xs mut c">Touche une machine → choisis l'exercice → note tes séries. Salle provisoire : je la referai à l'identique de la tienne avec tes photos.</p>
+    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center"><span class="xs mut">Noms :</span>${[["auto", "Sans chevauchement"], ["all", "Tous"], ["none", "Aucun"]].map(([k, l]) => `<button class="chip ${(S.gymNames || "auto") === k ? "on" : ""}" data-act="gymNames" data-v="${k}">${l}</button>`).join("")}
+      <select data-act="gymGoto" style="width:auto;margin-left:auto"><option value="">Aller à une machine…</option>${GYM_MACHINES.map(m => `<option value="${m.id}">${esc(m.label)}</option>`).join("")}</select></div>
+    <p class="xs mut c">Touche une machine → choisis l'exercice → note tes séries. Trackpad : tourne 2 doigts pour faire pivoter la salle, pince pour zoomer, glisse pour te déplacer.</p>
     ${w ? `<div class="card"><h3>Dans cette séance</h3>${(w.ex || []).map(e => `<div class="entry" data-act="gymPickEx" data-v="${e.id}"><span class="sm">${esc(getEx(e.id).name)}</span><span class="xs mut">${workSets(e).length} série(s) ›</span></div>`).join("") || `<p class="mut sm">Aucun exercice.</p>`}
       <button style="width:100%;margin-top:8px" data-act="finishW">Terminer la séance</button></div>` : ""}`;
   if (w) return toggle + liveView(w);
   const P = program(); const hist = workouts().filter(x => !x.live).slice(0, 30);
   return `${statusBanner()}<h1>Séance</h1>${toggle}${recoveryCardHTML()}
     <div class="card"><h2>Démarrer</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${Object.keys(P).map(n => `<button data-act="startW" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div>
-    <p class="xs mut">Ton programme est préchargé. Tu peux changer d'exercice, en ajouter ou en enlever pendant la séance.</p></div>
+    <p class="xs mut">Ton programme est préchargé. Pendant la séance, 🚫 remplace un exercice que tu ne veux pas faire.</p>
+    <button class="sec" style="width:100%;margin-top:6px" data-act="genOpen">✨ Créer un programme pour ma salle</button></div>
     <div class="card"><h2>Historique</h2>${hist.map(h => {
       const sets = (h.ex || []).reduce((s, e) => s + workSets(e).length, 0);
       const vol = (h.ex || []).reduce((s, e) => s + workSets(e).reduce((a, x) => a + x.w * x.r, 0), 0);
-      return `<div class="entry" data-act="openHist" data-v="${h._id}"><div><div class="b">${esc(h.name)}</div><div class="mut xs">${fmtDay(dateKey(new Date(h.start)))} · ${fmtDur((h.end || h.start) - h.start)} · ${sets} séries · ${r0(vol)} kg soulevés</div></div><div class="mut">›</div></div>`;
+      return `<div class="entry" data-act="openHist" data-v="${h._id}"><div><div class="b">${esc(h.name)}</div><div class="mut xs">${fmtDay(dateKey(new Date(h.start)))} · ${fmtDur((h.end || h.start) - h.start)} · ${sets} séries · ${r0(vol)} kg soulevés · ≈ ${r0(workoutKcal(h))} kcal</div></div><div class="mut">›</div></div>`;
     }).join("") || `<p class="mut sm">Aucune séance enregistrée.</p>`}</div>`;
 }
 function liveView(w) {
@@ -1778,6 +1892,7 @@ function liveView(w) {
   const warm = P.warmup ? `<div class="card"><label class="row" style="gap:10px;color:var(--txt);font-size:15px;margin:0"><input type="checkbox" style="width:22px;height:22px" data-act="warmAll" ${w.warmDone ? "checked" : ""}> <b>Échauffement fait</b></label>
     <details style="margin-top:6px"><summary class="xs mut">Voir le détail (poulie, unilatéral, ~8 reps léger)</summary><ul class="sm" style="margin:6px 0 0">${WARMUP_UPPER.map(([n]) => `<li>${esc(n)}</li>`).join("")}</ul></details></div>` : "";
   return `${statusBanner()}<div class="row between"><h1>${esc(w.name)}</h1><span class="mut" id="wTimer">${fmtDur(Date.now() - w.start)}</span></div>
+    <div class="xs mut" style="margin:-6px 0 8px">🔥 Séance : ≈ <b>${r0(workoutKcal(w))} kcal</b> dépensées par les séries (≈ ${r0(workoutKcalGross(w))} kcal avec ton métabolisme de repos) · <a href="#" data-act="energyInfo" style="color:var(--acc)">calcul</a></div>
     <div class="row sm" style="margin:-4px 0 10px"><span class="mut">Date :</span><input type="date" id="wDate" value="${dateKey(new Date(w.start))}" style="width:auto;padding:5px 8px" max="${todayKey()}"><span class="xs mut">(change-la pour noter une séance passée)</span></div>
     ${warm}${(w.ex || []).map((e, i) => exCard(w, e, i)).join("")}
     <button class="sec" style="width:100%;margin-bottom:10px" data-act="addEx">+ Ajouter un exercice</button>
@@ -1791,13 +1906,17 @@ function exCard(w, e, i) {
   const alts = ALTERNATIVES[e.id] || [];
   const prev = (e.sets || []);
   return `<div class="card"><div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
-    <div class="row" style="gap:2px">${alts.length ? `<button class="ghost small" data-act="swapEx" data-i="${i}" title="Variante">⇄</button>` : ""}<button class="ghost small" data-act="exUp" data-i="${i}" title="Monter">↑</button><button class="danger small" data-act="rmEx" data-i="${i}" title="Retirer">✕</button></div></div>
+    <div class="row" style="gap:2px">${alts.length ? `<button class="ghost small" data-act="swapEx" data-i="${i}" title="Variante">⇄</button>` : ""}<button class="ghost small" data-act="refuse" data-i="${i}" title="Je ne veux pas faire cet exercice">🚫</button><button class="ghost small" data-act="exUp" data-i="${i}" title="Monter">↑</button><button class="danger small" data-act="rmEx" data-i="${i}" title="Retirer">✕</button></div></div>
     <div class="row sm" style="margin:6px 0;gap:6px;flex-wrap:wrap"><span class="mut">Fourchette :</span><select data-act="range" data-v="${e.id}" style="width:auto;padding:4px 6px">${[[6, 8], [6, 10], [8, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) => `<option value="${a}-${b}" ${a === lo && b === hi ? "selected" : ""}>${a}-${b} reps</option>`).join("")}</select></div>
     ${last ? `<div class="xs mut">Dernière fois (${fmtDay(dateKey(new Date(last.date)))}) : ${last.sets.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div>` : ""}
     <div class="reco ${sug.up ? "good" : ""} sm">${esc(sug.text)}</div>
     ${prev.length ? `<div class="set xs mut"><span>#</span><span>kg</span><span>reps</span><span>RIR · repos</span><span></span></div>` : ""}
-    ${prev.map((s, j) => { const rest = j > 0 ? s.t - prev[j - 1].t : null; const n = prev.slice(0, j + 1).filter(z => !z.wu).length;
-      return `<div class="set ${s.wu ? "wu" : ""}"><span class="mut">${s.wu ? "É" : n}</span><span class="b">${s.w}</span><span class="b">${s.r}</span><span class="xs">${s.rir != null && !s.wu ? "RIR " + s.rir : ""}${rest ? ` · ${fmtDur(rest)}` : ""}</span><button class="danger small" data-act="delSet" data-i="${i}" data-j="${j}">✕</button></div>`; }).join("")}
+    ${prev.map((s, j) => { const rest = j > 0 ? s.t - prev[j - 1].t : null; const n = prev.slice(0, j + 1).filter(z => !z.wu).length; const ghostSet = !s.wu && last ? (last.sets || []).filter(z => !z.wu)[n - 1] : null;
+      return `<div class="set ${s.wu ? "wu" : ""}"><span class="mut">${s.wu ? "É" : n}</span><span class="b">${s.w}</span><span class="b">${s.r} ${s.wu ? "" : ghostBadge(ghostCmp(s, ghostSet))}</span><span class="xs">${s.rir != null && !s.wu ? "RIR " + s.rir : ""}${rest ? ` · ${fmtDur(rest)}` : ""}</span><button class="danger small" data-act="delSet" data-i="${i}" data-j="${j}">✕</button></div>`; }).join("")}
+    ${ghostSummary(e, last)}
+    ${(() => { const done = prev.length ? exKcal(e.id, prev) : 0; const nW = prev.filter(z => !z.wu).length; const gs = last ? (last.sets || []).filter(z => !z.wu)[nW] : null;
+      return `${gs ? `<div class="ghostline xs">👻 Série ${nW + 1} la dernière fois : <b>${gs.w} kg × ${gs.r}</b>${gs.rir != null ? ` @RIR ${gs.rir}` : ""} — à égaler ou battre</div>` : ""}
+      <div class="xs mut" style="margin-top:4px">🔥 ${done ? `≈ <b>${r0(done)} kcal</b> pour ces séries` : `Prévu (${hi} reps à ${dr.w || "?"} kg) : ≈ ${dr.w ? r0(setKcal(e.id, +dr.w, hi)) : "?"} kcal / série`} <a href="#" data-act="energyInfo" style="color:var(--acc)">comment ?</a></div>`; })()}
     <div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">
       <div class="row"><div class="grow"><div class="xs mut">Charge (kg)</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="w" data-v="-${profile().increment}">−</button><input type="number" inputmode="decimal" value="${dr.w}" data-input="draft" data-i="${i}" data-k="w"><button data-act="dStep" data-i="${i}" data-k="w" data-v="${profile().increment}">+</button></div>${BARBELL.has(e.id) && dr.w ? plateHTML(+dr.w) : ""}</div>
       <div class="grow"><div class="xs mut">Reps</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="r" data-v="-1">−</button><input type="number" inputmode="numeric" value="${dr.r}" data-input="draft" data-i="${i}" data-k="r" placeholder="${hi}"><button data-act="dStep" data-i="${i}" data-k="r" data-v="1">+</button></div></div></div>
@@ -1840,6 +1959,7 @@ function viewProgress() {
     <div class="card"><h2>Volume des 7 derniers jours</h2><p class="xs mut">Séries dures par muscle (secondaire = ½). Repère des études : ~10-20 séries/semaine pour l'hypertrophie (Schoenfeld 2017, Pelland 2024).</p>
       <table class="vol">${VOLUME_GROUPS.map(g => { const v = vol[g]; const col = v >= 10 ? "var(--grn)" : v >= 6 ? "var(--org)" : "var(--red)";
         return `<tr><td style="width:42%">${g}</td><td><div class="bar"><i style="width:${Math.min(100, v / 20 * 100)}%;background:${col}"></i></div></td><td style="width:40px;text-align:right">${r1(v)}</td></tr>`; }).join("")}</table></div>
+    ${photosCardHTML()}
     <div class="card"><h2>Records</h2>${recs.map(x => `<div class="entry"><span class="sm">${esc(getEx(x.id).name)}</span><span class="sm b">${x.best.w} kg × ${x.best.r} <span class="mut xs">(1RM ≈ ${r0(e1rm(x.best))})</span></span></div>`).join("") || `<p class="mut sm">—</p>`}</div>`;
 }
 function drawCharts() {
@@ -2059,6 +2179,142 @@ function gymExSheet(exId) {
   };
 }
 
+// ===================== CUISINE : plan de repas, idées, besoins, ajustement hebdo =====================
+// ---- Repères officiels EFSA (Dietary Reference Values, summary report 2017, tableaux 2, 5 et 9 — homme adulte) ----
+const DRV_MALE = [
+  // [clé, nom, unité, valeur, type (PRI = apport de référence, AI = apport satisfaisant), sources alimentaires]
+  ["calcium", "Calcium", "mg", 950, "PRI (≥ 25 ans)", "laitages, fromage, eaux minérales calciques, tofu, amandes"],
+  ["iron", "Fer", "mg", 11, "PRI", "viande rouge, boudin, lentilles, pois chiches, épinards + vitamine C"],
+  ["magnesium", "Magnésium", "mg", 350, "AI", "oléagineux, chocolat noir, céréales complètes, légumineuses"],
+  ["potassium", "Potassium", "mg", 3500, "AI", "pommes de terre, bananes, légumineuses, tomates, yaourt"],
+  ["zinc", "Zinc", "mg", 11.7, "PRI (phytates moyens)", "bœuf, œufs, fromage, graines de courge"],
+  ["selenium", "Sélénium", "µg", 70, "AI", "noix du Brésil, thon, œufs, viande"],
+  ["iodine", "Iode", "µg", 150, "AI", "sel iodé, laitages, œufs, poisson"],
+  ["copper", "Cuivre", "mg", 1.6, "AI", "abats, cacao, noix, légumineuses"],
+  ["phosphorus", "Phosphore", "mg", 550, "AI", "viande, laitages, œufs, céréales"],
+  ["vitA", "Vitamine A", "µg", 750, "PRI", "carotte, patate douce, épinards, œufs, foie"],
+  ["vitD", "Vitamine D", "µg", 15, "AI (peu de soleil)", "saumon, sardine, œufs, soleil ; souvent complément en hiver"],
+  ["vitE", "Vitamine E", "mg", 13, "AI", "huile de tournesol, amandes, noisettes"],
+  ["vitK", "Vitamine K", "µg", 70, "AI", "légumes verts (brocoli, épinards), salade"],
+  ["vitC", "Vitamine C", "mg", 110, "PRI", "poivron, kiwi, agrumes, brocoli"],
+  ["thiamin", "Vitamine B1", "mg", null, "PRI 0,1 mg/MJ", "porc, céréales complètes, légumineuses"],
+  ["vitB2", "Vitamine B2", "mg", 1.6, "PRI", "laitages, œufs, viande"],
+  ["niacin", "Vitamine B3", "mg", null, "PRI 1,6 mg/MJ", "volaille, thon, cacahuètes"],
+  ["pantothenic", "Vitamine B5", "mg", 5, "AI", "presque tous les aliments"],
+  ["vitB6", "Vitamine B6", "mg", 1.7, "PRI", "volaille, banane, pommes de terre, pois chiches"],
+  ["biotin", "Vitamine B8", "µg", 40, "AI", "œufs, oléagineux"],
+  ["folate", "Folates (B9)", "µg", 330, "PRI (DFE)", "légumes verts, lentilles, pois chiches"],
+  ["vitB12", "Vitamine B12", "µg", 4, "AI", "viande, œufs, laitages, poisson"],
+  ["choline", "Choline", "mg", 400, "AI", "œufs (≈ 150 mg/œuf), viande, soja"],
+  ["omega3", "Oméga-3 EPA + DHA", "mg", 250, "AI", "saumon, sardine, maquereau ; complément d'huile de poisson"],
+];
+function drvValue(d, kcal) { if (d[3] != null) return d[3]; const mj = (kcal || 2500) * 0.004184; return d[0] === "thiamin" ? r1(0.1 * mj) : r1(1.6 * mj); }
+// ---- ajustement automatique de l'objectif chaque lundi (méthode « dépense adaptative ») ----
+function weekKey(d = new Date()) { const t = new Date(d); t.setHours(0, 0, 0, 0); t.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return dateKey(t); }
+function weeklyAdjust(tdee, factor, ad) {
+  const wk = weekKey(); const A = Store.get("adjust", {}) || {};
+  if (A.week === wk && A.kcal) return A;
+  const kcal = r0(tdee * (1 + factor));
+  const N = { week: wk, kcal, tdee: r0(tdee), prev: A.kcal || null, slope: ad?.slopeWeek != null ? Math.round(ad.slopeWeek * 100) / 100 : null, hist: [...(A.hist || []), ...(A.kcal ? [[A.week, A.kcal]] : [])].slice(-12) };
+  setTimeout(() => Store.set("adjust", N), 0); return N;
+}
+// ---- vue Cuisine ----
+function viewKitchen() {
+  const k = S.kTab || "frigo";
+  const tabs = `<div class="chips" style="margin-bottom:10px">${[["frigo", "🧊 Frigo"], ["plan", "📅 Plan de repas"], ["idees", "💡 Idées recettes"], ["besoins", "📊 Mes besoins"]].map(([v, l]) => `<button class="chip ${k === v ? "on" : ""}" data-act="kTab" data-v="${v}">${l}</button>`).join("")}</div>`;
+  if (k === "frigo") return viewFridge().replace(/(<\/h1>[\s\S]*?<\/div>)/, "$1" + tabs);
+  const body = k === "plan" ? mealPlanHTML() : k === "idees" ? ideasHTML() : needsHTML();
+  return `${statusBanner()}<h1>Cuisine</h1>${tabs}${body}`;
+}
+// ---- plan de repas (IA) ----
+function mealPlanHTML() {
+  const P = Store.get("mealplan", null); const o = S.mpOpt || (S.mpOpt = { days: 5, meals: 4, batch: true, time: 30, likes: "" });
+  const T = targets();
+  const form = `<div class="card"><h2>Plan de repas</h2><p class="sm mut">Construit sur tes cibles (${T.kcal} kcal · P ${T.p} g · G ${T.c} g · L ${T.f} g), ton frigo, tes magasins et ton matériel de cuisine.</p>
+    <h3>Nombre de jours</h3><div class="chips">${[3, 5, 7].map(n => `<button class="chip ${o.days === n ? "on" : ""}" data-act="mpSet" data-k="days" data-v="${n}">${n} jours</button>`).join("")}</div>
+    <h3>Repas par jour</h3><div class="chips">${[3, 4, 5].map(n => `<button class="chip ${o.meals === n ? "on" : ""}" data-act="mpSet" data-k="meals" data-v="${n}">${n}</button>`).join("")}</div>
+    <h3>Temps de cuisine max par repas</h3><div class="chips">${[15, 30, 45].map(n => `<button class="chip ${o.time === n ? "on" : ""}" data-act="mpSet" data-k="time" data-v="${n}">${n} min</button>`).join("")}<button class="chip ${o.batch ? "on" : ""}" data-act="mpBatch">Batch cooking</button></div>
+    <h3>Envies / à éviter (facultatif)</h3><input id="mpLikes" value="${esc(o.likes || "")}" placeholder="ex : plats espagnols, pas de champignons, budget serré…">
+    <button style="width:100%;margin-top:10px" data-act="mpGo" ${S.busy.mp ? "disabled" : ""}>${S.busy.mp ? '<span class="spin"></span> Je prépare ton plan… (≈ 30 s)' : P ? "Refaire un plan" : "Créer mon plan"}</button></div>`;
+  if (!P) return form;
+  const today = (new Date().getDay() + 6) % 7;
+  const days = P.days.map((d, di) => { const tot = d.meals.reduce((t, m) => ({ kcal: t.kcal + (+m.kcal || 0), p: t.p + (+m.p || 0) }), { kcal: 0, p: 0 });
+    return `<details class="card" ${di === 0 ? "open" : ""}><summary><b>${esc(d.day)}</b> <span class="xs mut">· ${r0(tot.kcal)} kcal · P ${r0(tot.p)} g</span></summary>
+      ${d.meals.map((m, mi) => `<div class="entry" style="align-items:flex-start"><div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
+        <div class="xs mut">${r0(m.kcal)} kcal · P ${r0(m.p)} · G ${r0(m.c)} · L ${r0(m.f)}</div><div class="xs">${(m.ingredients || []).map(i => `${esc(i.name)} ${r0(i.g)} g`).join(" · ")}</div>
+        ${m.steps ? `<details><summary class="xs" style="color:var(--acc)">Recette</summary><div class="xs" style="white-space:pre-wrap">${esc(m.steps)}</div></details>` : ""}</div>
+        <button class="small sec" data-act="mpEat" data-d="${di}" data-m="${mi}">Mangé</button></div>`).join("")}</details>`; }).join("");
+  const shop = (P.shopping || []).map(s => `<h3>${esc(s.aisle)}</h3>${(s.items || []).map(i => `<label class="row" style="gap:8px"><input type="checkbox" style="width:18px;height:18px"><span class="sm">${esc(i.name)} <span class="mut">${esc(i.qty || "")}</span></span></label>`).join("")}`).join("");
+  return `${days}<div class="card"><h2>🛒 Liste de courses</h2>${shop || `<p class="mut sm">—</p>`}</div>${P.batch ? `<div class="card"><h2>🍱 Batch cooking</h2><div class="sm" style="white-space:pre-wrap">${esc(P.batch)}</div></div>` : ""}${form}`;
+}
+async function mealPlanGo() {
+  const o = S.mpOpt; o.likes = $("#mpLikes")?.value || ""; const T = targets();
+  S.busy.mp = true; render();
+  try {
+    const res = await aiJSON(`${USER_CTX()}
+Crée un PLAN DE REPAS de ${o.days} jours, ${o.meals} repas par jour, qui atteint chaque jour ≈ ${T.kcal} kcal (±5 %), protéines ≥ ${T.p} g, glucides ≈ ${T.c} g, lipides ≈ ${T.f} g, fibres ≥ 25 g, et des légumes chaque jour (soupes, veloutés, poêlées de surgelés, sauces mixées).
+Temps de cuisine max ${o.time} min par repas. ${o.batch ? "Organise-le en BATCH COOKING : 1 ou 2 sessions de cuisine (dimanche/mercredi) et des restes réutilisés." : ""} Utilise en priorité ce qu'il a : ${fridgeText() || "inconnu"}. Produits faciles à trouver chez Mercadona / Alcampo / Ahorramas. ${o.likes ? "Contraintes : " + o.likes + "." : ""}
+Valeurs nutritionnelles réalistes (tables Ciqual/USDA), ingrédients pesés CRUS en grammes.
+Réponds UNIQUEMENT en JSON : {"days":[{"day":"Lundi","meals":[{"meal":"Petit-déjeuner","name":"...","kcal":0,"p":0,"c":0,"f":0,"prep_min":10,"ingredients":[{"name":"flocons d'avoine","g":80}],"steps":"1. ... 2. ... (temps, feu/four °C)"}]}],"shopping":[{"aisle":"Viandes","items":[{"name":"blanc de poulet","qty":"1,2 kg"}]}],"batch":"plan de la session batch cooking, étape par étape"}`);
+    if (!res?.days?.length) throw { message: "plan vide" };
+    Store.set("mealplan", Object.assign(res, { created: Date.now(), opt: clone(o) }));
+  } catch (e) { toast(aiErr(e)); }
+  S.busy.mp = false; render();
+}
+// ---- idées de recettes (IA) ----
+const IDEA_CATS = [["breakfast", "🥣 Petit-déj protéiné"], ["fast", "⚡ Prêt en 15 min"], ["batch", "🍱 Batch pour 4 jours"], ["veg", "🥦 Légumes sans effort"], ["sweet", "🍫 Dessert protéiné"], ["spain", "🇪🇸 Plats espagnols healthy"], ["cheap", "💶 Petit budget"], ["fridge", "🧊 Avec mon frigo"]];
+function ideasHTML() {
+  return `<div class="card"><h2>Idées de recettes</h2><p class="sm mut">Recettes « mode chef » adaptées à tes macros, ton matériel (four, poêle, casserole, micro-ondes, cuiseur à riz) et tes goûts.</p>
+    <div class="chips">${IDEA_CATS.map(([k, l]) => `<button class="chip ${S.ideaCat === k ? "on" : ""}" data-act="ideaGo" data-v="${k}" ${S.busy.idea ? "disabled" : ""}>${l}</button>`).join("")}</div>
+    ${S.busy.idea ? `<p class="sm"><span class="spin"></span> Le chef réfléchit…</p>` : ""}${S.aiOut.idea ? `<div class="ai-out">${esc(S.aiOut.idea)}</div><button class="sec small" data-act="ideaSave">Garder ces idées</button>` : ""}</div>
+    ${(Store.get("notes", { items: [] }).items || []).length ? `<div class="card"><h2>Idées gardées</h2>${Store.get("notes").items.map(n => `<details><summary class="sm">${fmtDay(dateKey(new Date(n.t)))} — ${esc(n.text.split("\n").find(l => l.trim()) || "")}</summary><div class="xs" style="white-space:pre-wrap">${esc(n.text)}</div><button class="danger small" data-act="ideaDel" data-v="${n.id}">Supprimer</button></details>`).join("")}</div>` : ""}`;
+}
+async function ideaGo(cat) {
+  const T = targets(); const L = Object.fromEntries(IDEA_CATS)[cat];
+  S.ideaCat = cat; S.busy.idea = true; S.aiOut.idea = ""; render();
+  try { await aiText(`${USER_CTX()}\nPropose 3 recettes différentes, catégorie : « ${L} »${cat === "fridge" ? " avec ce qu'il a : " + (fridgeText() || "inconnu") : ""}. Une portion doit tenir dans ses cibles (par repas ≈ ${r0(T.kcal / 4)} kcal et ≥ ${r0(T.p / 4)} g de protéines, sauf dessert ≈ 250 kcal / 20 g). ${CHEF_RULES}`, t => { S.aiOut.idea = t; }); }
+  catch (e) { toast(aiErr(e)); }
+  S.busy.idea = false; render();
+}
+// ---- besoins journaliers ----
+function needsHTML() {
+  const T = targets(); const p = profile(); const w = r1(T.weight); const t = dayTotals(S.day || todayKey());
+  const row = (l, cur, goal, u, note) => { const pct = goal ? Math.min(100, cur / goal * 100) : 0; return `<div style="margin:8px 0"><div class="row between sm"><span><b>${l}</b> <span class="xs mut">${note || ""}</span></span><span>${cur != null ? r0(cur) + " / " : ""}${goal} ${u}</span></div>${cur != null ? `<div class="bar"><i style="width:${pct}%;background:${pct >= 100 ? "#16a34a" : "var(--acc)"}"></i></div>` : ""}</div>`; };
+  const A = Store.get("adjust", null);
+  return `<div class="card"><h2>Tes besoins du jour</h2>
+    ${row("Énergie", t.kcal, T.kcal, "kcal", `· ${T.source}`)}
+    ${row("Protéines", t.p, T.p, "g", `· ${p.protPerKg} g/kg × ${w} kg`)}
+    ${row("Glucides", t.c, T.c, "g", "· le reste de l'énergie")}
+    ${row("Lipides", t.f, T.f, "g", `· ≥ 20 % des kcal`)}
+    ${row("Fibres", t.fib, 25, "g", "· EFSA ≥ 25 g")}
+    ${row("Eau", null, 2.5, "L", "· EFSA, boissons + aliments")}
+    <details style="margin-top:8px"><summary class="xs" style="color:var(--acc)">D'où viennent ces chiffres ?</summary><ul class="xs">
+      <li><b>Protéines</b> : chez les pratiquants de musculation, le gain de masse maigre plafonne autour de 1,6 g/kg/j (méta-analyse de Morton et al. 2018, Br J Sports Med), avec une marge jusqu'à 2,2 g/kg. Tu es à ${p.protPerKg} g/kg (réglable dans Profil).</li>
+      <li><b>Lipides</b> : EFSA 20-35 % de l'énergie ; je garde au moins ${p.fatPerKg} g/kg pour les hormones.</li>
+      <li><b>Glucides</b> : EFSA 45-60 % de l'énergie ; ici c'est le reste une fois protéines et lipides placés, pour alimenter l'entraînement.</li>
+      <li><b>Énergie</b> : Mifflin-St Jeor × activité, puis corrigée par tes vraies données (apports + évolution du poids).</li></ul></details></div>
+    <div class="card"><h2>Ajustement automatique</h2>
+      <label class="row" style="gap:10px"><input type="checkbox" data-act="autoAdj" ${p.autoAdjust !== false ? "checked" : ""} style="width:22px;height:22px"><span class="sm">Recalculer mon objectif chaque lundi</span></label>
+      ${A ? `<p class="sm">Semaine du ${fmtDay(A.week)} : <b>${A.kcal} kcal/j</b>${A.prev ? ` (avant : ${A.prev})` : ""}. Dépense réelle estimée ≈ ${A.tdee} kcal${A.slope != null ? `, poids ${A.slope >= 0 ? "+" : ""}${A.slope} kg/sem` : ""}.</p>` : `<p class="sm mut">Il faut environ 10 jours de repas notés et 4 pesées pour lancer l'ajustement. En attendant, j'utilise la formule.</p>`}
+      <p class="xs mut">Même principe que MacroFactor : ta vraie dépense = ce que tu manges − (variation de poids × 7 700 kcal/kg). L'objectif reste fixe toute la semaine pour éviter le yoyo.</p></div>
+    <div class="card"><h2>Vitamines et minéraux</h2><p class="xs mut">Repères officiels EFSA pour un homme adulte (PRI = couvre 97,5 % des gens ; AI = apport jugé suffisant). Barre = ce que tu as mangé aujourd'hui (aliments dont la composition est connue).</p>
+      ${DRV_MALE.map(d => { const v = drvValue(d, T.kcal); const cur = t.micro?.[d[0]]; return `<div style="margin:7px 0"><div class="row between sm"><span><b>${d[1]}</b> <span class="xs mut">${d[4]}</span></span><span>${cur != null ? r1(cur) + " / " : ""}${v} ${d[2]}</span></div>${cur != null ? `<div class="bar"><i style="width:${Math.min(100, cur / v * 100)}%;background:${cur >= v ? "#16a34a" : "var(--acc)"}"></i></div>` : ""}<div class="xs mut">${d[5]}</div></div>`; }).join("")}
+      <p class="xs mut">Source : EFSA, Dietary Reference Values for nutrients — Summary report (2017, mis à jour), tableaux 2, 5 et 9. Sodium : l'OMS recommande moins de 5 g de sel/jour.</p></div>`;
+}
+const NUT_ACT = {
+  kTab: el => { S.kTab = el.dataset.v; render(); },
+  mpSet: el => { S.mpOpt.likes = $("#mpLikes")?.value || S.mpOpt.likes; S.mpOpt[el.dataset.k] = +el.dataset.v; render(); },
+  mpBatch: () => { S.mpOpt.likes = $("#mpLikes")?.value || S.mpOpt.likes; S.mpOpt.batch = !S.mpOpt.batch; render(); },
+  mpGo: () => mealPlanGo(),
+  mpEat: el => { const P = Store.get("mealplan"); const m = P.days[+el.dataset.d].meals[+el.dataset.m]; const g = (m.ingredients || []).reduce((t, i) => t + (+i.g || 0), 0) || 100;
+    const per100 = { kcal: m.kcal / g * 100, p: m.p / g * 100, c: m.c / g * 100, f: m.f / g * 100, fib: 0, sugar: 0, satfat: 0, salt: 0 };
+    S.day = todayKey(); updDay(d => d.entries.push(makeEntry({ name: m.name, per100, src: "plan" }, g, m.meal || ""))); toast("Ajouté à aujourd'hui ✓"); },
+  ideaGo: el => ideaGo(el.dataset.v),
+  ideaSave: () => { const doc = clone(Store.get("notes", { items: [] })); doc.items = doc.items || []; doc.items.unshift({ id: uid(), t: Date.now(), text: S.aiOut.idea }); Store.set("notes", doc); toast("Idées gardées ✓"); },
+  ideaDel: el => { const doc = clone(Store.get("notes", { items: [] })); doc.items = (doc.items || []).filter(n => n.id !== el.dataset.v); Store.set("notes", doc); },
+  autoAdj: el => { const pr = clone(Store.get("profile", {})); pr.autoAdjust = el.checked; Store.set("profile", pr); },
+};
+
 // ===================== RECETTES PERSO =====================
 const recipes = () => Store.get("recipes", { items: [] }).items || [];
 function recipeTotals(r) {
@@ -2217,6 +2473,228 @@ function plateHTML(total) {
 }
 const BARBELL = new Set(["squat", "bench_press", "rdl", "hip_thrust", "shrug"]);
 
+// ===================== DÉPENSE ÉNERGÉTIQUE DES SÉRIES =====================
+// Base scientifique (mesures, pas des chiffres au hasard) :
+//  • Scott, Luchini, Knausenberger & Steitz 2014, Central European Journal of Sport Sciences and Medicine 8(4):53-59.
+//    Coût TOTAL d'une série = aérobie pendant l'effort + anaérobie (lactate) + EPOC (récupération), mesuré par
+//    calorimétrie indirecte, 22 hommes (83 kg, 180,5 cm) et 16 femmes. Le coût est une fonction linéaire du TRAVAIL :
+//    travail = charge (kg) × distance verticale parcourue (m) × répétitions.
+//      squat      : coût (kJ) = 14.931 + 0.0942 × travail   (r = 0.977)
+//      soulevé    : coût (kJ) = 56.592 + 0.102  × travail   (r = 0.997)
+//      dév. incliné: coût (kJ) = 3.21  + 0.0911 × travail   (r = 0.947)
+//      shrug      : coût (kJ) = 0.0455 + 0.246  × travail   (r = 0.921)
+//      mollets    : coût (kJ) = 1.945 + 0.296  × travail    (r = 0.941)
+//    Répartition moyenne : 18 % aérobie pendant la série, 31 % anaérobie, 51 % EPOC.
+//  • Reis et al. 2017, PLoS One 12(7):e0181311 (58 hommes, 78,7 kg) : contrôle de cohérence pour les machines et
+//    l'isolation (presse, leg extension, tirage, curl, triceps) et confirmation que les jambes coûtent plus cher.
+//  • Robergs et al. 2007, J Strength Cond Res 21(1):123-130 : la charge et la distance parcourue prédisent le coût
+//    (le poids du corps n'entre pas dans leur équation, sauf quand c'est lui qu'on soulève).
+// Modélisation (calculs, pas de nouvelles données) :
+//  • chaque exercice est rattaché au mouvement mesuré le plus proche (même masse musculaire / même schéma) ;
+//  • la distance de référence (pour 180,5 cm) est ajustée à ta taille ;
+//  • quand le corps bouge avec la charge (squat, fentes, tractions, dips…), la partie du corps soulevée est
+//    ajoutée à la charge (travail = masse du « système » × distance, méthode de McBride et al. 2009) ;
+//  • 1 kcal = 4,184 kJ. Résultat = dépense NETTE due à la série (au-dessus du repos).
+const EN_MODELS = {
+  squat: { a: 14.931, b: 0.0942, n: "squat (Scott 2014)" }, dead: { a: 56.592, b: 0.102, n: "soulevé de terre (Scott 2014)" },
+  press: { a: 3.21, b: 0.0911, n: "développé incliné (Scott 2014)" }, isoUp: { a: 0.0455, b: 0.246, n: "shrug / petits muscles du haut (Scott 2014)" },
+  isoLow: { a: 1.945, b: 0.296, n: "mollets / isolation des jambes (Scott 2014)" }
+};
+// m = modèle, d = distance verticale (m) pour 180,5 cm, bw = part du poids du corps soulevée, k = multiplicateur de charge (2 haltères)
+const EN_EX = {
+  lat_raise_cable: { m: "isoUp", d: 0.4 }, lat_raise_db: { m: "isoUp", d: 0.55, k: 2 }, shoulder_press: { m: "press", d: 0.5 }, face_pull: { m: "isoUp", d: 0.4 },
+  rear_delt_fly: { m: "isoUp", d: 0.4 }, tri_oh_cable: { m: "isoUp", d: 0.4 }, tri_push_uni: { m: "isoUp", d: 0.35 }, tri_push_rope: { m: "isoUp", d: 0.35 },
+  dips: { m: "press", d: 0.4, bw: 0.95 }, hammer_rope: { m: "isoUp", d: 0.4 }, bayesian_curl: { m: "isoUp", d: 0.45 }, incline_db_curl: { m: "isoUp", d: 0.45, k: 2 },
+  preacher_curl: { m: "isoUp", d: 0.4 }, cable_crunch: { m: "isoUp", d: 0.35 }, incline_press_machine: { m: "press", d: 0.45 }, bench_press: { m: "press", d: 0.42 },
+  db_incline_press: { m: "press", d: 0.45, k: 2 }, chest_press: { m: "press", d: 0.4 }, pec_fly_machine: { m: "isoUp", d: 0.4 },
+  lat_pulldown_pron: { m: "press", d: 0.55 }, pull_up: { m: "press", d: 0.55, bw: 0.95 }, row_neutral_close: { m: "press", d: 0.4 }, row_pron_wide: { m: "press", d: 0.4 },
+  db_row: { m: "press", d: 0.45 }, shrug: { m: "isoUp", d: 0.115 }, squat: { m: "squat", d: 0.55, bw: 0.88 }, leg_press: { m: "squat", d: 0.35 },
+  hack_squat: { m: "squat", d: 0.4, bw: 0.88 }, leg_ext: { m: "isoLow", d: 0.3 }, bulgarian: { m: "squat", d: 0.4, bw: 0.88 }, lunges: { m: "squat", d: 0.4, bw: 0.88 },
+  rdl: { m: "dead", d: 0.5 }, seated_leg_curl: { m: "isoLow", d: 0.3 }, lying_leg_curl: { m: "isoLow", d: 0.3 }, hip_thrust: { m: "squat", d: 0.25, bw: 0.4 },
+  adductor_machine: { m: "isoLow", d: 0.25 }, abductor_machine: { m: "isoLow", d: 0.25 }, calf_standing: { m: "isoLow", d: 0.1, bw: 1 }, calf_seated: { m: "isoLow", d: 0.08 },
+  back_ext: { m: "squat", d: 0.4, bw: 0.6 }
+};
+function enInfo(exId) { return EN_EX[exId] || { m: "isoUp", d: 0.4 }; }
+// coût net d'UNE série en kcal
+function setKcal(exId, w, reps, bodyW, heightCm) {
+  const I = enInfo(exId), Mo = EN_MODELS[I.m]; if (!(reps > 0)) return 0;
+  const p = profile(); const bw = bodyW || latestWeight(); const h = heightCm || p.height || 176;
+  const load = (+w || 0) * (I.k || 1) + (I.bw || 0) * bw;
+  const dist = I.d * h / 180.5;
+  const work = load * dist * reps; // kg·m, comme dans Scott 2014
+  return (Mo.a + Mo.b * work) / 4.184;
+}
+function exKcal(exId, sets) { return (sets || []).reduce((t, s) => t + setKcal(exId, s.w, s.r), 0); }
+function workoutKcal(w) { return (w.ex || []).reduce((t, e) => t + exKcal(e.id, e.sets), 0); }
+// dépense brute de la séance = nette + métabolisme de repos pendant la durée
+function workoutKcalGross(w) { const p = profile(); const min = ((w.end || Date.now()) - w.start) / 60000; return workoutKcal(w) + bmr(p, latestWeight()) / 1440 * Math.max(0, min); }
+function energyExplainSheet() {
+  const p = profile(); const bw = r1(latestWeight());
+  const ex1 = r0(3 * setKcal("squat", 100, 10, 80, 176.5)), ex2 = r0(3 * setKcal("squat", 130, 6, 75, 176.5));
+  return `<div class="row between"><h2>Comment j'estime les calories</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+  <p class="sm">Ce n'est pas un chiffre au hasard : je pars de <b>mesures de laboratoire</b> (calorimétrie indirecte + lactate + récupération), puis je calcule pour toi.</p>
+  <div class="reco sm"><b>Mesure de base — Scott et al. 2014</b> (38 personnes) : le coût d'une série dépend linéairement du <b>travail</b> = charge × distance × répétitions.<br>
+  Squat : coût = 14,9 kJ + 0,0942 × travail · Soulevé : 56,6 + 0,102 × travail · Développé : 3,2 + 0,0911 × travail · Shrug : 0,05 + 0,246 × travail · Mollets : 1,9 + 0,296 × travail.<br>
+  Ça inclut la série (18 %), l'énergie anaérobie (31 %) et la « post-combustion » EPOC (51 %).</div>
+  <h3>Ce que je calcule pour toi</h3><ul class="sm">
+  <li>Chaque exercice est rattaché au mouvement mesuré le plus proche (même schéma, même masse musculaire).</li>
+  <li>La distance parcourue est ajustée à ta taille (${p.height} cm).</li>
+  <li>Quand ton corps bouge avec la charge (squat, fentes, tractions, dips, mollets debout), j'ajoute la partie de ton poids (${bw} kg) qui est soulevée.</li>
+  <li>Résultat = calories <b>en plus</b> du repos. La séance affiche aussi le total « brut » (avec ton métabolisme de repos pendant la durée).</li></ul>
+  <h3>Exemple</h3><p class="sm">Squat 3 × 10 à 100 kg, 80 kg de corps → <b>≈ ${ex1} kcal</b>.<br>Squat 3 × 6 à 130 kg, 75 kg de corps → <b>≈ ${ex2} kcal</b>.</p>
+  <p class="xs mut">Précision : ±20-30 % (variabilité entre personnes mesurée dans ces études). Les séances proches de l'échec coûtent un peu plus (Scott & Earnest 2011).
+  Contrôle de cohérence avec Reis et al. 2017 (PLoS One) pour les machines et l'isolation ; Robergs et al. 2007 (JSCR) confirme que charge et distance sont les bons prédicteurs.</p>`;
+}
+
+// ===================== PROGRAMMES, REMPLACEMENTS, SÉANCE FANTÔME =====================
+// exercices faisables dans TA salle = ceux des machines de la salle 3D (+ exercices perso)
+function gymExIds() { const s = new Set(); GYM_MACHINES.forEach(m => m.ex.forEach(id => s.add(id))); Object.keys(customEx()).forEach(id => s.add(id)); return s; }
+function banned() { return new Set(Store.get("program", {}).banned || []); }
+function allEx() { return Object.values(EX).concat(Object.values(customEx())); }
+// note de proximité entre deux exercices (mêmes muscles principaux, même muscle ciblé…)
+function exSimilarity(a, b) {
+  const A = getEx(a), B = getEx(b); let s = 0;
+  A.focus.forEach(m => { if (B.focus.includes(m)) s += 4; else if (B.prim.includes(m)) s += 2; });
+  A.prim.forEach(m => { if (B.prim.includes(m)) s += 2; else if (B.sec.includes(m)) s += 0.5; });
+  const gA = new Set(A.prim.map(m => MUSCLES[m]?.[1])); B.prim.forEach(m => { if (gA.has(MUSCLES[m]?.[1])) s += 1; });
+  if ((ALTERNATIVES[a] || []).includes(b)) s += 3;
+  return s;
+}
+function replacementsFor(exId, exclude = []) {
+  const ok = gymExIds(), ban = banned(), ex = new Set([exId, ...exclude]);
+  return allEx().filter(x => !ex.has(x.id) && !ban.has(x.id) && ok.has(x.id)).map(x => ({ id: x.id, s: exSimilarity(exId, x.id) })).filter(x => x.s >= 1).sort((p, q) => q.s - p.s).map(x => x.id);
+}
+// ---------- « Je ne veux pas faire cet exo » ----------
+function refuseSheet(i, ctx = "live") {
+  return () => {
+    const cur = ctx === "live" ? liveWorkout()?.ex[i]?.id : S.gen?.days[S.genDay]?.ex[i]?.id; if (!cur) return "";
+    const inW = ctx === "live" ? (liveWorkout().ex || []).map(e => e.id) : S.gen.days[S.genDay].ex.map(e => e.id);
+    const alts = replacementsFor(cur, inW).slice(0, 4);
+    return `<div class="row between"><h2>Pas envie de « ${esc(getEx(cur).name)} » ?</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+      <p class="sm mut">Je te propose des exercices de ta salle qui travaillent les mêmes muscles :</p>
+      ${alts.map((id, k) => { const x = getEx(id); return `<div class="entry" data-act="refusePick" data-v="${id}" data-i="${i}" data-ctx="${ctx}"><div style="width:84px;flex:none">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div class="grow"><div class="b">${esc(x.name)}${k === 0 ? ` <span class="pill">conseillé</span>` : ""}</div><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div><div class="mut">›</div></div>`; }).join("") || `<p class="sm">Aucun équivalent trouvé dans ta salle.</p>`}
+      <label class="row" style="gap:10px;margin-top:12px"><input type="checkbox" id="banForever" style="width:22px;height:22px"> <span class="sm">Ne plus jamais me proposer cet exercice</span></label>
+      ${ctx === "live" ? `<button class="sec small" style="margin-top:8px" data-act="refuseDrop" data-i="${i}">Juste le retirer de la séance</button>` : ""}`;
+  };
+}
+function banEx(id) { const doc = clone(Store.get("program", {})); doc.banned = [...new Set([...(doc.banned || []), id])]; // retire aussi des modèles
+  doc.templates = doc.templates || {}; Object.entries(program()).forEach(([n, t]) => { if (t.ex.includes(id)) { const r = replacementsFor(id, t.ex)[0]; doc.templates[n] = Object.assign({}, t, { ex: t.ex.map(e => e === id ? r : e).filter(Boolean) }); } });
+  Store.set("program", doc); }
+// ---------- séance fantôme : comparaison série par série avec la dernière fois ----------
+function ghostCmp(cur, prev) { if (!prev) return null; if (+cur.w === +prev.w) return Math.sign(cur.r - prev.r); const a = e1rm(cur), b = e1rm(prev); if (Math.abs(a - b) / b < 0.01) return 0; return a > b ? 1 : -1; }
+function ghostBadge(c) { return c == null ? "" : c > 0 ? `<span class="gh up" title="mieux que la dernière fois">▲</span>` : c < 0 ? `<span class="gh down" title="moins bien que la dernière fois">▼</span>` : `<span class="gh eq" title="pareil">＝</span>`; }
+function ghostSummary(e, last) {
+  if (!last) return ""; const cur = (e.sets || []).filter(s => !s.wu), prev = (last.sets || []).filter(s => !s.wu); if (!cur.length) return "";
+  const n = Math.min(cur.length, prev.length); let up = 0, dn = 0, eq = 0; for (let j = 0; j < n; j++) { const c = ghostCmp(cur[j], prev[j]); c > 0 ? up++ : c < 0 ? dn++ : eq++; }
+  const vC = cur.slice(0, n).reduce((t, s) => t + s.w * s.r, 0), vP = prev.slice(0, n).reduce((t, s) => t + s.w * s.r, 0); const dv = vP ? Math.round((vC - vP) / vP * 100) : 0;
+  const verdict = up > dn ? "📈 Tu progresses" : dn > up ? "📉 Un peu en dessous" : "➡️ Stable";
+  return `<div class="xs" style="margin:4px 0"><b>${verdict}</b> vs dernière fois : ${up}▲ ${eq}＝ ${dn}▼ · volume ${dv >= 0 ? "+" : ""}${dv} %</div>`;
+}
+// ---------- générateur de programme ----------
+// volumes hebdo par muscle : 10-12 séries (entretien/progression) et 16-20 pour les muscles prioritaires
+// (relation dose-réponse : Schoenfeld et al. 2017, J Sports Sci ; Pelland et al. 2024, méta-régression).
+const SPLITS = {
+  2: [["Full body A", "all"], ["Full body B", "all"]],
+  3: [["Push (pecs, épaules, triceps)", "push"], ["Pull (dos, biceps)", "pull"], ["Jambes", "legs"]],
+  4: [["Haut A", "upper"], ["Bas A", "legs"], ["Haut B", "upper"], ["Bas B", "legs"]],
+  5: [["Push", "push"], ["Pull", "pull"], ["Jambes", "legs"], ["Haut", "upper"], ["Bas", "legs"]],
+  6: [["Push A", "push"], ["Pull A", "pull"], ["Jambes A", "legs"], ["Push B", "push"], ["Pull B", "pull"], ["Jambes B", "legs"]]
+};
+const DAY_GROUPS = {
+  push: ["Pectoraux", "Épaules avant", "Épaules latérales", "Triceps"], pull: ["Dos – largeur", "Dos – épaisseur", "Épaules arrière", "Biceps", "Avant-bras", "Trapèzes"],
+  legs: ["Quadriceps", "Ischios", "Fessiers", "Mollets", "Adducteurs", "Abdos", "Lombaires"],
+  upper: ["Pectoraux", "Dos – largeur", "Dos – épaisseur", "Épaules latérales", "Épaules arrière", "Biceps", "Triceps"],
+  all: ["Pectoraux", "Dos – largeur", "Dos – épaisseur", "Épaules latérales", "Biceps", "Triceps", "Quadriceps", "Ischios", "Fessiers", "Abdos"]
+};
+function genProgram(o) {
+  const split = SPLITS[o.days] || SPLITS[3]; const prio = new Set(o.prio || []); const ok = gymExIds(), ban = banned();
+  const cnt = {}; split.forEach(([, k]) => DAY_GROUPS[k].forEach(g => cnt[g] = (cnt[g] || 0) + 1));
+  const weekly = g => prio.has(g) ? 18 : ["Avant-bras", "Trapèzes", "Lombaires", "Adducteurs", "Abdos", "Mollets"].includes(g) ? 6 : 10;
+  const maxSets = Math.max(8, Math.floor((o.minutes - 8) / 3.2));
+  const cands = allEx().filter(x => ok.has(x.id) && !ban.has(x.id));
+  const isCompound = x => x.prim.length + x.sec.length >= 3;
+  const used = {};
+  const days = split.map(([name, k], di) => {
+    const groups = DAY_GROUPS[k].slice().sort((a, b) => (prio.has(b) ? 1 : 0) - (prio.has(a) ? 1 : 0)); const ex = [];
+    // séries visées pour chaque muscle ce jour-là, ramenées à ce qui tient dans la durée choisie
+    let needs = groups.map(g => weekly(g) / cnt[g]); const sum = needs.reduce((t, x) => t + x, 0); const f = sum > maxSets ? maxSets / sum : 1;
+    needs = needs.map(n => Math.max(2, Math.round(n * f)));
+    groups.forEach((g, gi) => {
+      let need = needs[gi];
+      const pool = cands.filter(x => x.prim.some(m => MUSCLES[m]?.[1] === g) && !ex.some(e => e.id === x.id))
+        .sort((a, b) => ((used[a.id] || 0) - (used[b.id] || 0)) * 3 + (isCompound(b) - isCompound(a)) * 2 + ((o.keep || []).includes(b.id) - (o.keep || []).includes(a.id)));
+      while (need > 0 && pool.length) { const x = pool.shift(); const sets = need >= 7 ? 4 : need >= 5 ? 3 : Math.min(4, need); ex.push({ id: x.id, sets }); used[x.id] = (used[x.id] || 0) + 1; need -= sets; }
+    });
+    ex.sort((a, b) => isCompound(getEx(b.id)) - isCompound(getEx(a.id)));
+    return { name, ex, total: ex.reduce((t, e) => t + e.sets, 0) };
+  });
+  return { days, opts: o };
+}
+function genSheet() {
+  const G = S.genOpt || (S.genOpt = { days: 3, minutes: 60, prio: [], goal: "hyp" });
+  const prog = S.gen;
+  return `<div class="row between"><h2>Créer un programme</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <p class="sm mut">Seulement avec les machines de <b>ta salle</b> (UAX), sans les exercices que tu as refusés.</p>
+    <h3>Séances par semaine</h3><div class="chips">${[2, 3, 4, 5, 6].map(n => `<button class="chip ${G.days === n ? "on" : ""}" data-act="genSet" data-k="days" data-v="${n}">${n}</button>`).join("")}</div>
+    <h3>Durée d'une séance</h3><div class="chips">${[45, 60, 75, 90].map(n => `<button class="chip ${G.minutes === n ? "on" : ""}" data-act="genSet" data-k="minutes" data-v="${n}">${n} min</button>`).join("")}</div>
+    <h3>Muscles prioritaires</h3><div class="chips">${VOLUME_GROUPS.map(g => `<button class="chip ${G.prio.includes(g) ? "on" : ""}" data-act="genPrio" data-v="${esc(g)}">${esc(g)}</button>`).join("")}</div>
+    <button style="width:100%;margin-top:12px" data-act="genGo">${prog ? "Régénérer" : "Proposer un programme"}</button>
+    ${prog ? `<div style="margin-top:12px">${prog.days.map((d, di) => `<div class="card"><div class="row between"><h3 style="margin:0">${esc(d.name)}</h3><span class="xs mut">${d.total} séries · ~${Math.round(d.total * 3.2 + 8)} min</span></div>
+      ${d.ex.map((e, i) => { const x = getEx(e.id); return `<div class="entry"><div style="width:64px;flex:none">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div class="grow"><div class="sm b">${esc(x.name)}</div><div class="xs mut">${e.sets} séries · ${x.prim.map(m => MUSCLES[m]?.[1]).filter((v, k, a) => a.indexOf(v) === k).join(", ")}</div></div><button class="ghost small" data-act="genRefuse" data-d="${di}" data-i="${i}" title="Je ne veux pas cet exercice">🚫</button></div>`; }).join("")}</div>`).join("")}
+      <p class="xs mut">Volume par muscle : ~10 séries/semaine, 16-20 pour les prioritaires (relation dose-réponse, Schoenfeld 2017 ; Pelland 2024). Les gros exercices passent en premier.</p>
+      <div class="row" style="gap:8px"><button class="grow" data-act="genSave" data-v="replace">Remplacer mon programme</button><button class="sec grow" data-act="genSave" data-v="add">Ajouter à côté</button></div></div>` : ""}`;
+}
+const PROG_ACT = {
+  refuse: el => openSheet(refuseSheet(+el.dataset.i, "live")),
+  refusePick: el => { const i = +el.dataset.i, id = el.dataset.v, ctx = el.dataset.ctx; const ban = $("#banForever")?.checked;
+    if (ctx === "live") { const old = liveWorkout().ex[i].id; updW(w => { w.ex[i].id = id; }); delete S.draft[i]; if (ban) banEx(old); closeSheet(); toast(ban ? "Remplacé, et je ne te le proposerai plus" : "Exercice remplacé"); }
+    else { const d = S.gen.days[S.genDay]; const old = d.ex[i].id; d.ex[i].id = id; if (ban) banEx(old); openSheet(genSheet); } },
+  refuseDrop: el => { const i = +el.dataset.i; const old = liveWorkout().ex[i].id; const ban = $("#banForever")?.checked; updW(w => w.ex.splice(i, 1)); S.draft = {}; if (ban) banEx(old); closeSheet(); },
+  genOpen: () => { S.gen = null; openSheet(genSheet); },
+  genSet: el => { S.genOpt[el.dataset.k] = +el.dataset.v; renderSheet(); },
+  genPrio: el => { const g = el.dataset.v, p = S.genOpt.prio; const k = p.indexOf(g); k >= 0 ? p.splice(k, 1) : p.push(g); renderSheet(); },
+  genGo: () => { S.gen = genProgram(Object.assign({ keep: Object.values(program()).flatMap(t => t.ex) }, S.genOpt)); renderSheet(); },
+  genRefuse: el => { S.genDay = +el.dataset.d; openSheet(refuseSheet(+el.dataset.i, "gen")); },
+  genSave: el => { const doc = clone(Store.get("program", {})); const t = {}; S.gen.days.forEach(d => t[d.name] = { warmup: true, ex: d.ex.map(e => e.id), sets: Object.fromEntries(d.ex.map(e => [e.id, e.sets])) });
+    if (el.dataset.v === "replace") { doc.templates = t; doc.only = true; } else doc.templates = Object.assign(doc.templates || {}, t);
+    Store.set("program", doc); S.gen = null; closeSheet(); toast("Programme enregistré 💪"); },
+  energyInfo: () => openSheet(energyExplainSheet),
+};
+
+// ===================== PHOTOS DE PHYSIQUE (restent sur l'appareil, jamais envoyées) =====================
+const PH = { db: null, list: [], urls: {} };
+function phDB() {
+  if (PH.db) return Promise.resolve(PH.db);
+  return new Promise((res, rej) => { const r = indexedDB.open("muscu_photos", 1); r.onupgradeneeded = () => r.result.createObjectStore("p", { keyPath: "id" }); r.onsuccess = () => { PH.db = r.result; res(PH.db); }; r.onerror = () => rej(r.error); });
+}
+async function phLoad() { const db = await phDB(); return new Promise(res => { const out = []; const c = db.transaction("p").objectStore("p").openCursor(); c.onsuccess = () => { const cur = c.result; if (cur) { out.push(cur.value); cur.continue(); } else { PH.list = out.sort((a, b) => b.date.localeCompare(a.date) || b.t - a.t); res(PH.list); } }; }); }
+async function phAdd(blob, view, date) { const db = await phDB(); const it = { id: uid(), t: Date.now(), date: date || todayKey(), view, blob, w: r1(latestWeight()) }; await new Promise(r => { const tx = db.transaction("p", "readwrite"); tx.objectStore("p").put(it); tx.oncomplete = r; }); await phLoad(); }
+async function phDel(id) { const db = await phDB(); await new Promise(r => { const tx = db.transaction("p", "readwrite"); tx.objectStore("p").delete(id); tx.oncomplete = r; }); if (PH.urls[id]) { URL.revokeObjectURL(PH.urls[id]); delete PH.urls[id]; } await phLoad(); }
+function phURL(it) { return PH.urls[it.id] || (PH.urls[it.id] = URL.createObjectURL(it.blob)); }
+const PH_VIEWS = [["face", "Face"], ["profil", "Profil"], ["dos", "Dos"]];
+function photosCardHTML() {
+  if (!window.indexedDB) return "";
+  if (!PH.loaded) { PH.loaded = true; phLoad().then(() => { if (S.tab === "progress") render(); }).catch(() => {}); }
+  const v = S.phView || "face"; const list = PH.list.filter(p => p.view === v);
+  const A = list.find(p => p.id === S.phA) || list[list.length - 1], B = list.find(p => p.id === S.phB) || list[0];
+  const cmp = A && B && A !== B ? `<div class="phcmp" style="position:relative;border-radius:14px;overflow:hidden;aspect-ratio:3/4;background:#000;margin-top:8px">
+      <img src="${phURL(A)}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+      <div id="phTop" style="position:absolute;inset:0;clip-path:inset(0 0 0 ${S.phSplit ?? 50}%)"><img src="${phURL(B)}" style="width:100%;height:100%;object-fit:cover"></div>
+      <div style="position:absolute;top:0;bottom:0;left:${S.phSplit ?? 50}%;width:2px;background:#fff" id="phLine"></div>
+      <span class="tag" style="position:absolute;left:8px;top:8px">${fmtDay(A.date)} · ${A.w || "?"} kg</span><span class="tag" style="position:absolute;right:8px;top:8px">${fmtDay(B.date)} · ${B.w || "?"} kg</span></div>
+      <input type="range" min="0" max="100" value="${S.phSplit ?? 50}" data-input="phSplit" style="width:100%;margin-top:6px">` : "";
+  return `<div class="card"><h2>Photos de physique</h2><p class="xs mut">Restent uniquement sur cet appareil (jamais envoyées ni synchronisées). Astuce : même lumière, même endroit, le matin à jeun.</p>
+    <div class="chips">${PH_VIEWS.map(([k, l]) => `<button class="chip ${v === k ? "on" : ""}" data-act="phView" data-v="${k}">${l}</button>`).join("")}</div>
+    <label class="btn" style="display:block;text-align:center;margin-top:8px">📸 Ajouter une photo (${PH_VIEWS.find(x => x[0] === v)[1]})<input type="file" accept="image/*" capture="user" data-file="physique" hidden></label>
+    ${list.length ? `<div style="display:flex;gap:6px;overflow-x:auto;margin-top:8px">${list.map(p => `<div style="flex:none;width:72px;text-align:center"><img src="${phURL(p)}" data-act="phPick" data-v="${p.id}" style="width:72px;height:96px;object-fit:cover;border-radius:10px;border:3px solid ${p === A ? "#f59e0b" : p === B ? "#2563eb" : "transparent"}"><div class="xs mut">${fmtDay(p.date)}</div><button class="danger small" data-act="phDel" data-v="${p.id}" style="padding:2px 6px">✕</button></div>`).join("")}</div>
+      <p class="xs mut">Touche une photo pour choisir « avant » (orange) puis « après » (bleu).</p>` : `<p class="sm mut">Aucune photo pour l'instant.</p>`}${cmp}</div>`;
+}
+const PH_ACT = {
+  phView: el => { S.phView = el.dataset.v; S.phA = S.phB = null; render(); },
+  phPick: el => { const id = el.dataset.v; if (!S.phNext || S.phNext === "A") { S.phA = id; S.phNext = "B"; } else { S.phB = id; S.phNext = "A"; } render(); },
+  phDel: el => { const id = el.dataset.v; if (S.phDelArm !== id) { S.phDelArm = id; toast("Touche encore ✕ pour supprimer cette photo"); return; } S.phDelArm = null; phDel(id).then(render); },
+};
+
 // ===================== ACTIONS =====================
 function updDay(fn) { const d = clone(day(S.day)); d.entries = d.entries || []; d.acts = d.acts || []; fn(d); saveDay(S.day, d); }
 function updW(fn) { const w = liveWorkout(); if (!w) return; const id = w._id; const o = clone(Store.get(id)); fn(o); Store.set(id, o); }
@@ -2338,7 +2816,7 @@ const ACT = {
   createEx: () => { const name = $("#newExName").value.trim(); if (!name) return; const m = $("#newExMuscle").value; const id = "c_" + uid();
     const doc = clone(Store.get("program", {})); doc.customEx = doc.customEx || {}; doc.customEx[id] = { id, name, cat: "Mes exercices", prim: [m], sec: [], focus: [m] }; Store.set("program", doc);
     updW(w => w.ex.push({ id, sets: [] })); closeSheet(); },
-  finishW: () => { const notes = $("#wNotes")?.value || ""; updW(w => { w.live = false; w.end = Date.now(); w.notes = notes; w.ex = w.ex.filter(e => (e.sets || []).length); }); clearInterval(window._wt); S.draft = {}; restStop(); toast("Séance enregistrée 💪"); },
+  finishW: () => { const notes = $("#wNotes")?.value || ""; updW(w => { w.live = false; w.end = Date.now(); w.notes = notes; w.ex = w.ex.filter(e => (e.sets || []).length); }); clearInterval(window._wt); S.draft = {}; restStop(); const lw = workouts().find(x => !x.live && x.end); toast("Séance enregistrée 💪" + (lw ? ` · ≈ ${r0(workoutKcal(lw))} kcal` : "")); },
   cancelW: () => openSheet(() => `<h2>Abandonner la séance ?</h2><p class="sm mut">Les séries notées seront supprimées.</p><div class="row"><button class="sec grow" data-act="closeSheet">Non</button><button class="grow" style="background:var(--red)" data-act="cancelWok">Oui, supprimer</button></div>`),
   cancelWok: () => { const w = liveWorkout(); if (w) Store.del(w._id); S.draft = {}; closeSheet(); },
   openHist: el => openSheet(histSheet(el.dataset.v)),
@@ -2383,6 +2861,7 @@ const ACT = {
     <p class="xs mut">Le matin, à jeun, après les toilettes : c'est le plus fiable.</p><input id="qW" type="number" step="0.1" inputmode="decimal" value="${day(todayKey()).weight || ""}" placeholder="ex. 80.2" style="font-size:22px;text-align:center">
     <button style="width:100%;margin-top:10px" data-act="quickWeightGo">Enregistrer</button>`),
   quickWeightGo: () => { const w = parseFloat($("#qW").value); if (!(w > 30)) return; const k = todayKey(); const d = clone(day(k)); d.entries = d.entries || []; d.acts = d.acts || []; d.weight = w; saveDay(k, d); toast(`Poids enregistré : ${w} kg`); closeSheet(); },
+  gymNames: el => { S.gymNames = el.dataset.v; $$('[data-act="gymNames"]').forEach(b => b.classList.toggle("on", b === el)); const S3 = V3.scenes.gym; if (S3) S3.dirty = performance.now() + 300; },
   inv3d: () => { try { localStorage.setItem("muscu_inv3d", localStorage.getItem("muscu_inv3d") === "1" ? "0" : "1"); } catch (e) {} render(); },
   setTheme: el => { try { localStorage.setItem("muscu_theme", el.dataset.v); } catch (e) {} applyTheme(); Object.values(V3.scenes).forEach(s => s.renderer.dispose()); V3.scenes = {}; render(); },
   onbHide: () => { try { localStorage.setItem("muscu_onb_hide", "1"); } catch (e) {} render(); },
@@ -2433,6 +2912,7 @@ async function handleBarcode(code) {
 async function onFile(kind, file) {
   if (!file) return; S.add.err = "";
   if (kind === "shop") { S.shop.busy = true; S.shop.err = ""; renderSheet(); try { const b = await shrinkImage(file, 1600); const r = await aiShop("", b); S.shop.items = (r?.items || []).filter(x => x && x.name && x.qty > 0); if (!S.shop.items.length) S.shop.err = "Rien reconnu sur la photo."; } catch (e) { S.shop.err = aiErr(e); } S.shop.busy = false; renderSheet(); return; }
+  if (kind === "physique") { try { const b = await shrinkImage(file, 1400); await phAdd(b, S.phView || "face"); toast("Photo ajoutée 📸"); } catch (e) { toast("Impossible d'enregistrer la photo"); } render(); return; }
   if (kind === "photo") { S.add.blob = await shrinkImage(file); S.add.img = URL.createObjectURL(S.add.blob); renderSheet(); return; }
   if (kind === "barcode") {
     S.add.busy = true; renderSheet();
@@ -2489,6 +2969,7 @@ document.addEventListener("change", ev => {
   if (el.dataset.file) { if (el.dataset.file === "prodphotos") onProductPhotos([...(el.files || [])].slice(0, 3)); else if (el.dataset.file === "fridgephotos") onFridgePhotos([...(el.files || [])].slice(0, 3)); else onFile(el.dataset.file, el.files?.[0]); el.value = ""; return; }
   if (el.dataset.act === "range") { const [a, b] = el.value.split("-").map(Number); const doc = clone(Store.get("program", {})); doc.ranges = doc.ranges || {}; doc.ranges[el.dataset.v] = [a, b]; Store.set("program", doc); return; }
   if (el.dataset.act === "progEx") { S.progEx = el.value; render(); return; }
+  if (el.dataset.act === "gymGoto") { if (el.value) gymGoto(el.value); el.value = ""; return; }
   if (el.dataset.act === "copyChk") { S.copySel[+el.dataset.v] = el.checked; renderSheet(); return; }
   if (el.id === "copyDate" && el.value) { S.copyFrom = el.value; S.copySel = null; renderSheet(); return; }
   if (el.id === "wDate") { const w = liveWorkout(); if (w && el.value) { const t = new Date(w.start); const d = parseKey(el.value); d.setHours(t.getHours(), t.getMinutes()); const delta = d.getTime() - w.start; updW(o => { o.start += delta; o.ex.forEach(e => e.sets.forEach(s => s.t += delta)); }); } return; }
@@ -2505,6 +2986,7 @@ document.addEventListener("input", ev => {
   else if (k === "recQ") { S.rec.q = el.value; const res = searchFoods(el.value).slice(0, 8); S._recRes = res; $("#recRes").innerHTML = res.map((f, i) => `<div class="entry" data-act="recAddIng" data-i="${i}"><span class="sm">${esc(f.name)}</span><span class="mut">+</span></div>`).join(""); }
   else if (k === "recG") { S.rec.ings[+el.dataset.i].g = +el.value || 0; }
   else if (k === "recP") { S.recPortions = parseFloat(el.value) || 1; }
+  else if (k === "phSplit") { S.phSplit = +el.value; const t = $("#phTop"), l = $("#phLine"); if (t) t.style.clipPath = `inset(0 0 0 ${el.value}%)`; if (l) l.style.left = el.value + "%"; }
   else if (k === "draft") { const dr = S.draft[+el.dataset.i]; if (dr) dr[el.dataset.k] = el.value; }
   else if (k === "exQ") { S.exQ = el.value; const sh = exPickerSheet("add")(); const tmp = document.createElement("div"); tmp.innerHTML = sh; $("#exList").innerHTML = tmp.querySelector("#exList").innerHTML; }
 });
@@ -2512,7 +2994,7 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT);
+Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
