@@ -107,7 +107,7 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795038346";
+const BUILD_VERSION = "1795130963";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -2876,16 +2876,30 @@ function genProgram(o) {
   const isCompound = x => x.prim.length + x.sec.length >= 3;
   const used = {};
   const days = split.map(([name, k], di) => {
-    const groups = DAY_GROUPS[k].slice().sort((a, b) => (prio.has(b) ? 1 : 0) - (prio.has(a) ? 1 : 0)); const ex = [];
+    const groups = DAY_GROUPS[k].slice().sort((a, b) => (prio.has(b) ? 1 : 0) - (prio.has(a) ? 1 : 0));
     // séries visées pour chaque muscle ce jour-là, ramenées à ce qui tient dans la durée choisie
-    let needs = groups.map(g => weekly(g) / cnt[g]); const sum = needs.reduce((t, x) => t + x, 0); const f = sum > maxSets ? maxSets / sum : 1;
-    needs = needs.map(n => Math.max(2, Math.round(n * f)));
-    groups.forEach((g, gi) => {
-      let need = needs[gi];
-      const pool = cands.filter(x => x.prim.some(m => MUSCLES[m]?.[1] === g) && !ex.some(e => e.id === x.id))
+    // on vise le volume complet, puis on réduit tant que la séance ne tient pas dans la durée choisie
+    const usedSnap = Object.assign({}, used); let ex;
+    for (let f = 1; f >= 0.3; f -= 0.05) {
+      Object.keys(used).forEach(k => delete used[k]); Object.assign(used, usedSnap); ex = [];
+      const needs = groups.map(g => weekly(g) / cnt[g] * f);
+    // séries « dures » restantes par muscle ; un exercice compte 1 série pour ses muscles principaux
+    // et 0,5 pour ses muscles secondaires (comptage fractionné, Pelland 2024)
+    const rem = {}; groups.forEach((g, gi) => rem[g] = needs[gi]);
+    const grpOf = ms => [...new Set(ms.map(m => MUSCLES[m]?.[1]).filter(Boolean))];
+    groups.forEach(g => {
+      const pool = cands.filter(x => grpOf(x.prim).includes(g))
         .sort((a, b) => ((used[a.id] || 0) - (used[b.id] || 0)) * 3 + (isCompound(b) - isCompound(a)) * 2 + ((o.keep || []).includes(b.id) - (o.keep || []).includes(a.id)));
-      while (need > 0 && pool.length) { const x = pool.shift(); const sets = need >= 7 ? 4 : need >= 5 ? 3 : Math.min(4, need); ex.push({ id: x.id, sets }); used[x.id] = (used[x.id] || 0) + 1; need -= sets; }
+      while (rem[g] >= 1.5 && pool.length) {
+        const x = pool.shift(); if (ex.some(e => e.id === x.id)) continue;
+        const sets = rem[g] >= 4.5 ? 4 : rem[g] >= 2.5 ? 3 : 2;
+        ex.push({ id: x.id, sets }); used[x.id] = (used[x.id] || 0) + 1;
+        grpOf(x.prim).forEach(h => { if (h in rem) rem[h] -= sets; });
+        grpOf(x.sec).filter(h => !grpOf(x.prim).includes(h)).forEach(h => { if (h in rem) rem[h] -= sets * 0.5; });
+      }
     });
+      if (ex.reduce((t, e) => t + e.sets, 0) <= maxSets) break;
+    }
     ex.sort((a, b) => isCompound(getEx(b.id)) - isCompound(getEx(a.id)));
     return { name, ex, total: ex.reduce((t, e) => t + e.sets, 0) };
   });
@@ -2902,7 +2916,7 @@ function genSheet() {
     <button style="width:100%;margin-top:12px" data-act="genGo">${prog ? "Régénérer" : "Proposer un programme"}</button>
     ${prog ? `<div style="margin-top:12px">${prog.days.map((d, di) => `<div class="card"><div class="row between"><h3 style="margin:0">${esc(d.name)}</h3><span class="xs mut">${d.total} séries · ~${Math.round(d.total * 3.2 + 8)} min</span></div>
       ${d.ex.map((e, i) => { const x = getEx(e.id); return `<div class="entry"><div style="width:64px;flex:none">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div><div class="grow"><div class="sm b">${esc(x.name)}</div><div class="xs mut">${e.sets} séries · ${x.prim.map(m => MUSCLES[m]?.[1]).filter((v, k, a) => a.indexOf(v) === k).join(", ")}</div></div><button class="ghost small" data-act="genRefuse" data-d="${di}" data-i="${i}" title="Je ne veux pas cet exercice">🚫</button></div>`; }).join("")}</div>`).join("")}
-      <p class="xs mut">Volume par muscle : ~10 séries/semaine, 16-20 pour les prioritaires (relation dose-réponse, Schoenfeld 2017 ; Pelland 2024). Les gros exercices passent en premier.</p>
+      <p class="xs mut">Volume = séries <b>par muscle et par semaine</b> (pas par séance) : ~10, 16-20 pour les prioritaires, 6 pour les petits muscles. Seules les séries dures comptent (0 à 3 répétitions en réserve). Un exercice compte 1 série pour ses muscles principaux et ½ pour les secondaires : un développé couché fait aussi travailler triceps et épaules avant (Schoenfeld 2017 ; Pelland 2024). Les gros exercices passent en premier.</p>
       <div class="row" style="gap:8px"><button class="grow" data-act="genSave" data-v="replace">Remplacer mon programme</button><button class="sec grow" data-act="genSave" data-v="add">Ajouter à côté</button></div></div>` : ""}`;
 }
 const PROG_ACT = {
