@@ -117,7 +117,7 @@ const ACT = {
     const i = +el.dataset.i; const dr = S.draft[i];
     const wv = parseFloat($(`input[data-input=draft][data-i="${i}"][data-k="w"]`).value), rv = parseInt($(`input[data-input=draft][data-i="${i}"][data-k="r"]`).value);
     if (!(rv > 0) || isNaN(wv)) { toast("Indique la charge et les reps"); return; }
-    dr.w = wv; dr.r = ""; restStart(liveWorkout().ex[i].id, !!dr.wu);
+    dr.w = wv; dr.r = dr.wu ? "" : rv; restStart(liveWorkout().ex[i].id, !!dr.wu);
     updW(w => w.ex[i].sets.push({ w: wv, r: rv, rir: dr.wu ? null : dr.rir, wu: !!dr.wu, t: Date.now() }));
     if (dr.wu) dr.wu = false;
     const h = exerciseHistory(liveWorkout().ex[i].id, liveWorkout()._id); const best = h.flatMap(x => x.sets).reduce((b, s) => Math.max(b, e1rm(s)), 0);
