@@ -111,14 +111,14 @@ const ACT = {
   warmChk: el => updW(w => { w.warm = w.warm || {}; w.warm[el.dataset.v] = el.checked; }),
   showMusc: el => { S.bodyEx = el.dataset.v; openSheet(exMuscleSheet(el.dataset.v)); },
   dStep: el => { const i = +el.dataset.i, k = el.dataset.k; const dr = S.draft[i]; const inp = $(`input[data-input=draft][data-i="${i}"][data-k="${k}"]`); let cur = parseFloat(inp?.value); if (isNaN(cur)) cur = k === "r" ? repRange(liveWorkout().ex[i].id)[1] - +el.dataset.v : 0; dr[k] = Math.max(0, r1(cur + +el.dataset.v)); render(); },
-  dRir: el => { const dr = S.draft[+el.dataset.i]; dr.rir = +el.dataset.v; dr.wu = false; render(); },
+  dRir: el => { const dr = S.draft[+el.dataset.i]; const v = +el.dataset.v; dr.rir = dr.rir === v ? null : v; dr.wu = false; render(); },
   dWu: el => { const dr = S.draft[+el.dataset.i]; dr.wu = !dr.wu; render(); },
   logSet: el => {
     const i = +el.dataset.i; const dr = S.draft[i];
     const wv = parseFloat($(`input[data-input=draft][data-i="${i}"][data-k="w"]`).value), rv = parseInt($(`input[data-input=draft][data-i="${i}"][data-k="r"]`).value);
     if (!(rv > 0) || isNaN(wv)) { toast("Indique la charge et les reps"); return; }
-    dr.w = wv; dr.r = dr.wu ? "" : rv; restStart(liveWorkout().ex[i].id, !!dr.wu);
-    updW(w => w.ex[i].sets.push({ w: wv, r: rv, rir: dr.wu ? null : dr.rir, wu: !!dr.wu, t: Date.now() }));
+    dr.w = wv; dr.r = dr.wu ? "" : rv; const rirDone = dr.rir; dr.rir = null; restStart(liveWorkout().ex[i].id, !!dr.wu);
+    updW(w => w.ex[i].sets.push({ w: wv, r: rv, rir: dr.wu ? null : rirDone ?? null, wu: !!dr.wu, t: Date.now() }));
     if (dr.wu) dr.wu = false;
     const h = exerciseHistory(liveWorkout().ex[i].id, liveWorkout()._id); const best = h.flatMap(x => x.sets).reduce((b, s) => Math.max(b, e1rm(s)), 0);
     if (!dr.wu && best && e1rm({ w: wv, r: rv }) > best) toast("🏆 Nouveau record (1RM estimé) !");

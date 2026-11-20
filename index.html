@@ -140,7 +140,7 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795139608";
+const BUILD_VERSION = "1795139700";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -2211,7 +2211,7 @@ function liveView(w) {
 function exCard(w, e, i) {
   const x = getEx(e.id); const sug = suggestion(e.id, w._id); const hist = exerciseHistory(e.id, w._id);
   const last = hist[0]; const [lo, hi] = repRange(e.id);
-  const lastW = (e.sets || []).filter(s => !s.wu).slice(-1)[0]; const dr = S.draft[i] || (S.draft[i] = { w: lastW?.w ?? sug.w ?? "", r: lastW?.r ?? "", rir: lastW?.rir ?? 2, wu: false });
+  const lastW = (e.sets || []).filter(s => !s.wu).slice(-1)[0]; const dr = S.draft[i] || (S.draft[i] = { w: lastW?.w ?? sug.w ?? "", r: lastW?.r ?? "", rir: null, wu: false });
   const alts = ALTERNATIVES[e.id] || [];
   const prev = (e.sets || []);
   const dl = isDeload() ? `<div class="reco xs" style="margin:6px 0">🔋 Décharge : fais environ <b>${Math.max(1, Math.round((program()[w.name]?.sets?.[e.id] || 3) / 2))} série(s)</b> à la charge habituelle, en gardant 3-4 reps en réserve.</div>` : "";
@@ -3476,14 +3476,14 @@ const ACT = {
   warmChk: el => updW(w => { w.warm = w.warm || {}; w.warm[el.dataset.v] = el.checked; }),
   showMusc: el => { S.bodyEx = el.dataset.v; openSheet(exMuscleSheet(el.dataset.v)); },
   dStep: el => { const i = +el.dataset.i, k = el.dataset.k; const dr = S.draft[i]; const inp = $(`input[data-input=draft][data-i="${i}"][data-k="${k}"]`); let cur = parseFloat(inp?.value); if (isNaN(cur)) cur = k === "r" ? repRange(liveWorkout().ex[i].id)[1] - +el.dataset.v : 0; dr[k] = Math.max(0, r1(cur + +el.dataset.v)); render(); },
-  dRir: el => { const dr = S.draft[+el.dataset.i]; dr.rir = +el.dataset.v; dr.wu = false; render(); },
+  dRir: el => { const dr = S.draft[+el.dataset.i]; const v = +el.dataset.v; dr.rir = dr.rir === v ? null : v; dr.wu = false; render(); },
   dWu: el => { const dr = S.draft[+el.dataset.i]; dr.wu = !dr.wu; render(); },
   logSet: el => {
     const i = +el.dataset.i; const dr = S.draft[i];
     const wv = parseFloat($(`input[data-input=draft][data-i="${i}"][data-k="w"]`).value), rv = parseInt($(`input[data-input=draft][data-i="${i}"][data-k="r"]`).value);
     if (!(rv > 0) || isNaN(wv)) { toast("Indique la charge et les reps"); return; }
-    dr.w = wv; dr.r = dr.wu ? "" : rv; restStart(liveWorkout().ex[i].id, !!dr.wu);
-    updW(w => w.ex[i].sets.push({ w: wv, r: rv, rir: dr.wu ? null : dr.rir, wu: !!dr.wu, t: Date.now() }));
+    dr.w = wv; dr.r = dr.wu ? "" : rv; const rirDone = dr.rir; dr.rir = null; restStart(liveWorkout().ex[i].id, !!dr.wu);
+    updW(w => w.ex[i].sets.push({ w: wv, r: rv, rir: dr.wu ? null : rirDone ?? null, wu: !!dr.wu, t: Date.now() }));
     if (dr.wu) dr.wu = false;
     const h = exerciseHistory(liveWorkout().ex[i].id, liveWorkout()._id); const best = h.flatMap(x => x.sets).reduce((b, s) => Math.max(b, e1rm(s)), 0);
     if (!dr.wu && best && e1rm({ w: wv, r: rv }) > best) toast("🏆 Nouveau record (1RM estimé) !");
