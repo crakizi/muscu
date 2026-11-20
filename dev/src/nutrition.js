@@ -40,10 +40,10 @@ function weeklyAdjust(tdee, factor, ad) {
 // ---- vue Cuisine ----
 function viewKitchen() {
   const k = S.kTab || "frigo";
-  const tabs = `<div class="chips" style="margin-bottom:10px">${[["frigo", "🧊 Frigo"], ["plan", "📅 Plan de repas"], ["idees", "💡 Idées recettes"], ["besoins", "📊 Mes besoins"]].map(([v, l]) => `<button class="chip ${k === v ? "on" : ""}" data-act="kTab" data-v="${v}">${l}</button>`).join("")}</div>`;
-  if (k === "frigo") return viewFridge().replace(/(<\/h1>[\s\S]*?<\/div>)/, "$1" + tabs);
+  const tabs = `<div class="ktabs">${[["frigo", "🧊", "Frigo"], ["plan", "📅", "Plan de repas"], ["idees", "💡", "Idées recettes"], ["besoins", "📊", "Mes besoins"]].map(([v, ic, l]) => `<button class="ktab ${k === v ? "on" : ""}" data-act="kTab" data-v="${v}"><span>${ic}</span>${l}</button>`).join("")}</div>`;
+  if (k === "frigo") return statusBanner() + tabs + viewFridge().replace(statusBanner(), "").replace(/<div class="row between"><h1>Mon frigo<\/h1>[\s\S]*?<\/div>/, "");
   const body = k === "plan" ? mealPlanHTML() : k === "idees" ? ideasHTML() : needsHTML();
-  return `${statusBanner()}<h1>Cuisine</h1>${tabs}${body}`;
+  return `${statusBanner()}${tabs}${body}`;
 }
 // ---- plan de repas (IA) ----
 function mealPlanHTML() {

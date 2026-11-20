@@ -119,3 +119,8 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .gymfs .gymfsbtn{top:calc(10px + env(safe-area-inset-top))}
 
 #app.full{max-width:none;padding-left:8px;padding-right:8px}
+
+.ktabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 12px}
+.ktab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 4px;border-radius:16px;background:var(--card);color:var(--txt);font-size:13px;font-weight:600;box-shadow:var(--shadow);border:2px solid transparent;line-height:1.15}
+.ktab span{font-size:28px}.ktab.on{border-color:var(--acc);background:var(--grad,var(--acc));color:#fff}
+#app.swiping{will-change:transform}

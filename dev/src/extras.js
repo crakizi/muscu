@@ -55,3 +55,39 @@ function plateHTML(total) {
   return `<div class="xs mut" style="margin-top:4px">🏋️ Par côté (barre 20 kg) : <b>${x.out.length ? x.out.join(" + ") : "rien"}</b>${x.rest ? ` <span class="mut">(+${x.rest} kg impossible)</span>` : ""}</div>`;
 }
 const BARBELL = new Set(["squat", "bench_press", "rdl", "hip_thrust", "shrug"]);
+// ===================== GLISSER ENTRE LES SECTIONS (comme les onglets de Clash Royale) =====================
+const SWIPE_TABS = ["today", "fridge", "workout", "progress", "coach"];
+const SW = { on: false };
+function swipeBlocked(t) {
+  if (S.sheet || !SWIPE_TABS.includes(S.tab)) return true;
+  for (let el = t; el && el !== document.body; el = el.parentElement) {
+    if (el.id === "scene3d" || el.tagName === "CANVAS" || el.classList?.contains("navpad") || el.id === "nav") return true;
+    if (/INPUT|TEXTAREA|SELECT/.test(el.tagName)) return true;
+    const cs = getComputedStyle(el); if (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 4) return true;
+  }
+  return false;
+}
+function swipeGo(dir) { // dir = +1 → section de droite, -1 → section de gauche
+  const i = SWIPE_TABS.indexOf(S.tab), j = i + dir; const app = $("#app");
+  if (j < 0 || j >= SWIPE_TABS.length) { app.style.transition = "transform .2s"; app.style.transform = ""; return; }
+  app.style.transition = "transform .16s ease-in, opacity .16s"; app.style.transform = `translateX(${-dir * 100}%)`; app.style.opacity = ".3";
+  setTimeout(() => { S.tab = SWIPE_TABS[j]; S.sheet = null; window.scrollTo(0, 0); render();
+    app.style.transition = "none"; app.style.transform = `translateX(${dir * 40}%)`; app.style.opacity = ".3";
+    requestAnimationFrame(() => requestAnimationFrame(() => { app.style.transition = "transform .2s ease-out, opacity .2s"; app.style.transform = ""; app.style.opacity = ""; })); }, 150);
+}
+document.addEventListener("touchstart", e => { const tx = e.touches[0]?.clientX ?? 0; const fromEdge = tx < 28 || tx > window.innerWidth - 28;
+  if (e.touches.length !== 1 || S.sheet || (!fromEdge && swipeBlocked(e.target))) { SW.on = false; return; }
+  SW.on = true; SW.drag = false; SW.x = e.touches[0].clientX; SW.y = e.touches[0].clientY; SW.t = performance.now(); SW.dx = 0; }, { passive: true });
+document.addEventListener("touchmove", e => { if (!SW.on) return; const dx = e.touches[0].clientX - SW.x, dy = e.touches[0].clientY - SW.y;
+  if (!SW.drag) { if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { SW.on = false; return; } if (Math.abs(dx) > 14 && Math.abs(dx) > 1.3 * Math.abs(dy)) SW.drag = true; else return; }
+  e.preventDefault(); const i = SWIPE_TABS.indexOf(S.tab); const edge = (dx > 0 && i === 0) || (dx < 0 && i === SWIPE_TABS.length - 1);
+  SW.dx = dx; const app = $("#app"); app.classList.add("swiping"); app.style.transition = "none"; app.style.transform = `translateX(${edge ? dx * 0.2 : dx}px)`; }, { passive: false });
+document.addEventListener("touchend", () => { if (!SW.on) return; SW.on = false; const app = $("#app"); app.classList.remove("swiping"); if (!SW.drag) return;
+  const v = Math.abs(SW.dx) / Math.max(1, performance.now() - SW.t);
+  if (Math.abs(SW.dx) > window.innerWidth * 0.22 || (v > 0.5 && Math.abs(SW.dx) > 40)) swipeGo(SW.dx < 0 ? 1 : -1);
+  else { app.style.transition = "transform .2s ease-out"; app.style.transform = ""; } });
+// Mac : glisser à deux doigts sur le trackpad
+let wheelAcc = 0, wheelLock = 0, wheelT = 0;
+document.addEventListener("wheel", e => { if (Math.abs(e.deltaX) < Math.abs(e.deltaY) * 1.5 || swipeBlocked(e.target)) return;
+  const now = performance.now(); if (now < wheelLock) return; if (now - wheelT > 250) wheelAcc = 0; wheelT = now; wheelAcc += e.deltaX;
+  if (Math.abs(wheelAcc) > 140) { wheelLock = now + 700; swipeGo(wheelAcc > 0 ? 1 : -1); wheelAcc = 0; } }, { passive: true });
