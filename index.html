@@ -109,12 +109,19 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .wd.fut{opacity:.75}.wd:disabled{opacity:.3}
 .datepick{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
 
+.poses{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pose{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;padding:8px 4px;border:2px dashed var(--line,#cbd5e1);border-radius:14px;min-height:150px;cursor:pointer;background:var(--chip)}
+.pose.has{border-style:solid;border-color:var(--acc);padding:0;overflow:hidden;justify-content:flex-end;position:relative}
+.pose.has img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.pose.has span{position:relative;background:rgba(0,0,0,.55);color:#fff;width:100%;padding:2px}
+.phpair{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}.phpair figure{margin:0}.phpair img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px}.phpair figcaption{font-size:11px;text-align:center;color:var(--mut)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid2 input{width:100%}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795135155";
+const BUILD_VERSION = "1795135624";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1945,12 +1952,13 @@ function viewToday() {
   const left = T.kcal - t.kcal;
   const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
   const mini = (lab, v, ref, max) => `<span class="${max ? (v > ref ? "tag red" : "tag") : (v >= ref ? "tag grn" : "tag")}">${lab} ${r1(v)}/${ref} g</span>`;
-  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.g} g · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
+  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
   const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
   const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyOpen" title="Copier un autre jour">↺ Copier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
     ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
-    ${!all.length && (day(addDays(k, -1)).entries || []).length ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Reprendre ce que j'ai mangé la veille (${r0(dayTotals(addDays(k, -1)).kcal)} kcal)</button>` : ""}
+    ${!all.length && lastLoggedDay(k) ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Répéter ${lastLoggedDay(k) === addDays(k, -1) ? "la veille" : fmtDay(lastLoggedDay(k))} (${r0(dayTotals(lastLoggedDay(k)).kcal)} kcal)</button>` : ""}
+    <button class="ghost small" style="width:100%;margin:2px 0 4px" data-act="estimOpen">🤷 Oublié de peser / noter ? Ajoute une estimation en kcal</button>
     ${!all.length ? `<p class="mut sm">${k > todayKey() ? "Jour à venir : prépare tes repas à l'avance, ils seront comptés ce jour-là." : "Rien pour l'instant."} Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("") : all.map(entryRow).join("")}
   </div>`;
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
@@ -1958,6 +1966,7 @@ function viewToday() {
   return `${statusBanner()}
   ${k === todayKey() ? `<div class="hello"><img src="icons/icon-192.png" alt="" onerror="this.remove()"><div><div class="b" style="font-size:18px">${hello} Vuthy 👋</div><div class="xs mut">${fmtDay(k)} · objectif : ${esc(GOALS[profile().goal].label)}</div></div><button class="ghost" style="margin-left:auto;font-size:20px" data-act="tab" data-v="profile" title="Profil">⚙︎</button></div>
   ${onboardingHTML()}
+  ${bilans().length && bilanDue() ? `<button class="sec" style="width:100%;margin-bottom:8px" data-act="blOpen">📸 C'est l'heure de ton bilan de la semaine (à jeun)</button>` : ""}
   <div class="qa"><button data-act="openAdd" data-v=""><span>🍽️</span>Aliment</button><button data-act="tab" data-v="workout"><span>🏋️</span>Séance</button><button data-act="quickWeight"><span>⚖️</span>Poids</button><button data-act="tab" data-v="fridge"><span>🧊</span>Frigo</button></div>` : ""}
 ${weekStripHTML(k)}
   ${k > todayKey() ? "" : dailyStripHTML(d)}
@@ -2221,6 +2230,7 @@ function viewProgress() {
   const vol = weeklyVolume(7);
   const recs = exIds.map(id => { const h = exerciseHistory(id); const best = h.flatMap(x => x.sets).reduce((b, s) => !b || e1rm(s) > e1rm(b) ? s : b, null); return { id, best }; }).filter(x => x.best);
   return `${statusBanner()}<h1>Progrès</h1>
+    ${bilanCardHTML()}
     <div class="card"><h2>Poids</h2><canvas id="chW" height="180"></canvas><p class="xs mut">Points = pesées · ligne = tendance lissée (moins sensible à l'eau et au sel).</p></div>
     <div class="card"><h2>Calories (14 derniers jours)</h2><canvas id="chK" height="180"></canvas></div>
     <div class="card"><h2>Progression par exercice</h2>${exIds.length ? `<select data-act="progEx">${exIds.map(id => `<option value="${id}" ${id === S.progEx ? "selected" : ""}>${esc(getEx(id).name)}</option>`).join("")}</select><canvas id="chE" height="180" style="margin-top:8px"></canvas><p class="xs mut">1RM estimé (formule d'Epley) de ta meilleure série + charge max de chaque séance.</p>` : `<p class="mut sm">Enregistre des séances pour voir ta progression.</p>`}</div>
@@ -2366,6 +2376,19 @@ function weekSheet() {
       <div style="position:absolute;left:0;right:0;bottom:${T.kcal / mx * 100}%;border-top:2px dashed var(--acc);opacity:.6"></div>
       ${ks.map((x, i) => `<div style="flex:1;text-align:center" data-act="dayGo" data-v="${x}"><div style="height:${tot[i].kcal / mx * 120}px;border-radius:6px 6px 0 0;background:${Math.abs(tot[i].kcal - T.kcal) <= T.kcal * 0.1 ? "var(--ok,#22c55e)" : "var(--chip)"}"></div><div class="xs mut">${DAY_LETTERS[parseKey(x).getDay()]}${parseKey(x).getDate()}</div></div>`).join("")}
     </div><p class="xs mut">Pointillés = ton objectif. Vert = à ±10 %. Touche une barre pour ouvrir le jour.</p></div>`}`;
+}
+
+function lastLoggedDay(k) { for (let i = 1; i <= 30; i++) { const x = addDays(k, -i); if ((day(x).entries || []).length) return x; } return null; }
+function estimSheet() {
+  const E = S.estim;
+  return `<div class="row between"><h2>Estimation</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <p class="sm mut" style="margin-top:0">Tu n'as pas pu peser ou scanner ? Mets ce que tu penses avoir mangé. C'est marqué « estimation » dans ton journal.</p>
+    <label class="sm">Calories estimées<input type="number" inputmode="numeric" id="estK" value="${E.kcal || ""}" placeholder="ex : 800" style="font-size:22px"></label>
+    <div class="chips" style="margin:8px 0">${[300, 500, 700, 900, 1200].map(v => `<button class="chip" data-act="estimQuick" data-v="${v}">${v}</button>`).join("")}</div>
+    <label class="sm">Dont protéines (g, optionnel)<input type="number" inputmode="numeric" id="estP" value="${E.p || ""}" placeholder="laisser vide si tu ne sais pas"></label>
+    <label class="sm">Description (optionnel)<input id="estN" value="${esc(E.name || "")}" placeholder="ex : resto italien, kebab, repas chez des amis"></label>
+    <h3>Repas</h3><div class="chips">${["", ...MEALS].map(m => `<button class="chip ${E.meal === m ? "on" : ""}" data-act="estimMeal" data-v="${m}">${esc(m ? mealLabel(m) : "Sans repas")}</button>`).join("")}</div>
+    <button style="width:100%;margin-top:14px" data-act="estimSave">Ajouter l'estimation</button>`;
 }
 
 // ===================== FRIGO (inventaire) =====================
@@ -2993,7 +3016,7 @@ function phDB() {
   return new Promise((res, rej) => { const r = indexedDB.open("muscu_photos", 1); r.onupgradeneeded = () => r.result.createObjectStore("p", { keyPath: "id" }); r.onsuccess = () => { PH.db = r.result; res(PH.db); }; r.onerror = () => rej(r.error); });
 }
 async function phLoad() { const db = await phDB(); return new Promise(res => { const out = []; const c = db.transaction("p").objectStore("p").openCursor(); c.onsuccess = () => { const cur = c.result; if (cur) { out.push(cur.value); cur.continue(); } else { PH.list = out.sort((a, b) => b.date.localeCompare(a.date) || b.t - a.t); res(PH.list); } }; }); }
-async function phAdd(blob, view, date) { const db = await phDB(); const it = { id: uid(), t: Date.now(), date: date || todayKey(), view, blob, w: r1(latestWeight()) }; await new Promise(r => { const tx = db.transaction("p", "readwrite"); tx.objectStore("p").put(it); tx.oncomplete = r; }); await phLoad(); }
+async function phAdd(blob, view, date) { const db = await phDB(); const it = { id: uid(), t: Date.now(), date: date || todayKey(), view, blob, w: r1(latestWeight()) }; await new Promise(r => { const tx = db.transaction("p", "readwrite"); tx.objectStore("p").put(it); tx.oncomplete = r; }); await phLoad(); return it; }
 async function phDel(id) { const db = await phDB(); await new Promise(r => { const tx = db.transaction("p", "readwrite"); tx.objectStore("p").delete(id); tx.oncomplete = r; }); if (PH.urls[id]) { URL.revokeObjectURL(PH.urls[id]); delete PH.urls[id]; } await phLoad(); }
 function phURL(it) { return PH.urls[it.id] || (PH.urls[it.id] = URL.createObjectURL(it.blob)); }
 const PH_VIEWS = [["face", "Face"], ["profil", "Profil"], ["dos", "Dos"]];
@@ -3020,6 +3043,124 @@ const PH_ACT = {
   phDel: el => { const id = el.dataset.v; if (S.phDelArm !== id) { S.phDelArm = id; toast("Touche encore ✕ pour supprimer cette photo"); return; } S.phDelArm = null; phDel(id).then(render); },
 };
 
+// ===================== BILAN DE LA SEMAINE =====================
+// Photos des poses (restent sur l'appareil, IndexedDB « muscu_photos »), petit bilan, mensurations optionnelles,
+// puis comparaison avec le bilan d'il y a ~1 semaine et d'il y a ~1 mois (ou le plus proche qui existe).
+const POSES = [
+  { k: "face", l: "Face", d: "Debout, bras le long du corps, relâché", main: true },
+  { k: "profil", l: "Profil", d: "De côté (côté droit), bras le long du corps", main: true },
+  { k: "dos", l: "Dos", d: "De dos, bras le long du corps, relâché", main: true },
+  { k: "fdb", l: "Double biceps face", d: "Bras pliés à hauteur des épaules, contracté", main: false },
+  { k: "ddb", l: "Double biceps dos", d: "De dos, bras pliés, dorsaux écartés", main: false },
+  { k: "abs", l: "Abdos & cuisses", d: "Mains derrière la tête, abdos et cuisses contractés", main: false },
+];
+const MEASURES = [["taille", "Tour de taille (nombril)"], ["poitrine", "Poitrine"], ["bras", "Bras (contracté)"], ["cuisse", "Cuisse"], ["fesses", "Hanches / fesses"], ["mollet", "Mollet"], ["epaules", "Épaules"], ["cou", "Cou"]];
+const BL_SCALES = [["energie", "Énergie"], ["faim", "Faim"], ["recup", "Récup / sommeil"], ["motiv", "Motivation"]];
+
+// silhouettes simples pour guider la pose
+function poseSVG(k) {
+  const head = `<circle cx="30" cy="11" r="7"/>`;
+  const legs = `<path d="M24 52 L22 84 M36 52 L38 84"/>`;
+  const torso = k === "profil" ? `<path d="M30 18 C35 26 35 44 30 52"/>` : `<path d="M22 20 L38 20 L36 52 L24 52 Z"/>`;
+  const arms = { face: "M22 22 L18 50 M38 22 L42 50", profil: "M30 22 L32 50", dos: "M22 22 L18 50 M38 22 L42 50", fdb: "M22 22 L10 22 L10 8 M38 22 L50 22 L50 8", ddb: "M22 22 L10 22 L10 8 M38 22 L50 22 L50 8", abs: "M22 22 L16 10 L28 6 M38 22 L44 10 L32 6" }[k];
+  const back = k === "dos" || k === "ddb" ? `<path d="M30 21 L30 50" stroke-dasharray="2 3"/>` : "";
+  return `<svg viewBox="0 0 60 88" width="44" height="64" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55">${head}${torso}${back}<path d="${arms}"/>${legs}</svg>`;
+}
+const bilans = () => (Store.get("bilans", { items: [] }).items || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+function saveBilan(b) { const doc = clone(Store.get("bilans", { items: [] })); doc.items = (doc.items || []).filter(x => x.id !== b.id); doc.items.push(b); Store.set("bilans", doc); }
+function weekAvgWeight(k) { const w = [0, 1, 2, 3, 4, 5, 6].map(i => day(addDays(k, -i)).weight).filter(Boolean); return w.length ? r1(w.reduce((s, x) => s + x, 0) / w.length) : null; }
+function daysBetween(a, b) { return Math.round((parseKey(b) - parseKey(a)) / 864e5); }
+function agoText(n) { // 9 → « il y a 1 semaine et 2 jours », 38 → « il y a 1 mois et 1 semaine »
+  if (n <= 0) return "aujourd'hui"; if (n < 7) return `il y a ${n} jour${n > 1 ? "s" : ""}`;
+  const parts = [];
+  if (n < 30) { const w = Math.floor(n / 7), d = n % 7; parts.push(`${w} semaine${w > 1 ? "s" : ""}`); if (d) parts.push(`${d} jour${d > 1 ? "s" : ""}`); }
+  else { const m = Math.floor(n / 30), w = Math.round((n - m * 30) / 7); parts.push(`${m} mois`); if (w) parts.push(`${w} semaine${w > 1 ? "s" : ""}`); }
+  return "il y a " + parts.join(" et ");
+}
+// bilan de référence : le plus récent d'il y a au moins 5 jours (semaine), et le plus proche de 30 jours parmi ceux d'il y a au moins 21 jours (mois)
+function refBilans(cur) {
+  const prev = bilans().filter(b => b.id !== cur.id && b.date < cur.date);
+  const week = prev.filter(b => daysBetween(b.date, cur.date) >= 5).pop() || null;
+  const monthC = prev.filter(b => daysBetween(b.date, cur.date) >= 21 && b !== week);
+  const month = monthC.sort((a, b) => Math.abs(daysBetween(a.date, cur.date) - 30) - Math.abs(daysBetween(b.date, cur.date) - 30))[0] || null;
+  return { week, month };
+}
+function bilanDue() { const l = bilans().pop(); return !l || daysBetween(l.date, todayKey()) >= 7; }
+function photoOf(b, pose) { const id = b?.photos?.[pose]; return id ? PH.list.find(p => p.id === id) : null; }
+
+function bilanSheet() {
+  if (!PH.loaded) { PH.loaded = true; phLoad().then(renderSheet).catch(() => {}); }
+  const B = S.bl; const todayB = B.date === todayKey();
+  const slot = p => { const ph = photoOf(B, p.k); return `<label class="pose ${ph ? "has" : ""}">${ph ? `<img src="${phURL(ph)}">` : poseSVG(p.k)}
+      <span class="b xs">${esc(p.l)}</span><span class="xs mut">${ph ? "Touche pour changer" : esc(p.d)}</span>
+      <input type="file" accept="image/*" data-file="pose" data-v="${p.k}" hidden></label>`; };
+  const nPh = Object.keys(B.photos || {}).length;
+  return `<div class="row between"><h2>📸 Bilan ${todayB ? "de la semaine" : "du " + fmtDay(B.date)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <p class="sm mut" style="margin-top:0">Le matin, <b>à jeun</b>, après les toilettes, même endroit et même lumière. Touche une case : tu peux <b>prendre la photo</b> ou la <b>choisir dans ta galerie</b>. Les photos restent uniquement sur ce téléphone.</p>
+    <h3>Photos (${nPh})</h3><div class="poses">${POSES.filter(p => p.main).map(slot).join("")}</div>
+    <details ${POSES.some(p => !p.main && B.photos?.[p.k]) ? "open" : ""}><summary class="sm b" style="margin:8px 0">+ Poses bonus (double biceps, abdos)</summary><div class="poses">${POSES.filter(p => !p.main).map(slot).join("")}</div></details>
+    <h3>Petit bilan</h3>
+    <div class="row" style="gap:8px;align-items:center"><span class="sm">Poids à jeun</span><input type="number" step="0.1" inputmode="decimal" data-bl="weight" value="${B.weight ?? ""}" placeholder="kg" style="width:90px">
+      <span class="xs mut">${weekAvgWeight(B.date) ? `moyenne 7 j : ${weekAvgWeight(B.date)} kg` : ""}</span></div>
+    ${BL_SCALES.map(([k, l]) => `<div style="margin-top:8px"><div class="xs mut">${l} cette semaine</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${B[k] === i ? "on" : ""}" data-act="blScale" data-k="${k}" data-v="${i}">${i}</button>`).join("")}</div></div>`).join("")}
+    <textarea data-bl="notes" rows="2" placeholder="Note (ressenti, écarts, douleur, ce que tu veux changer…)" style="margin-top:10px">${esc(B.notes || "")}</textarea>
+    <details ${Object.keys(B.m || {}).length ? "open" : ""}><summary class="sm b" style="margin:10px 0">Mensurations (optionnel, en cm)</summary>
+      <div class="grid2">${MEASURES.map(([k, l]) => `<label class="xs">${l}<input type="number" step="0.5" inputmode="decimal" data-bl="m.${k}" value="${B.m?.[k] ?? ""}"></label>`).join("")}</div></details>
+    <button style="width:100%;margin-top:14px" data-act="blSave">Enregistrer et comparer</button>`;
+}
+function cmpBlock(cur, ref, label) {
+  if (!ref) return "";
+  const n = daysBetween(ref.date, cur.date);
+  const poses = POSES.filter(p => photoOf(cur, p.k) && photoOf(ref, p.k));
+  const dW = cur.weight && ref.weight ? r1(cur.weight - ref.weight) : null;
+  const goal = profile().goal; const lossGood = goal === "cut" || goal === "recomp";
+  const mRows = MEASURES.filter(([k]) => cur.m?.[k] && ref.m?.[k]).map(([k, l]) => { const d = r1(cur.m[k] - ref.m[k]); const good = k === "taille" ? d <= 0 : d >= 0; return `<span class="tag ${d === 0 ? "" : good ? "grn" : "red"}">${l} ${d > 0 ? "+" : ""}${d} cm</span>`; }).join(" ");
+  return `<div class="card"><div class="row between"><h3 style="margin:0">${label}</h3><span class="xs mut">${agoText(n)}</span></div>
+    <div class="xs mut">${fmtDay(ref.date)} → ${fmtDay(cur.date)}${dW !== null ? ` · poids <b style="color:var(--${(lossGood ? dW <= 0 : dW >= 0) ? "ok,#16a34a" : "txt"})">${dW > 0 ? "+" : ""}${dW} kg</b> (${ref.weight} → ${cur.weight} kg)` : ""}</div>
+    ${mRows ? `<div style="margin-top:6px">${mRows}</div>` : ""}
+    ${poses.length ? poses.map(p => `<div class="xs b" style="margin-top:10px">${p.l}</div><div class="phpair"><figure><img src="${phURL(photoOf(ref, p.k))}"><figcaption>${fmtDay(ref.date)}</figcaption></figure><figure><img src="${phURL(photoOf(cur, p.k))}"><figcaption>${fmtDay(cur.date)}</figcaption></figure></div>`).join("") : `<p class="xs mut">Pas de photo de la même pose à comparer.</p>`}</div>`;
+}
+function bilanCmpSheet() {
+  const cur = bilans().find(b => b.id === S.blCmp); if (!cur) return "";
+  const { week, month } = refBilans(cur);
+  return `<div class="row between"><h2>Comparaison</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    ${!week && !month ? `<p class="mut">C'est ton premier bilan 🎉 La comparaison apparaîtra dès le prochain (dans une semaine).</p>` : ""}
+    ${cmpBlock(cur, week, "Par rapport à la dernière fois")}${cmpBlock(cur, month, "Par rapport à il y a environ 1 mois")}
+    <button class="sec" style="width:100%" data-act="blOpen" data-v="${cur.id}">Modifier ce bilan</button>`;
+}
+function bilanCardHTML() {
+  const all = bilans(); const last = all[all.length - 1];
+  if (!PH.loaded && window.indexedDB) { PH.loaded = true; phLoad().then(() => { if (S.tab === "progress") render(); }).catch(() => {}); }
+  return `<div class="card"><div class="row between"><h2 style="margin:0">Bilan de la semaine</h2>${last ? `<span class="xs mut">dernier : ${agoText(daysBetween(last.date, todayKey()))}</span>` : ""}</div>
+    <p class="xs mut">Une fois par semaine, le même jour, le matin à jeun : photos des poses, poids, petit ressenti. Mensurations si tu veux.</p>
+    <button style="width:100%" data-act="blOpen">${last && last.date === todayKey() ? "Compléter le bilan d'aujourd'hui" : "📸 Faire mon bilan"}</button>
+    ${all.length ? `<div style="display:flex;gap:8px;overflow-x:auto;margin-top:10px">${all.slice().reverse().map(b => { const ph = photoOf(b, "face") || POSES.map(p => photoOf(b, p.k)).find(Boolean); return `<div data-act="blCmp" data-v="${b.id}" style="flex:none;width:74px;text-align:center;cursor:pointer">${ph ? `<img src="${phURL(ph)}" style="width:74px;height:98px;object-fit:cover;border-radius:10px">` : `<div style="width:74px;height:98px;border-radius:10px;background:var(--chip);display:grid;place-items:center">${poseSVG("face")}</div>`}<div class="xs">${fmtDay(b.date).replace(/^\w+ /, "")}</div><div class="xs mut">${b.weight ? b.weight + " kg" : ""}</div></div>`; }).join("")}</div><p class="xs mut">Touche un bilan pour le comparer.</p>` : ""}</div>`;
+}
+function blReadForm() {
+  document.querySelectorAll("[data-bl]").forEach(i => { const k = i.dataset.bl, v = i.value.trim();
+    if (k.startsWith("m.")) { S.bl.m = S.bl.m || {}; const mk = k.slice(2); if (v) S.bl.m[mk] = +v.replace(",", "."); else delete S.bl.m[mk]; }
+    else if (k === "weight") S.bl.weight = v ? +v.replace(",", ".") : null; else S.bl[k] = v; });
+}
+async function onPoseFile(pose, file) {
+  if (!file) return; blReadForm();
+  try { const b = await shrinkImage(file, 1400); const old = S.bl.photos?.[pose];
+    const it = await phAdd(b, pose, S.bl.date);
+    S.bl.photos = Object.assign({}, S.bl.photos, { [pose]: it.id }); if (old) phDel(old).catch(() => {});
+    saveBilan(S.bl); toast("Photo ajoutée 📸"); } catch (e) { toast("Impossible d'enregistrer la photo"); }
+  renderSheet();
+}
+const BL_ACT = {
+  blOpen: el => { const id = el.dataset.v; const all = bilans();
+    S.bl = clone(id ? all.find(b => b.id === id) : all.find(b => b.date === todayKey()) || { id: uid(), date: todayKey(), photos: {}, m: {}, weight: day(todayKey()).weight || null });
+    openSheet(bilanSheet); },
+  blScale: el => { blReadForm(); S.bl[el.dataset.k] = S.bl[el.dataset.k] === +el.dataset.v ? null : +el.dataset.v; renderSheet(); },
+  blSave: () => { blReadForm(); const b = S.bl; if (!b.weight && !Object.keys(b.photos || {}).length) { toast("Ajoute au moins une photo ou ton poids"); return; }
+    b.t = Date.now(); saveBilan(b);
+    if (b.weight && b.date === todayKey() && !day(todayKey()).weight) { const d = clone(day(todayKey())); d.weight = b.weight; saveDay(todayKey(), d); }
+    S.blCmp = b.id; openSheet(bilanCmpSheet); render(); },
+  blCmp: el => { S.blCmp = el.dataset.v; openSheet(bilanCmpSheet); },
+};
+
 // ===================== ACTIONS =====================
 function updDay(fn) { const d = clone(day(S.day)); d.entries = d.entries || []; d.acts = d.acts || []; fn(d); saveDay(S.day, d); }
 function updW(fn) { const w = liveWorkout(); if (!w) return; const id = w._id; const o = clone(Store.get(id)); fn(o); Store.set(id, o); }
@@ -3039,7 +3180,16 @@ const ACT = {
   dayNav: el => { S.day = addDays(S.day, +el.dataset.v); if (S.day > maxPlanDay()) S.day = maxPlanDay(); S.aiOut.today = ""; render(); },
   dayGo: el => { S.day = el.dataset.v; S.aiOut.today = ""; if (S.sheet) closeSheet(); render(); },
   weekSheet: () => openSheet(weekSheet),
-  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) repris de la veille · Annuler dans l'historique si besoin`); render(); },
+  estimOpen: () => { S.estim = { meal: "" }; openSheet(estimSheet); },
+  estimQuick: el => { S.estim.kcal = +el.dataset.v; S.estim.p = $("#estP").value; S.estim.name = $("#estN").value; renderSheet(); },
+  estimMeal: el => { S.estim.kcal = $("#estK").value; S.estim.p = $("#estP").value; S.estim.name = $("#estN").value; S.estim.meal = el.dataset.v; renderSheet(); },
+  estimSave: () => { const kcal = +$("#estK").value; if (!kcal) { toast("Indique les calories"); return; }
+    const T = targets(); let p = +$("#estP").value || 0; if (!p) p = kcal * (T.p * 4 / T.kcal) / 4;
+    const rest = Math.max(0, kcal - p * 4), cs = T.c * 4 / (T.c * 4 + T.f * 9 || 1);
+    const per100 = { kcal, p: r1(p), c: r1(rest * cs / 4), f: r1(rest * (1 - cs) / 9), fib: 0, sugar: 0, satfat: 0, salt: 0 };
+    updDay(d => d.entries.push(makeEntry({ name: "Estimation" + ($("#estN").value.trim() ? " · " + $("#estN").value.trim() : ""), per100, src: "estim" }, 100, S.estim.meal)));
+    closeSheet(); toast("Estimation ajoutée"); render(); },
+  copyYesterday: () => { const es = day(lastLoggedDay(S.day)).entries || []; updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) repris · Annuler dans l'historique si besoin`); render(); },
   // ----- ajout repas
   openAdd: el => { S.sheet = null; resetAdd(el.dataset.v || defaultMeal()); openSheet(addSheet); },
   addMeal: el => { S.add.meal = el.dataset.v; renderSheet(); },
@@ -3295,6 +3445,7 @@ document.addEventListener("change", ev => {
     if (el.dataset.file === "hubphoto") { S.add.tab = "photo"; openSheet(addSheet); (async () => { if (!files[0]) return; S.add.blob = await shrinkImage(files[0]); S.add.img = URL.createObjectURL(S.add.blob); renderSheet(); ACT.aiPhoto(); })(); }
     else { S.add.tab = "scan"; openSheet(addSheet); onProductPhotos(files.slice(0, 3)); }
     el.value = ""; return; }
+  if (el.dataset.file === "pose") { onPoseFile(el.dataset.v, el.files?.[0]); el.value = ""; return; }
   if (el.dataset.file) { if (el.dataset.file === "prodphotos") onProductPhotos([...(el.files || [])].slice(0, 3)); else if (el.dataset.file === "fridgephotos") onFridgePhotos([...(el.files || [])].slice(0, 3)); else onFile(el.dataset.file, el.files?.[0]); el.value = ""; return; }
   if (el.dataset.act === "range") { const [a, b] = el.value.split("-").map(Number); const doc = clone(Store.get("program", {})); doc.ranges = doc.ranges || {}; doc.ranges[el.dataset.v] = [a, b]; Store.set("program", doc); return; }
   if (el.dataset.act === "progEx") { S.progEx = el.value; render(); return; }
@@ -3325,7 +3476,7 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT);
+Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
