@@ -174,7 +174,7 @@ const ACT = {
   quick: () => openSheet(() => `<div class="row between"><h2>Ajouter</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     <div class="qa" style="grid-template-columns:repeat(2,1fr)"><button data-act="openAdd" data-v=""><span>🍽️</span>Un aliment</button><button data-act="quickWeight"><span>⚖️</span>Mon poids</button><button data-act="tab" data-v="workout"><span>🏋️</span>Une séance</button><button data-act="fridgeShop"><span>🛒</span>Mes courses</button></div>`),
   quickWeight: () => openSheet(() => `<div class="row between"><h2>Poids du jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-    <p class="xs mut">Le matin, à jeun, après les toilettes : c'est le plus fiable.</p><input id="qW" type="number" step="0.1" inputmode="decimal" value="${day(todayKey()).weight || ""}" placeholder="ex. 80.2" style="font-size:22px;text-align:center">
+    <p class="xs mut">À faire <b>le matin au réveil, à jeun, après être passé aux toilettes</b>, tous les jours si tu peux : ton poids de la semaine est la moyenne de tes pesées du lundi au dimanche (jusqu'à 7).</p><input id="qW" type="number" step="0.1" inputmode="decimal" value="${day(todayKey()).weight || ""}" placeholder="ex. 80.2" style="font-size:22px;text-align:center">
     <button style="width:100%;margin-top:10px" data-act="quickWeightGo">Enregistrer</button>`),
   quickWeightGo: () => { const w = parseFloat($("#qW").value); if (!(w > 30)) return; const k = todayKey(); const d = clone(day(k)); d.entries = d.entries || []; d.acts = d.acts || []; d.weight = w; saveDay(k, d); toast(`Poids enregistré : ${w} kg`); closeSheet(); },
   gymNames: el => { S.gymNames = el.dataset.v; $$('[data-act="gymNames"]').forEach(b => b.classList.toggle("on", b === el)); const S3 = V3.scenes.gym; if (S3) S3.dirty = performance.now() + 300; },
@@ -313,7 +313,7 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT);
+Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT, FAT_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });

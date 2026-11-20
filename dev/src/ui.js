@@ -86,6 +86,8 @@ function viewToday() {
   return `${statusBanner()}
   ${k === todayKey() ? `<div class="hello"><img src="icons/icon-192.png" alt="" onerror="this.remove()"><div><div class="b" style="font-size:18px">${hello} Vuthy 👋</div><div class="xs mut">${fmtDay(k)} · objectif : ${esc(GOALS[profile().goal].label)}</div></div><button class="ghost" style="margin-left:auto;font-size:20px" data-act="tab" data-v="profile" title="Profil">⚙︎</button></div>
   ${onboardingHTML()}
+  ${checkinCardHTML()}
+  ${deloadAdvice() && !isDeload() ? deloadCardHTML() : ""}
   ${bilans().length && bilanDue() ? `<button class="sec" style="width:100%;margin-bottom:8px" data-act="blOpen">📸 C'est l'heure de ton bilan de la semaine (à jeun)</button>` : ""}
   <div class="qa"><button data-act="openAdd" data-v=""><span>🍽️</span>Aliment</button><button data-act="tab" data-v="workout"><span>🏋️</span>Séance</button><button data-act="quickWeight"><span>⚖️</span>Poids</button><button data-act="tab" data-v="fridge"><span>🧊</span>Frigo</button></div>` : ""}
 ${weekStripHTML(k)}
@@ -115,7 +117,7 @@ function dailySheet() {
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   return `<div class="row between"><h2>Suivi du jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     ${d.health ? `<div class="banner" style="background:#fde8ef;color:#9d174d">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
-    <div class="row"><div class="grow"><label>Poids (matin, à jeun)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="80.2"></div>
+    <div class="row"><div class="grow"><label>Poids (au réveil, à jeun, après les toilettes)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="80.2"></div>
     <div class="grow"><label>Pas</label><input id="inSteps" type="number" inputmode="numeric" value="${d.steps || ""}" placeholder="8500"></div>
     <div class="grow"><label>Sommeil (h)</label><input id="inSleep" type="number" step="0.25" inputmode="decimal" value="${d.sleep || ""}" placeholder="7.5"></div></div>
     <button style="width:100%;margin-top:8px" data-act="saveDaily">Enregistrer</button>
@@ -275,7 +277,7 @@ function viewWorkout() {
       <button style="width:100%;margin-top:8px" data-act="finishW">Terminer la séance</button></div>` : ""}`;
   if (w) return toggle + liveView(w);
   const P = program(); const hist = workouts().filter(x => !x.live).slice(0, 30);
-  return `${statusBanner()}<h1>Séance</h1>${toggle}${recoveryCardHTML()}
+  return `${statusBanner()}<h1>Séance</h1>${toggle}${deloadCardHTML()}${recoveryCardHTML()}
     <div class="card"><h2>Démarrer</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${Object.keys(P).map(n => `<button data-act="startW" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div>
     <p class="xs mut">Ton programme est préchargé. Pendant la séance, 🚫 remplace un exercice que tu ne veux pas faire.</p>
     <button class="sec" style="width:100%;margin-top:6px" data-act="genOpen">✨ Créer un programme pour ma salle</button></div>
@@ -303,7 +305,8 @@ function exCard(w, e, i) {
   const dr = S.draft[i] || (S.draft[i] = { w: (e.sets || []).filter(s => !s.wu).slice(-1)[0]?.w ?? sug.w ?? "", r: "", rir: 2, wu: false });
   const alts = ALTERNATIVES[e.id] || [];
   const prev = (e.sets || []);
-  return `<div class="card"><div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer;text-align:center" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}<div class="xs" style="color:var(--acc,#3b82f6)">🎬 Comment faire</div></div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
+  const dl = isDeload() ? `<div class="reco xs" style="margin:6px 0">🔋 Décharge : fais environ <b>${Math.max(1, Math.round((program()[w.name]?.sets?.[e.id] || 3) / 2))} série(s)</b> à la charge habituelle, en gardant 3-4 reps en réserve.</div>` : "";
+  return `<div class="card">${dl}<div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer;text-align:center" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}<div class="xs" style="color:var(--acc,#3b82f6)">🎬 Comment faire</div></div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
     <div class="row" style="gap:2px">${alts.length ? `<button class="ghost small" data-act="swapEx" data-i="${i}" title="Variante">⇄</button>` : ""}<button class="ghost small" data-act="refuse" data-i="${i}" title="Je ne veux pas faire cet exercice">🚫</button><button class="ghost small" data-act="exUp" data-i="${i}" title="Monter">↑</button><button class="danger small" data-act="rmEx" data-i="${i}" title="Retirer">✕</button></div></div>
     <div class="row sm" style="margin:6px 0;gap:6px;flex-wrap:wrap"><span class="mut">Fourchette :</span><select data-act="range" data-v="${e.id}" style="width:auto;padding:4px 6px">${[[6, 8], [6, 10], [8, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) => `<option value="${a}-${b}" ${a === lo && b === hi ? "selected" : ""}>${a}-${b} reps</option>`).join("")}</select></div>
     ${last ? `<div class="xs mut">Dernière fois (${fmtDay(dateKey(new Date(last.date)))}) : ${last.sets.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div>` : ""}

@@ -133,3 +133,47 @@ const NUT_ACT = {
   ideaDel: el => { const doc = clone(Store.get("notes", { items: [] })); doc.items = (doc.items || []).filter(n => n.id !== el.dataset.v); Store.set("notes", doc); },
   autoAdj: el => { const pr = clone(Store.get("profile", {})); pr.autoAdjust = el.checked; Store.set("profile", pr); },
 };
+// ===================== CHECK-IN DE LA SEMAINE =====================
+// Poids de la semaine = moyenne des pesées du lundi au dimanche (jusqu'à 7), plus fiable qu'une seule pesée.
+function weekWeights(ws0) { const w = []; for (let i = 0; i < 7; i++) { const v = day(addDays(ws0, i)).weight; if (v) w.push(+v); } return { n: w.length, avg: w.length ? r1(w.reduce((a, b) => a + b, 0) / w.length) : null }; }
+function weekIntake(ws0) { const k = []; for (let i = 0; i < 7; i++) { const x = addDays(ws0, i); const t = dayTotals(x); if (t.kcal >= 800 && !day(x).incomplete) k.push(t.kcal); } return { n: k.length, avg: k.length ? r0(k.reduce((a, b) => a + b, 0) / k.length) : null }; }
+function checkinData() {
+  const cur = weekKey(), last = addDays(cur, -7), prev = addDays(cur, -14);
+  const W = weekWeights(last), Wp = weekWeights(prev), I = weekIntake(last);
+  const T = targets(), A = Store.get("adjust", {}) || {}, ad = adaptiveTDEE(), p = profile(), G = GOALS[p.goal];
+  const dW = W.avg != null && Wp.avg != null ? r1(W.avg - Wp.avg) : null;
+  const why = [];
+  if (!ad.ok) why.push(`Pas encore assez de données pour mesurer ta vraie dépense (il faut au moins 10 jours notés et 4 pesées sur 4 semaines ; tu en as ${ad.days} et ${ad.weighs}). Ton objectif vient pour l'instant de la formule.`);
+  else {
+    why.push(`Sur les 4 dernières semaines tu as mangé en moyenne <b>${r0(ad.avgIntake)} kcal/j</b> et ton poids tendance a bougé de <b>${ad.slopeWeek >= 0 ? "+" : ""}${r1(ad.slopeWeek)} kg/semaine</b> → ta dépense réelle est d'environ <b>${r0(ad.tdee)} kcal/j</b>.`);
+    why.push(`Objectif « ${esc(G.label)} » = dépense ${G.factor >= 0 ? "+" : ""}${Math.round(G.factor * 100)} % → <b>${T.kcal} kcal/j</b>.`);
+  }
+  if (A.prev && A.kcal && A.week === cur) { const d = A.kcal - A.prev; why.push(d === 0 ? "Objectif inchangé par rapport à la semaine dernière." : `C'est <b>${d > 0 ? "+" : ""}${d} kcal</b> par rapport à la semaine dernière (${A.prev} kcal).`); }
+  return { week: last, W, Wp, dW, I, T, why };
+}
+function checkinCardHTML() {
+  const seen = Store.get("checkinSeen", {}) || {}; const cur = weekKey();
+  if (seen.week === cur) return "";
+  const C = checkinData(); if (!C.W.n && !C.I.n) return "";
+  return `<div class="card" style="border:2px solid var(--acc)"><div class="row between"><b>📋 Check-in de la semaine</b><button class="ghost small" data-act="checkinSeen">OK</button></div>
+    <div class="row" style="gap:14px;margin:8px 0;flex-wrap:wrap">
+      <div><div class="xs mut">Poids moyen (${C.W.n}/7 pesées)</div><div class="big" style="font-size:22px">${C.W.avg ?? "—"} kg</div>${C.dW != null ? `<div class="xs">${C.dW > 0 ? "+" : ""}${C.dW} kg vs semaine d'avant</div>` : ""}</div>
+      <div><div class="xs mut">Mangé en moyenne (${C.I.n} j)</div><div class="big" style="font-size:22px">${C.I.avg ?? "—"}</div><div class="xs">kcal / jour</div></div>
+      <div><div class="xs mut">Nouvel objectif</div><div class="big" style="font-size:22px">${C.T.kcal}</div><div class="xs">kcal · P ${C.T.p} g</div></div></div>
+    <p class="sm" style="margin:4px 0">${C.why.join(" ")}</p>
+    ${C.W.n < 4 ? `<p class="xs mut">Astuce : pèse-toi chaque matin au réveil, à jeun, après être passé aux toilettes. Plus tu as de pesées dans la semaine (jusqu'à 7), plus la moyenne est fiable.</p>` : ""}
+    <button class="sec small" data-act="checkinHist">Historique des check-ins</button></div>`;
+}
+function checkinHistSheet() {
+  const cur = weekKey(); const A = Store.get("adjust", {}) || {}; const hist = Object.fromEntries((A.hist || []).concat(A.kcal ? [[A.week, A.kcal]] : []));
+  const rows = []; for (let i = 1; i <= 12; i++) { const w = addDays(cur, -7 * i); const W = weekWeights(w), I = weekIntake(w); if (!W.n && !I.n) continue; rows.push({ w, W, I, k: hist[addDays(w, 7)] }); }
+  return `<div class="row between"><h2>Check-ins</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <p class="xs mut">Poids moyen = moyenne de tes pesées du lundi au dimanche (jusqu'à 7).</p>
+    ${rows.length ? `<table class="sm" style="width:100%;border-collapse:collapse"><tr class="xs mut"><td>Semaine du</td><td>Poids moyen</td><td>Écart</td><td>Mangé/j</td><td>Objectif suivant</td></tr>
+    ${rows.map((r, i) => { const nx = rows[i + 1]; const d = nx && r.W.avg != null && nx.W.avg != null ? r1(r.W.avg - nx.W.avg) : null;
+      return `<tr style="border-top:1px solid var(--line,#e5e7eb)"><td>${fmtDay(r.w).replace(/^\w+ /, "")}</td><td><b>${r.W.avg ?? "—"}</b> <span class="xs mut">(${r.W.n})</span></td><td>${d == null ? "" : (d > 0 ? "+" : "") + d}</td><td>${r.I.avg ?? "—"}</td><td>${r.k ?? ""}</td></tr>`; }).join("")}</table>` : `<p class="mut">Pas encore de semaine complète.</p>`}`;
+}
+Object.assign(NUT_ACT, {
+  checkinSeen: () => { Store.set("checkinSeen", { week: weekKey() }); render(); },
+  checkinHist: () => openSheet(checkinHistSheet),
+});
