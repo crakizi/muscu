@@ -5,8 +5,9 @@ const COMPOUND = new Set(["squat", "bench_press", "rdl", "leg_press", "hack_squa
 const REST = { end: 0, total: 0, exId: null, iv: null };
 function restDefault(exId) {
   try { const m = JSON.parse(localStorage.getItem("muscu_rest") || "{}"); if (m[exId]) return m[exId]; } catch (e) {}
-  return COMPOUND.has(exId) ? 150 : 90;
+  return 150; // 2 min 30 pour tous les exercices (Vuthy précisera plus tard exercice par exercice)
 }
+try { if (!localStorage.getItem("muscu_rest_v2")) { localStorage.removeItem("muscu_rest"); localStorage.setItem("muscu_rest_v2", "1"); } } catch (e) {}
 function restSave(exId, sec) { try { const m = JSON.parse(localStorage.getItem("muscu_rest") || "{}"); m[exId] = sec; localStorage.setItem("muscu_rest", JSON.stringify(m)); } catch (e) {} }
 function restStart(exId, warmup) {
   const sec = warmup ? 60 : restDefault(exId);
