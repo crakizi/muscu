@@ -135,12 +135,14 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .avatar{width:58px;height:58px;border-radius:50%;background:var(--grad,var(--acc));color:#fff;font-size:26px;font-weight:800;display:grid;place-items:center;flex:none}
 .pstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;text-align:center}.pstats div{background:var(--chip);border-radius:12px;padding:8px 2px}.pstats b{display:block;font-size:18px}.pstats span{font-size:11px;color:var(--mut)}
 
+.exdone{padding:10px 14px;opacity:.85;cursor:pointer}.exdone .b{font-size:15px}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795139731";
+const BUILD_VERSION = "1795140030";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -2209,6 +2211,9 @@ function liveView(w) {
     <div class="row" style="margin-top:10px"><button class="danger grow" data-act="cancelW">Abandonner</button><button class="grow" data-act="finishW">Terminer la séance</button></div></div>`;
 }
 function exCard(w, e, i) {
+  if (e.done) { const x0 = getEx(e.id); const ws = (e.sets || []).filter(s => !s.wu);
+    return `<div class="card exdone" data-act="exReopen" data-i="${i}"><div class="row between" style="align-items:center"><div><div class="b">✅ ${esc(x0.name)}</div>
+      <div class="xs mut">${ws.length} série${ws.length > 1 ? "s" : ""} · ${ws.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div></div><button class="ghost small" data-act="exReopen" data-i="${i}">Modifier</button></div></div>`; }
   const x = getEx(e.id); const sug = suggestion(e.id, w._id); const hist = exerciseHistory(e.id, w._id);
   const last = hist[0]; const [lo, hi] = repRange(e.id);
   const lastW = (e.sets || []).filter(s => !s.wu).slice(-1)[0]; const dr = S.draft[i] || (S.draft[i] = { w: lastW?.w ?? sug.w ?? "", r: lastW?.r ?? "", rir: null, wu: false });
@@ -2231,7 +2236,7 @@ function exCard(w, e, i) {
       <div class="row"><div class="grow"><div class="xs mut">Charge (kg)</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="w" data-v="-${profile().increment}">−</button><input type="number" inputmode="decimal" value="${dr.w}" data-input="draft" data-i="${i}" data-k="w"><button data-act="dStep" data-i="${i}" data-k="w" data-v="${profile().increment}">+</button></div>${BARBELL.has(e.id) && dr.w ? plateHTML(+dr.w) : ""}</div>
       <div class="grow"><div class="xs mut">Reps</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="r" data-v="-1">−</button><input type="number" inputmode="numeric" value="${dr.r}" data-input="draft" data-i="${i}" data-k="r" placeholder="${hi}"><button data-act="dStep" data-i="${i}" data-k="r" data-v="1">+</button></div></div></div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="xs mut">RIR (reps en réserve)</span>${[0, 1, 2, 3, 4].map(v => `<button class="chip ${dr.rir === v && !dr.wu ? "on" : ""}" data-act="dRir" data-i="${i}" data-v="${v}">${v === 4 ? "4+" : v}</button>`).join("")}<button class="chip ${dr.wu ? "on" : ""}" data-act="dWu" data-i="${i}">Échauff.</button></div>
-      <button style="width:100%;margin-top:8px" data-act="logSet" data-i="${i}">Valider la série</button></div></div>`;
+      <div class="row" style="margin-top:8px;gap:8px"><button class="grow" data-act="logSet" data-i="${i}">Valider la série</button>${prev.some(z => !z.wu) ? `<button class="sec small" style="flex:none;padding:8px 12px" data-act="exDone" data-i="${i}" title="Replier l'exercice">✓ Exercice fini</button>` : ""}</div></div></div>`;
 }
 function exPickerSheet(mode, idx) {
   return () => {
@@ -3479,6 +3484,8 @@ const ACT = {
   dStep: el => { const i = +el.dataset.i, k = el.dataset.k; const dr = S.draft[i]; const inp = $(`input[data-input=draft][data-i="${i}"][data-k="${k}"]`); let cur = parseFloat(inp?.value); if (isNaN(cur)) cur = k === "r" ? repRange(liveWorkout().ex[i].id)[1] - +el.dataset.v : 0; dr[k] = Math.max(0, r1(cur + +el.dataset.v)); render(); },
   dRir: el => { const dr = S.draft[+el.dataset.i]; const v = +el.dataset.v; dr.rir = dr.rir === v ? null : v; dr.wu = false; render(); },
   dWu: el => { const dr = S.draft[+el.dataset.i]; dr.wu = !dr.wu; render(); },
+  exDone: el => { const i = +el.dataset.i; updW(w => { w.ex[i].done = true; }); setTimeout(() => { const n = document.querySelectorAll("#app .card")[0]; const nx = [...document.querySelectorAll('[data-act="logSet"]')][0]; if (nx) nx.closest(".card").scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); },
+  exReopen: el => { const i = +el.dataset.i; updW(w => { w.ex[i].done = false; }); },
   logSet: el => {
     const i = +el.dataset.i; const dr = S.draft[i];
     const wv = parseFloat($(`input[data-input=draft][data-i="${i}"][data-k="w"]`).value), rv = parseInt($(`input[data-input=draft][data-i="${i}"][data-k="r"]`).value);

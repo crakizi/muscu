@@ -113,6 +113,8 @@ const ACT = {
   dStep: el => { const i = +el.dataset.i, k = el.dataset.k; const dr = S.draft[i]; const inp = $(`input[data-input=draft][data-i="${i}"][data-k="${k}"]`); let cur = parseFloat(inp?.value); if (isNaN(cur)) cur = k === "r" ? repRange(liveWorkout().ex[i].id)[1] - +el.dataset.v : 0; dr[k] = Math.max(0, r1(cur + +el.dataset.v)); render(); },
   dRir: el => { const dr = S.draft[+el.dataset.i]; const v = +el.dataset.v; dr.rir = dr.rir === v ? null : v; dr.wu = false; render(); },
   dWu: el => { const dr = S.draft[+el.dataset.i]; dr.wu = !dr.wu; render(); },
+  exDone: el => { const i = +el.dataset.i; updW(w => { w.ex[i].done = true; }); setTimeout(() => { const n = document.querySelectorAll("#app .card")[0]; const nx = [...document.querySelectorAll('[data-act="logSet"]')][0]; if (nx) nx.closest(".card").scrollIntoView({ behavior: "smooth", block: "start" }); }, 80); },
+  exReopen: el => { const i = +el.dataset.i; updW(w => { w.ex[i].done = false; }); },
   logSet: el => {
     const i = +el.dataset.i; const dr = S.draft[i];
     const wv = parseFloat($(`input[data-input=draft][data-i="${i}"][data-k="w"]`).value), rv = parseInt($(`input[data-input=draft][data-i="${i}"][data-k="r"]`).value);

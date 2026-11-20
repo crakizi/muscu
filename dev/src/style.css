@@ -128,3 +128,5 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs button.scanbtn{flex:1.1}
 .avatar{width:58px;height:58px;border-radius:50%;background:var(--grad,var(--acc));color:#fff;font-size:26px;font-weight:800;display:grid;place-items:center;flex:none}
 .pstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;text-align:center}.pstats div{background:var(--chip);border-radius:12px;padding:8px 2px}.pstats b{display:block;font-size:18px}.pstats span{font-size:11px;color:var(--mut)}
+
+.exdone{padding:10px 14px;opacity:.85;cursor:pointer}.exdone .b{font-size:15px}
