@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d4ed8"/><stop offset="1" stop-color="#0b1a3f"/></linearGradient>
+    <linearGradient id="leaf" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#22c55e"/><stop offset="1" stop-color="#a3e635"/></linearGradient>
+    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#cbd5e1"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="0" fill="url(#bg)"/>
+  <circle cx="512" cy="540" r="330" fill="#3b82f6" opacity=".18"/>
+  <!-- feuille -->
+  <path d="M512 520 C 470 400, 520 270, 690 230 C 700 380, 640 500, 512 520 Z" fill="url(#leaf)"/>
+  <path d="M520 505 C 560 420, 610 350, 672 262" stroke="#14532d" stroke-width="14" fill="none" stroke-linecap="round" opacity=".55"/>
+  <!-- haltère -->
+  <g fill="url(#metal)">
+    <rect x="300" y="565" width="424" height="42" rx="21"/>
+    <rect x="196" y="470" width="78" height="232" rx="30"/>
+    <rect x="264" y="500" width="56" height="172" rx="22"/>
+    <rect x="750" y="470" width="78" height="232" rx="30"/>
+    <rect x="704" y="500" width="56" height="172" rx="22"/>
+    <rect x="150" y="555" width="50" height="62" rx="16"/>
+    <rect x="824" y="555" width="50" height="62" rx="16"/>
+  </g>
+</svg>
