@@ -12,7 +12,7 @@ function labelSprite(text, scale = 1, bg = "rgba(20,22,26,.85)") {
   ctx.beginPath(); ctx.moveTo(r, 0); ctx.arcTo(w, 0, w, c.height, r); ctx.arcTo(w, c.height, 0, c.height, r); ctx.arcTo(0, c.height, 0, 0, r); ctx.arcTo(0, 0, w, 0, r); ctx.fill();
   ctx.fillStyle = "#fff"; ctx.textBaseline = "middle"; ctx.fillText(text, 18, c.height / 2 + 2);
   const tex = new THREE.CanvasTexture(c); const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false }));
-  const k = 0.028 * scale; s.scale.set(c.width / c.height * k, k, 1); s.renderOrder = 10; return s;
+  const k = 0.04 * scale; s.scale.set(c.width / c.height * k, k, 1); s.renderOrder = 10; return s;
 }
 function makeScene(key, opts) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -363,7 +363,7 @@ function parquetTex() { const c = document.createElement("canvas"); c.width = 51
   for (let r = 0; r < 16; r++) for (let k = 0; k < 4; k++) { const off = (r % 2) * 64; const v = 190 + Math.floor(Math.random() * 30); x.fillStyle = `rgb(${v},${v - 28},${v - 62})`; x.fillRect(k * 128 + off - 128, r * 32, 128, 32); x.fillRect(k * 128 + off, r * 32, 128, 32); x.strokeStyle = "rgba(90,60,30,.35)"; x.strokeRect(k * 128 + off, r * 32, 128, 32); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 2); t.encoding = THREE.sRGBEncoding; return t; }
 function buildGym() {
-  const S3 = makeScene("gym", { map: true, bounds: [-12, 12, -8, 8], cam: [1.5, 19, 15], target: [-0.5, 0, 0], minD: 2.5, maxD: 34, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
+  const S3 = makeScene("gym", { map: true, bounds: [-12, 12, -8, 8], cam: [-3.3, 8.6, 6.8], target: [-4, 0, -0.5], minD: 2.5, maxD: 34, bg: 0x1a1d22, onPick: id => ACT_PICK_MACHINE(id) });
   const sc = S3.scene; const W = 24, D = 16; const G = gm();
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), M(0x1e2024, { roughness: 0.95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
   // plateforme parquet au premier plan (machines à disques)
@@ -398,7 +398,7 @@ function gymLabels(S3) {
   const items = S3.pickables.map(g => ({ g, lab: g.userData.lab, d: cam.position.distanceTo(g.getWorldPosition(new THREE.Vector3())) })).filter(x => x.lab).sort((a, b) => a.d - b.d);
   items.forEach(({ g, lab, d }) => {
     const force = g === S3.hover || g === S3.selected; let vis = force || mode === "all" || mode === "auto";
-    if (vis && !force) { const p = lab.getWorldPosition(new THREE.Vector3()).project(cam); const x = (p.x + 1) / 2 * W, y = (1 - p.y) / 2 * H; const w = lab.scale.x / 0.028 * 22, h = 26;
+    if (vis && !force) { const p = lab.getWorldPosition(new THREE.Vector3()).project(cam); const x = (p.x + 1) / 2 * W, y = (1 - p.y) / 2 * H; const w = lab.scale.x / 0.04 * 31, h = 36;
       if (p.z > 1 || shown.some(r => Math.abs(r[0] - x) < (r[2] + w) / 2 && Math.abs(r[1] - y) < h)) vis = false; else shown.push([x, y, w]); }
     lab.visible = vis;
   });
