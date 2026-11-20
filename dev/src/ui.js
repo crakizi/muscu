@@ -46,10 +46,10 @@ const ICONS = {
   profile: '<circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>'
 };
 function navHTML() {
-  const L = { today: "Aujourd'hui", fridge: "Cuisine", workout: "Séance", progress: "Progrès", coach: "Coach" };
+  const L = { today: "Aujourd'hui", fridge: "Cuisine", workout: "Séance", progress: "Progrès", coach: "Coach", profile: "Profil" };
   const btn = k => `<button class="${S.tab === k ? "on" : ""}" data-act="tab" data-v="${k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${L[k]}${k === "workout" && liveWorkout() ? " •" : ""}</button>`;
   const keys = Object.keys(L);
-  return keys.slice(0, 2).map(btn).join("") + `<button class="scanbtn" data-act="scanHub" aria-label="Scanner un aliment"><span><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 9v6M10 9v6M13 9v6M17 9v6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Scanner</button>` + keys.slice(2).map(btn).join("");
+  return keys.slice(0, 3).map(btn).join("") + `<button class="scanbtn" data-act="scanHub" aria-label="Scanner un aliment"><span><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 9v6M10 9v6M13 9v6M17 9v6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Scanner</button>` + keys.slice(3).map(btn).join("");
 }
 function statusBanner() {
   if (Store.banner) return Store.banner();
@@ -84,7 +84,7 @@ function viewToday() {
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   const h = new Date().getHours(); const hello = h < 6 ? "Bonne nuit" : h < 13 ? "Bonjour" : h < 19 ? "Salut" : "Bonsoir";
   return `${statusBanner()}
-  ${k === todayKey() ? `<div class="hello"><img src="icons/icon-192.png" alt="" onerror="this.remove()"><div><div class="b" style="font-size:18px">${hello} Vuthy 👋</div><div class="xs mut">${fmtDay(k)} · objectif : ${esc(GOALS[profile().goal].label)}</div></div><button class="ghost" style="margin-left:auto;font-size:20px" data-act="tab" data-v="profile" title="Profil">⚙︎</button></div>
+  ${k === todayKey() ? `<div class="hello"><img src="icons/icon-192.png" alt="" onerror="this.remove()"><div><div class="b" style="font-size:18px">${hello} Vuthy 👋</div><div class="xs mut">${fmtDay(k)} · objectif : ${esc(GOALS[profile().goal].label)}</div></div></div>
   ${onboardingHTML()}
   ${checkinCardHTML()}
   ${deloadAdvice() && !isDeload() ? deloadCardHTML() : ""}
@@ -442,7 +442,13 @@ function weekSummary() {
 function viewProfile() {
   const p = profile(); const T = targets();
   const f = (id, lab, v, step = "1", extra = "") => `<div><label>${lab}</label><input id="p_${id}" type="number" step="${step}" inputmode="decimal" value="${v ?? ""}" ${extra}></div>`;
-  return `${statusBanner()}<h1>Profil & objectifs</h1>
+  const nW = workouts().filter(w => !w.live).length, nB = (typeof bilans === "function" ? bilans().length : 0), wk = typeof weekWeights === "function" ? weekWeights(weekKey()) : { avg: null };
+  const nDays = Store.ids("d-").filter(k => (Store.get(k)?.entries || []).length).length;
+  return `${statusBanner()}<h1>Profil</h1>
+    <div class="card profhead"><div class="row" style="gap:14px;align-items:center"><div class="avatar">V</div><div><div class="b" style="font-size:20px">Vuthy</div>
+      <div class="xs mut">${p.age || "?"} ans · ${p.height || "?"} cm · ${wk.avg ?? r1(latestWeight())} kg${wk.avg ? " (moyenne de la semaine)" : ""}</div><div class="xs">🎯 ${esc(GOALS[p.goal].label)} · ${T.kcal} kcal</div></div></div>
+      <div class="pstats"><div><b>${nW}</b><span>séances</span></div><div><b>${nDays}</b><span>jours notés</span></div><div><b>🔥 ${typeof streakDays === "function" ? streakDays() : 0}</b><span>d'affilée</span></div><div><b>${nB}</b><span>bilans</span></div></div>
+      <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:10px"><button class="sec small" data-act="blOpen">📸 Bilan de la semaine</button><button class="sec small" data-act="checkinHist">📋 Check-ins</button><button class="sec small" data-act="quickWeight">⚖️ Mon poids</button></div></div>
     <div class="card"><h2>Objectif</h2><div class="chips">${Object.entries(GOALS).map(([k, g]) => `<button class="chip ${p.goal === k ? "on" : ""}" data-act="setGoal" data-v="${k}">${g.label}</button>`).join("")}</div>
       <p class="xs mut">Change quand tu veux : les cibles se recalculent tout de suite. Maintien = 0 %, Recomposition = −5 %, Masse = +8 %, Sèche = −20 % par rapport à ta dépense.</p></div>
     <div class="card"><h2>Mes infos</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">

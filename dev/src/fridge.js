@@ -36,7 +36,7 @@ function viewFridge() {
     const list = items.filter(i => (i.zone || "frigo") === z); if (!list.length) return "";
     return `<div class="card"><h3>${FRIDGE_ZONES[z]} <span class="mut sm">${list.length}</span></h3>${list.map(i => `<div class="entry"><div data-act="fridgeEdit" data-v="${i.id}" style="flex:1"><div>${esc(i.name)}</div><div class="xs mut">${qtyTxt(i)} · ${FRIDGE_CATS[i.cat] || ""}</div></div><button class="small sec" data-act="fridgeEat" data-v="${i.id}">Manger</button></div>`).join("")}</div>`;
   }).join("");
-  return `${statusBanner()}<div class="row between"><h1>Mon frigo</h1><button class="ghost" data-act="tab" data-v="profile">⚙︎</button></div>
+  return `${statusBanner()}<div class="row between"><h1>Mon frigo</h1></div>
     <div id="scene3d" style="height:60vh;min-height:380px;border-radius:16px;overflow:hidden;margin-bottom:10px;background:var(--chip)"></div>
     <p class="xs mut c" style="margin-top:-4px">Fais glisser pour tourner, pince pour zoomer, touche un aliment pour le modifier.</p>
     <div class="row" style="margin-bottom:10px"><button class="grow" data-act="fridgeAddOpen">+ Ajouter</button><button class="sec grow" data-act="fridgeShop">Courses (IA)</button></div>

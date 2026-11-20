@@ -56,7 +56,7 @@ function plateHTML(total) {
 }
 const BARBELL = new Set(["squat", "bench_press", "rdl", "hip_thrust", "shrug"]);
 // ===================== GLISSER ENTRE LES SECTIONS (comme les onglets de Clash Royale) =====================
-const SWIPE_TABS = ["today", "fridge", "workout", "progress", "coach"];
+const SWIPE_TABS = ["today", "fridge", "workout", "progress", "coach", "profile"];
 const SW = { on: false };
 function swipeBlocked(t) {
   if (S.sheet || !SWIPE_TABS.includes(S.tab)) return true;
