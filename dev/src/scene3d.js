@@ -108,9 +108,19 @@ function mount3D(key, holder, build) {
   if (key !== "body" && !holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
     const hint = document.createElement("div"); hint.style.cssText = "pointer-events:none;position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
     hint.textContent = key === "gym" ? "Tourner 2 doigts = pivoter · pincer = zoom · glisser = se déplacer · double-clic = aller à la machine" : "Glisser = tourner · pincer = zoom"; holder.appendChild(hint); }
-  if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
+  if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); if (S3.key === "gym") gymFit(S3, false); S3.dirty = performance.now() + 300; } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
+  if (key === "gym") gymFit(S3, !S3._fitted); S3._fitted = true;
   S3.dirty = performance.now() + 1500; V3.active = S3; if (!V3.raf) loop3D(); return S3;
+}
+// vue d'ensemble qui remplit tout le cadre : la salle entière, le plus grand possible
+function gymFit(S3, apply) {
+  const [x0, x1, z0, z1] = [-12, 12, -8, 8]; const W = x1 - x0, D = z1 - z0; const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  const el = 62 * Math.PI / 180; const vf = S3.cam.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * S3.cam.aspect);
+  const dist = Math.max((W / 2) / Math.tan(hf / 2), (D * Math.sin(el) / 2 + 1.2 * Math.cos(el)) / Math.tan(vf / 2)) * 1.1;
+  const tgt = [cx, 0, cz + 0.4], cam = [cx, dist * Math.sin(el), cz + 0.4 + dist * Math.cos(el)];
+  S3.home = { cam, target: tgt };
+  if (apply) { S3.controls.target.set(...tgt); S3.cam.position.set(...cam); S3.controls.update(); }
 }
 // ---- déplacements par boutons / animations ----
 function flyTo(S3, target, camPos) {

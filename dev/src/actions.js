@@ -26,7 +26,7 @@ const ACT = {
     const per100 = { kcal, p: r1(p), c: r1(rest * cs / 4), f: r1(rest * (1 - cs) / 9), fib: 0, sugar: 0, satfat: 0, salt: 0 };
     updDay(d => d.entries.push(makeEntry({ name: "Estimation de la journée" + ($("#estN").value.trim() ? " · " + $("#estN").value.trim() : ""), per100, src: "estim" }, 100, "")));
     closeSheet(); toast("Estimation ajoutée"); render(); },
-  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) repris · Annuler dans l'historique si besoin`); render(); },
+  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; if (!es.length) { toast("Rien de noté la veille"); return; } updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) copiés d'hier`); render(); },
   // ----- ajout repas
   openAdd: el => { S.sheet = null; resetAdd(el.dataset.v || defaultMeal()); openSheet(addSheet); },
   addMeal: el => { S.add.meal = el.dataset.v; renderSheet(); },

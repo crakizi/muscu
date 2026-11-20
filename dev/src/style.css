@@ -117,3 +117,5 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .gymfs .gymctl{margin:0!important;padding:6px 10px}
 .gymfsbtn{position:absolute;top:10px;right:10px;z-index:3;padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:13px}
 .gymfs .gymfsbtn{top:calc(10px + env(safe-area-inset-top))}
+
+#app.full{max-width:none;padding-left:8px;padding-right:8px}

@@ -124,12 +124,14 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .gymfsbtn{position:absolute;top:10px;right:10px;z-index:3;padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:13px}
 .gymfs .gymfsbtn{top:calc(10px + env(safe-area-inset-top))}
 
+#app.full{max-width:none;padding-left:8px;padding-right:8px}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795137770";
+const BUILD_VERSION = "1795138299";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1037,9 +1039,19 @@ function mount3D(key, holder, build) {
   if (key !== "body" && !holder.querySelector(".navpad")) { const pad = document.createElement("div"); pad.className = "navpad"; pad.innerHTML = navPadHTML(key); holder.appendChild(pad);
     const hint = document.createElement("div"); hint.style.cssText = "pointer-events:none;position:absolute;left:10px;top:10px;z-index:3;background:var(--card);color:var(--mut);font:12px -apple-system,system-ui;padding:6px 10px;border-radius:10px;box-shadow:var(--shadow);max-width:60%";
     hint.textContent = key === "gym" ? "Tourner 2 doigts = pivoter · pincer = zoom · glisser = se déplacer · double-clic = aller à la machine" : "Glisser = tourner · pincer = zoom"; holder.appendChild(hint); }
-  if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); } }); } S3._ro.disconnect(); S3._ro.observe(holder);
+  if (!S3._ro) { S3._ro = new ResizeObserver(() => { const h2 = S3.renderer.domElement.parentElement; if (!h2) return; const w2 = h2.clientWidth, hh = h2.clientHeight; if (w2 && hh) { S3.renderer.setSize(w2, hh); S3.cam.aspect = w2 / hh; S3.cam.updateProjectionMatrix(); if (S3.key === "gym") gymFit(S3, false); S3.dirty = performance.now() + 300; } }); } S3._ro.disconnect(); S3._ro.observe(holder);
   const w = holder.clientWidth || 360, h = holder.clientHeight || 300; S3.renderer.setSize(w, h); S3.cam.aspect = w / h; S3.cam.updateProjectionMatrix();
+  if (key === "gym") gymFit(S3, !S3._fitted); S3._fitted = true;
   S3.dirty = performance.now() + 1500; V3.active = S3; if (!V3.raf) loop3D(); return S3;
+}
+// vue d'ensemble qui remplit tout le cadre : la salle entière, le plus grand possible
+function gymFit(S3, apply) {
+  const [x0, x1, z0, z1] = [-12, 12, -8, 8]; const W = x1 - x0, D = z1 - z0; const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+  const el = 62 * Math.PI / 180; const vf = S3.cam.fov * Math.PI / 180, hf = 2 * Math.atan(Math.tan(vf / 2) * S3.cam.aspect);
+  const dist = Math.max((W / 2) / Math.tan(hf / 2), (D * Math.sin(el) / 2 + 1.2 * Math.cos(el)) / Math.tan(vf / 2)) * 1.1;
+  const tgt = [cx, 0, cz + 0.4], cam = [cx, dist * Math.sin(el), cz + 0.4 + dist * Math.cos(el)];
+  S3.home = { cam, target: tgt };
+  if (apply) { S3.controls.target.set(...tgt); S3.cam.position.set(...cam); S3.controls.update(); }
 }
 // ---- déplacements par boutons / animations ----
 function flyTo(S3, target, camPos) {
@@ -1903,7 +1915,7 @@ function render() {
   pendingRender = false;
   const views = { today: viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
   const sy = window.scrollY;
-  $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge");
+  $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge"); $("#app").classList.toggle("full", S.tab === "workout" && S.wMode === "3d");
   $("#app").innerHTML = (views[S.tab] || viewToday)();
   $("#nav").innerHTML = navHTML();
 
@@ -1963,7 +1975,7 @@ function viewToday() {
   const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
   const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
-  const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyOpen" title="Copier un autre jour">↺ Copier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
+  const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyYesterday" title="Copier tout ce que j'ai mangé hier">↺ Copier hier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
     ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
     ${!all.length && (day(addDays(k, -1)).entries || []).length ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Même chose qu'hier (${r0(dayTotals(addDays(k, -1)).kcal)} kcal) : tout copier</button>` : ""}
     ${!all.length && k <= todayKey() ? `<button class="ghost small" style="width:100%;margin:2px 0 4px" data-act="estimOpen">🤷 Journée oubliée ? Mets une estimation de tes kcal de la journée</button>` : ""}
@@ -3328,7 +3340,7 @@ const ACT = {
     const per100 = { kcal, p: r1(p), c: r1(rest * cs / 4), f: r1(rest * (1 - cs) / 9), fib: 0, sugar: 0, satfat: 0, salt: 0 };
     updDay(d => d.entries.push(makeEntry({ name: "Estimation de la journée" + ($("#estN").value.trim() ? " · " + $("#estN").value.trim() : ""), per100, src: "estim" }, 100, "")));
     closeSheet(); toast("Estimation ajoutée"); render(); },
-  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) repris · Annuler dans l'historique si besoin`); render(); },
+  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; if (!es.length) { toast("Rien de noté la veille"); return; } updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) copiés d'hier`); render(); },
   // ----- ajout repas
   openAdd: el => { S.sheet = null; resetAdd(el.dataset.v || defaultMeal()); openSheet(addSheet); },
   addMeal: el => { S.add.meal = el.dataset.v; renderSheet(); },

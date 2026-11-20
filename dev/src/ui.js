@@ -15,7 +15,7 @@ function render() {
   pendingRender = false;
   const views = { today: viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
   const sy = window.scrollY;
-  $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge");
+  $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge"); $("#app").classList.toggle("full", S.tab === "workout" && S.wMode === "3d");
   $("#app").innerHTML = (views[S.tab] || viewToday)();
   $("#nav").innerHTML = navHTML();
 
@@ -75,7 +75,7 @@ function viewToday() {
   const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
   const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
-  const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyOpen" title="Copier un autre jour">↺ Copier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
+  const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyYesterday" title="Copier tout ce que j'ai mangé hier">↺ Copier hier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
     ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
     ${!all.length && (day(addDays(k, -1)).entries || []).length ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Même chose qu'hier (${r0(dayTotals(addDays(k, -1)).kcal)} kcal) : tout copier</button>` : ""}
     ${!all.length && k <= todayKey() ? `<button class="ghost small" style="width:100%;margin:2px 0 4px" data-act="estimOpen">🤷 Journée oubliée ? Mets une estimation de tes kcal de la journée</button>` : ""}
