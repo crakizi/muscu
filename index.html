@@ -102,12 +102,19 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .dpill.empty{color:var(--mut);font-weight:500;border-style:dashed;box-shadow:none;background:transparent}
 .sheet:has(#body3d){max-height:96vh}
 
+.week{display:flex;align-items:center;gap:4px;margin:8px 0 6px}.week>.ghost{padding:6px 4px;font-size:18px}
+.wd{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0;border-radius:12px;background:var(--chip);color:var(--txt);min-width:0}
+.wd b{font-size:15px}.wd i{font-style:normal;font-size:11px;height:13px;color:var(--acc)}
+.wd.today{outline:2px solid var(--acc);outline-offset:-2px}.wd.on{background:var(--grad,var(--acc));color:#fff}.wd.on i{color:#fff}
+.wd.fut{opacity:.75}.wd:disabled{opacity:.3}
+.datepick{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795130963";
+const BUILD_VERSION = "1795135155";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1943,7 +1950,8 @@ function viewToday() {
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
   const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyOpen" title="Copier un autre jour">↺ Copier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
     ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
-    ${!all.length ? `<p class="mut sm">Rien pour l'instant. Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("") : all.map(entryRow).join("")}
+    ${!all.length && (day(addDays(k, -1)).entries || []).length ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Reprendre ce que j'ai mangé la veille (${r0(dayTotals(addDays(k, -1)).kcal)} kcal)</button>` : ""}
+    ${!all.length ? `<p class="mut sm">${k > todayKey() ? "Jour à venir : prépare tes repas à l'avance, ils seront comptés ce jour-là." : "Rien pour l'instant."} Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("") : all.map(entryRow).join("")}
   </div>`;
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   const h = new Date().getHours(); const hello = h < 6 ? "Bonne nuit" : h < 13 ? "Bonjour" : h < 19 ? "Salut" : "Bonsoir";
@@ -1951,8 +1959,8 @@ function viewToday() {
   ${k === todayKey() ? `<div class="hello"><img src="icons/icon-192.png" alt="" onerror="this.remove()"><div><div class="b" style="font-size:18px">${hello} Vuthy 👋</div><div class="xs mut">${fmtDay(k)} · objectif : ${esc(GOALS[profile().goal].label)}</div></div><button class="ghost" style="margin-left:auto;font-size:20px" data-act="tab" data-v="profile" title="Profil">⚙︎</button></div>
   ${onboardingHTML()}
   <div class="qa"><button data-act="openAdd" data-v=""><span>🍽️</span>Aliment</button><button data-act="tab" data-v="workout"><span>🏋️</span>Séance</button><button data-act="quickWeight"><span>⚖️</span>Poids</button><button data-act="tab" data-v="fridge"><span>🧊</span>Frigo</button></div>` : ""}
-  <div class="row between"><button class="sec small" data-act="dayNav" data-v="-1">‹</button><h2 class="c" style="margin:0">${k === todayKey() ? "Mon journal du jour" : fmtDay(k)}</h2><button class="sec small" data-act="dayNav" data-v="1" ${k >= todayKey() ? "disabled" : ""}>›</button></div>
-  ${dailyStripHTML(d)}
+${weekStripHTML(k)}
+  ${k > todayKey() ? "" : dailyStripHTML(d)}
   <div class="card" style="margin-top:4px"><div class="row" style="gap:14px">
     <div class="ring">${ring(t.kcal, T.kcal, "var(--acc)")}<div class="in"><div class="big">${r0(Math.abs(left))}</div><div class="xs mut">${left >= 0 ? "kcal restantes" : "kcal en trop"}</div></div></div>
     <div class="grow" style="display:flex;flex-direction:column;gap:9px">
@@ -2316,6 +2324,48 @@ function viewProfile() {
     <div class="card"><h2>Données</h2><p class="xs mut">${Store.mode === "cloud" ? "Synchronisées en ligne entre ton iPhone et ton Mac." : "Stockées dans ce navigateur (mode aperçu)."} ${Store.ids("d-").length} jours · ${Store.ids("w-").length} séances · ${Object.keys(myFoods()).length} aliments perso.</p>
       <div class="row"><button class="sec" data-act="exportData">Copier une sauvegarde</button><button class="sec" data-act="importData">Restaurer</button></div></div>
     <div class="card"><h2>Installer sur l'iPhone</h2><p class="sm">Dans Safari : ouvre cette page → bouton Partager → « Sur l'écran d'accueil ». L'app s'ouvre ensuite comme une vraie app.</p></div>`;
+}
+
+// ===== semaine en haut du journal (navigation passé / futur, à la manière de FitSelf) =====
+const DAY_LETTERS = ["D", "L", "M", "M", "J", "V", "S"];
+function weekStart(k) { const d = parseKey(k); const off = (d.getDay() + 6) % 7; return addDays(k, -off); }
+function maxPlanDay() { return addDays(weekStart(todayKey()), 13); } // jusqu'à la fin de la semaine prochaine
+function streakDays() {
+  let k = todayKey(), n = 0; if (!(day(k).entries || []).length) k = addDays(k, -1);
+  while (n < 400 && (day(k).entries || []).length) { n++; k = addDays(k, -1); } return n;
+}
+function weekStripHTML(k) {
+  const ws = weekStart(k), today = todayKey(), T = targets();
+  const cells = [0, 1, 2, 3, 4, 5, 6].map(i => {
+    const d = addDays(ws, i), es = day(d).entries || [], kc = es.length ? dayTotals(d).kcal : 0;
+    const okRange = T.kcal && Math.abs(kc - T.kcal) <= T.kcal * 0.1;
+    const dis = d > maxPlanDay();
+    return `<button class="wd ${d === k ? "on" : ""} ${d === today ? "today" : ""} ${d > today ? "fut" : ""}" data-act="dayGo" data-v="${d}" ${dis ? "disabled" : ""}>
+      <span class="xs">${DAY_LETTERS[parseKey(d).getDay()]}</span><b>${parseKey(d).getDate()}</b>
+      <i>${es.length ? (d > today ? "○" : okRange ? "✓" : "•") : ""}</i></button>`;
+  }).join("");
+  const st = streakDays();
+  const title = k === today ? "Aujourd'hui" : k === addDays(today, -1) ? "Hier" : k === addDays(today, 1) ? "Demain" : fmtDay(k);
+  return `<div class="row between" style="margin-top:4px"><h2 style="margin:0;position:relative">${title}${k > today ? ' <span class="tag">prévu</span>' : ""}
+      <input type="date" class="datepick" value="${k}" max="${maxPlanDay()}" data-act="dayPick" aria-label="Choisir un jour"></h2>
+    <div class="row" style="gap:8px">${k !== today ? `<button class="chip" data-act="dayGo" data-v="${today}">Aujourd'hui</button>` : ""}<span class="b" title="Jours notés d'affilée">🔥 ${st}</span><button class="ghost small" data-act="weekSheet" title="Ma semaine">📊</button></div></div>
+  <div class="week"><button class="ghost" data-act="dayNav" data-v="-7" aria-label="Semaine précédente">‹</button>${cells}<button class="ghost" data-act="dayNav" data-v="7" ${addDays(ws, 7) > maxPlanDay() ? "disabled" : ""} aria-label="Semaine suivante">›</button></div>`;
+}
+function weekSheet() {
+  const T = targets(), today = todayKey(); const ks = []; let k = today;
+  for (let i = 0; i < 60 && ks.length < 7; i++, k = addDays(k, -1)) if ((day(k).entries || []).length) ks.push(k);
+  ks.reverse(); const tot = ks.map(x => dayTotals(x));
+  const avg = f => tot.length ? tot.reduce((s, t) => s + t[f], 0) / tot.length : 0;
+  const inT = tot.filter(t => Math.abs(t.kcal - T.kcal) <= T.kcal * 0.1).length; const mx = Math.max(T.kcal * 1.3, ...tot.map(t => t.kcal));
+  return `<div class="row between"><h2>Ma semaine</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    ${!ks.length ? `<p class="mut">Aucun jour noté pour l'instant.</p>` : `<p class="sm mut">Moyenne des ${ks.length} derniers jours notés.</p>
+    <div class="card"><div class="row between"><span>Calories</span><b>${r0(avg("kcal"))} / ${T.kcal} kcal</b></div>
+    <div class="row between xs mut"><span>Protéines ${r0(avg("p"))}/${T.p} g</span><span>Glucides ${r0(avg("c"))}/${T.c} g</span><span>Lipides ${r0(avg("f"))}/${T.f} g</span></div>
+    <p class="sm" style="margin-bottom:0"><b>${inT}/${ks.length}</b> jours dans l'objectif (±10 %)</p></div>
+    <div class="card"><div style="display:flex;align-items:flex-end;gap:6px;height:140px;position:relative">
+      <div style="position:absolute;left:0;right:0;bottom:${T.kcal / mx * 100}%;border-top:2px dashed var(--acc);opacity:.6"></div>
+      ${ks.map((x, i) => `<div style="flex:1;text-align:center" data-act="dayGo" data-v="${x}"><div style="height:${tot[i].kcal / mx * 120}px;border-radius:6px 6px 0 0;background:${Math.abs(tot[i].kcal - T.kcal) <= T.kcal * 0.1 ? "var(--ok,#22c55e)" : "var(--chip)"}"></div><div class="xs mut">${DAY_LETTERS[parseKey(x).getDay()]}${parseKey(x).getDate()}</div></div>`).join("")}
+    </div><p class="xs mut">Pointillés = ton objectif. Vert = à ±10 %. Touche une barre pour ouvrir le jour.</p></div>`}`;
 }
 
 // ===================== FRIGO (inventaire) =====================
@@ -2986,7 +3036,10 @@ const ACT = {
   tab: el => { S.tab = el.dataset.v; S.sheet = null; window.scrollTo(0, 0); render(); },
   closeSheet: () => closeSheet(),
   closeSheetBg: (el, ev) => { if (ev.target === el) closeSheet(); },
-  dayNav: el => { S.day = addDays(S.day, +el.dataset.v); if (S.day > todayKey()) S.day = todayKey(); S.aiOut.today = ""; render(); },
+  dayNav: el => { S.day = addDays(S.day, +el.dataset.v); if (S.day > maxPlanDay()) S.day = maxPlanDay(); S.aiOut.today = ""; render(); },
+  dayGo: el => { S.day = el.dataset.v; S.aiOut.today = ""; if (S.sheet) closeSheet(); render(); },
+  weekSheet: () => openSheet(weekSheet),
+  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) repris de la veille · Annuler dans l'historique si besoin`); render(); },
   // ----- ajout repas
   openAdd: el => { S.sheet = null; resetAdd(el.dataset.v || defaultMeal()); openSheet(addSheet); },
   addMeal: el => { S.add.meal = el.dataset.v; renderSheet(); },
@@ -3248,6 +3301,7 @@ document.addEventListener("change", ev => {
   if (el.dataset.act === "moodTrack") { const pr = clone(Store.get("profile", {})); pr.moodTrack = el.checked; Store.set("profile", pr); renderSheet(); return; }
   if (el.dataset.act === "gymGoto") { if (el.value) gymGoto(el.value); el.value = ""; return; }
   if (el.dataset.act === "copyChk") { S.copySel[+el.dataset.v] = el.checked; renderSheet(); return; }
+  if (el.dataset.act === "dayPick" && el.value) { S.day = el.value > maxPlanDay() ? maxPlanDay() : el.value; render(); return; }
   if (el.id === "copyDate" && el.value) { S.copyFrom = el.value; S.copySel = null; renderSheet(); return; }
   if (el.id === "wDate") { const w = liveWorkout(); if (w && el.value) { const t = new Date(w.start); const d = parseKey(el.value); d.setHours(t.getHours(), t.getMinutes()); const delta = d.getTime() - w.start; updW(o => { o.start += delta; o.ex.forEach(e => e.sets.forEach(s => s.t += delta)); }); } return; }
   if (el.dataset.act === "warmAll") { updW(w => w.warmDone = el.checked); return; }
