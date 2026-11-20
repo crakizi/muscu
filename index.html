@@ -116,12 +116,20 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .phpair{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}.phpair figure{margin:0}.phpair img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px}.phpair figcaption{font-size:11px;text-align:center;color:var(--mut)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grid2 input{width:100%}
 
+.gymbox{position:relative;display:flex;flex-direction:column;height:calc(100dvh - 235px);min-height:460px}
+.gymbox #scene3d{flex:1;border-radius:18px;min-height:0}
+.gymfs{position:fixed;inset:0;z-index:60;background:var(--bg,#fff);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+.gymfs #scene3d{flex:1;min-height:0}
+.gymfs .gymctl{margin:0!important;padding:6px 10px}
+.gymfsbtn{position:absolute;top:10px;right:10px;z-index:3;padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:13px}
+.gymfs .gymfsbtn{top:calc(10px + env(safe-area-inset-top))}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795135624";
+const BUILD_VERSION = "1795136223";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1957,8 +1965,8 @@ function viewToday() {
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
   const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyOpen" title="Copier un autre jour">↺ Copier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
     ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
-    ${!all.length && lastLoggedDay(k) ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Répéter ${lastLoggedDay(k) === addDays(k, -1) ? "la veille" : fmtDay(lastLoggedDay(k))} (${r0(dayTotals(lastLoggedDay(k)).kcal)} kcal)</button>` : ""}
-    <button class="ghost small" style="width:100%;margin:2px 0 4px" data-act="estimOpen">🤷 Oublié de peser / noter ? Ajoute une estimation en kcal</button>
+    ${!all.length && (day(addDays(k, -1)).entries || []).length ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Même chose qu'hier (${r0(dayTotals(addDays(k, -1)).kcal)} kcal) : tout copier</button>` : ""}
+    ${!all.length && k <= todayKey() ? `<button class="ghost small" style="width:100%;margin:2px 0 4px" data-act="estimOpen">🤷 Journée oubliée ? Mets une estimation de tes kcal de la journée</button>` : ""}
     ${!all.length ? `<p class="mut sm">${k > todayKey() ? "Jour à venir : prépare tes repas à l'avance, ils seront comptés ce jour-là." : "Rien pour l'instant."} Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("") : all.map(entryRow).join("")}
   </div>`;
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
@@ -2146,9 +2154,10 @@ function viewWorkout() {
   const spb = typeof spBarHTML === "function" ? spBarHTML() : "";
   const toggle = spb + `<div class="chips" style="margin-bottom:10px"><button class="chip ${mode === "list" ? "on" : ""}" data-act="wMode" data-v="list">Liste</button><button class="chip ${mode === "3d" ? "on" : ""}" data-act="wMode" data-v="3d">Salle 3D</button></div>`;
   if (mode === "3d") return `${statusBanner()}<div class="row between"><h1>${w ? esc(w.name) : "Salle 3D"}</h1>${w ? `<span class="mut" id="wTimer">${fmtDur(Date.now() - w.start)}</span>` : ""}</div>${toggle}
-    <div id="scene3d" style="height:calc(100vh - 250px);min-height:420px;border-radius:18px;overflow:hidden;background:var(--chip)"></div>
-    <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center"><span class="xs mut">Noms :</span>${[["auto", "Sans chevauchement"], ["all", "Tous"], ["none", "Aucun"]].map(([k, l]) => `<button class="chip ${(S.gymNames || "auto") === k ? "on" : ""}" data-act="gymNames" data-v="${k}">${l}</button>`).join("")}
-      <select data-act="gymGoto" style="width:auto;margin-left:auto"><option value="">Aller à une machine…</option>${GYM_MACHINES.map(m => `<option value="${m.id}">${esc(m.label)}</option>`).join("")}</select></div>
+    <div class="${S.gymFull ? "gymfs" : "gymbox"}"><div id="scene3d" style="height:100%;width:100%;overflow:hidden;background:var(--chip)"></div>
+      <button class="gymfsbtn" data-act="gymFull" title="${S.gymFull ? "Quitter le plein écran" : "Plein écran"}">${S.gymFull ? "✕ Fermer" : "⛶ Plein écran"}</button>
+    <div class="row gymctl" style="gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center"><span class="xs mut">Noms :</span>${[["auto", "Sans chevauchement"], ["all", "Tous"], ["none", "Aucun"]].map(([k, l]) => `<button class="chip ${(S.gymNames || "auto") === k ? "on" : ""}" data-act="gymNames" data-v="${k}">${l}</button>`).join("")}
+      <select data-act="gymGoto" style="width:auto;margin-left:auto"><option value="">Aller à une machine…</option>${GYM_MACHINES.map(m => `<option value="${m.id}">${esc(m.label)}</option>`).join("")}</select></div></div>
     <p class="xs mut c">Touche une machine → choisis l'exercice → note tes séries. Trackpad : tourne 2 doigts pour faire pivoter la salle, pince pour zoomer, glisse pour te déplacer.</p>
     ${w ? `<div class="card"><h3>Dans cette séance</h3>${(w.ex || []).map(e => `<div class="entry" data-act="gymPickEx" data-v="${e.id}"><span class="sm">${esc(getEx(e.id).name)}</span><span class="xs mut">${workSets(e).length} série(s) ›</span></div>`).join("") || `<p class="mut sm">Aucun exercice.</p>`}
       <button style="width:100%;margin-top:8px" data-act="finishW">Terminer la séance</button></div>` : ""}`;
@@ -2378,17 +2387,15 @@ function weekSheet() {
     </div><p class="xs mut">Pointillés = ton objectif. Vert = à ±10 %. Touche une barre pour ouvrir le jour.</p></div>`}`;
 }
 
-function lastLoggedDay(k) { for (let i = 1; i <= 30; i++) { const x = addDays(k, -i); if ((day(x).entries || []).length) return x; } return null; }
 function estimSheet() {
   const E = S.estim;
-  return `<div class="row between"><h2>Estimation</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-    <p class="sm mut" style="margin-top:0">Tu n'as pas pu peser ou scanner ? Mets ce que tu penses avoir mangé. C'est marqué « estimation » dans ton journal.</p>
-    <label class="sm">Calories estimées<input type="number" inputmode="numeric" id="estK" value="${E.kcal || ""}" placeholder="ex : 800" style="font-size:22px"></label>
-    <div class="chips" style="margin:8px 0">${[300, 500, 700, 900, 1200].map(v => `<button class="chip" data-act="estimQuick" data-v="${v}">${v}</button>`).join("")}</div>
+  return `<div class="row between"><h2>Journée oubliée</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <p class="sm mut" style="margin-top:0">Tu n'as rien pesé ni noté aujourd'hui ? Mets ce que tu penses avoir mangé sur <b>toute la journée</b>. C'est marqué « estimation » dans ton journal. Pour repère, ton objectif est de ${targets().kcal} kcal.</p>
+    <label class="sm">Calories de la journée<input type="number" inputmode="numeric" id="estK" value="${E.kcal || ""}" placeholder="ex : 2500" style="font-size:22px"></label>
+    <div class="chips" style="margin:8px 0">${[1500, 1800, 2000, 2200, 2500, 2800, 3000, 3500, 4000].map(v => `<button class="chip ${+E.kcal === v ? "on" : ""}" data-act="estimQuick" data-v="${v}">${v}</button>`).join("")}</div>
     <label class="sm">Dont protéines (g, optionnel)<input type="number" inputmode="numeric" id="estP" value="${E.p || ""}" placeholder="laisser vide si tu ne sais pas"></label>
-    <label class="sm">Description (optionnel)<input id="estN" value="${esc(E.name || "")}" placeholder="ex : resto italien, kebab, repas chez des amis"></label>
-    <h3>Repas</h3><div class="chips">${["", ...MEALS].map(m => `<button class="chip ${E.meal === m ? "on" : ""}" data-act="estimMeal" data-v="${m}">${esc(m ? mealLabel(m) : "Sans repas")}</button>`).join("")}</div>
-    <button style="width:100%;margin-top:14px" data-act="estimSave">Ajouter l'estimation</button>`;
+    <label class="sm">Description (optionnel)<input id="estN" value="${esc(E.name || "")}" placeholder="ex : journée chez mes parents, resto le soir"></label>
+    <button style="width:100%;margin-top:14px" data-act="estimSave">Ajouter l'estimation de la journée</button>`;
 }
 
 // ===================== FRIGO (inventaire) =====================
@@ -3180,16 +3187,16 @@ const ACT = {
   dayNav: el => { S.day = addDays(S.day, +el.dataset.v); if (S.day > maxPlanDay()) S.day = maxPlanDay(); S.aiOut.today = ""; render(); },
   dayGo: el => { S.day = el.dataset.v; S.aiOut.today = ""; if (S.sheet) closeSheet(); render(); },
   weekSheet: () => openSheet(weekSheet),
+  gymFull: () => { S.gymFull = !S.gymFull; render(); },
   estimOpen: () => { S.estim = { meal: "" }; openSheet(estimSheet); },
   estimQuick: el => { S.estim.kcal = +el.dataset.v; S.estim.p = $("#estP").value; S.estim.name = $("#estN").value; renderSheet(); },
-  estimMeal: el => { S.estim.kcal = $("#estK").value; S.estim.p = $("#estP").value; S.estim.name = $("#estN").value; S.estim.meal = el.dataset.v; renderSheet(); },
   estimSave: () => { const kcal = +$("#estK").value; if (!kcal) { toast("Indique les calories"); return; }
     const T = targets(); let p = +$("#estP").value || 0; if (!p) p = kcal * (T.p * 4 / T.kcal) / 4;
     const rest = Math.max(0, kcal - p * 4), cs = T.c * 4 / (T.c * 4 + T.f * 9 || 1);
     const per100 = { kcal, p: r1(p), c: r1(rest * cs / 4), f: r1(rest * (1 - cs) / 9), fib: 0, sugar: 0, satfat: 0, salt: 0 };
-    updDay(d => d.entries.push(makeEntry({ name: "Estimation" + ($("#estN").value.trim() ? " · " + $("#estN").value.trim() : ""), per100, src: "estim" }, 100, S.estim.meal)));
+    updDay(d => d.entries.push(makeEntry({ name: "Estimation de la journée" + ($("#estN").value.trim() ? " · " + $("#estN").value.trim() : ""), per100, src: "estim" }, 100, "")));
     closeSheet(); toast("Estimation ajoutée"); render(); },
-  copyYesterday: () => { const es = day(lastLoggedDay(S.day)).entries || []; updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) repris · Annuler dans l'historique si besoin`); render(); },
+  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) repris · Annuler dans l'historique si besoin`); render(); },
   // ----- ajout repas
   openAdd: el => { S.sheet = null; resetAdd(el.dataset.v || defaultMeal()); openSheet(addSheet); },
   addMeal: el => { S.add.meal = el.dataset.v; renderSheet(); },
