@@ -59,10 +59,10 @@ function mealPlanHTML() {
   const today = (new Date().getDay() + 6) % 7;
   const days = P.days.map((d, di) => { const tot = d.meals.reduce((t, m) => ({ kcal: t.kcal + (+m.kcal || 0), p: t.p + (+m.p || 0) }), { kcal: 0, p: 0 });
     return `<details class="card" ${di === 0 ? "open" : ""}><summary><b>${esc(d.day)}</b> <span class="xs mut">· ${r0(tot.kcal)} kcal · P ${r0(tot.p)} g</span></summary>
-      ${d.meals.map((m, mi) => `<div class="entry" style="align-items:flex-start">${dishImg(m.name, { desc: m.photo_en, ings: (m.ingredients || []).map(i => i.name) })}<div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
+      ${d.meals.map((m, mi) => `<div class="meal-card">${dishImg(m.name, { desc: m.photo_en, ings: (m.ingredients || []).map(i => i.name), size: "card" })}<div class="entry" style="align-items:flex-start;border-top:0;padding-top:6px"><div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
         <div class="xs mut">${r0(m.kcal)} kcal · P ${r0(m.p)} · G ${r0(m.c)} · L ${r0(m.f)}</div><div class="xs">${(m.ingredients || []).map(i => `${esc(i.name)} ${r0(i.g)} g`).join(" · ")}</div>
         ${m.steps ? `<details><summary class="xs" style="color:var(--acc)">Recette</summary><div class="xs" style="white-space:pre-wrap">${esc(m.steps)}</div></details>` : ""}</div>
-        <button class="small sec" data-act="mpEat" data-d="${di}" data-m="${mi}">Mangé</button></div>`).join("")}</details>`; }).join("");
+        <button class="small sec" data-act="mpEat" data-d="${di}" data-m="${mi}">Mangé</button></div></div>`).join("")}</details>`; }).join("");
   const shop = (P.shopping || []).map(s => `<h3>${esc(s.aisle)}</h3>${(s.items || []).map(i => `<label class="row" style="gap:8px"><input type="checkbox" style="width:18px;height:18px"><span class="sm">${esc(i.name)} <span class="mut">${esc(i.qty || "")}</span></span></label>`).join("")}`).join("");
   return `${days}<div class="card"><h2>🛒 Liste de courses</h2>${shop || `<p class="mut sm">—</p>`}</div>${P.batch ? `<div class="card"><h2>🍱 Batch cooking</h2><div class="sm" style="white-space:pre-wrap">${esc(P.batch)}</div></div>` : ""}${form}`;
 }

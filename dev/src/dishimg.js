@@ -125,8 +125,7 @@ function dishSheet() {
   const k = S.dishSheet; const m = DI.meta[k] || { name: k };
   return `<div class="row between"><h2>${esc(m.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     <div class="dimg dimg-big${DI.urls[k] ? "" : " dimg-wait"}" data-dish="${k}">${diInner(k)}</div>
-    <p class="xs mut">Photo générée par IA${DI.src[k] ? " (" + DI.src[k] + ")" : ""} pour illustrer le plat : l'aspect réel peut varier. Gardée uniquement sur cet appareil.</p>
-    <button class="sec" style="width:100%" data-act="dishRegen" data-v="${k}" ${DI.state[k] === "loading" ? "disabled" : ""}>↻ Nouvelle photo</button>`;
+    <p class="xs mut">Photo générée par IA pour illustrer le plat : l'aspect réel peut varier.</p>`;
 }
 const DISH_ACT = {
   dishView: (el, ev) => { ev?.stopPropagation?.(); const k = el.dataset.v; if (DI.state[k] === "err") { if (["nokey", "badkey"].includes(DI.why)) { toast("Ajoute ta clé Pollinations dans Profil → Photos des plats"); return; } if (DI.why === "nobalance") { toast("Solde Pollinations vide : fais une Quête sur enter.pollinations.ai"); return; } delete DI.state[k]; diEnsure(k); diShow(k); return; } if (!DI.urls[k]) return; S.dishSheet = k; openSheet(dishSheet); },
