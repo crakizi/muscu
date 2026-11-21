@@ -133,9 +133,9 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 /* photos des plats */
 .dimg{flex:none;border-radius:10px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .dimg img{width:100%;height:100%;object-fit:cover;display:block;animation:dimgIn .4s ease}
-.dimg-thumb{width:104px;height:104px;border-radius:12px}
-.dimg-mini{width:56px;height:56px;border-radius:10px;align-self:center}
-.dimg-wide{width:100%;aspect-ratio:4/3;max-height:380px;margin:4px 0 8px;border-radius:12px}
+.dimg-thumb{width:84px;height:84px;border-radius:12px}
+.dimg-mini{width:46px;height:46px;border-radius:10px;align-self:center}
+.dimg-wide{width:100%;aspect-ratio:16/9;max-height:200px;margin:4px 0 8px;border-radius:12px}
 .dimg-big{width:100%;aspect-ratio:4/3;margin:8px 0;border-radius:14px}
 .dimg-wait{background:linear-gradient(90deg,var(--bg),var(--line),var(--bg));background-size:200% 100%;animation:dimgShim 1.4s linear infinite}
 .dimg-ph{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:20px;opacity:.7;white-space:normal}

@@ -139,9 +139,9 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 /* photos des plats */
 .dimg{flex:none;border-radius:10px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 .dimg img{width:100%;height:100%;object-fit:cover;display:block;animation:dimgIn .4s ease}
-.dimg-thumb{width:104px;height:104px;border-radius:12px}
-.dimg-mini{width:56px;height:56px;border-radius:10px;align-self:center}
-.dimg-wide{width:100%;aspect-ratio:4/3;max-height:380px;margin:4px 0 8px;border-radius:12px}
+.dimg-thumb{width:84px;height:84px;border-radius:12px}
+.dimg-mini{width:46px;height:46px;border-radius:10px;align-self:center}
+.dimg-wide{width:100%;aspect-ratio:16/9;max-height:200px;margin:4px 0 8px;border-radius:12px}
 .dimg-big{width:100%;aspect-ratio:4/3;margin:8px 0;border-radius:14px}
 .dimg-wait{background:linear-gradient(90deg,var(--bg),var(--line),var(--bg));background-size:200% 100%;animation:dimgShim 1.4s linear infinite}
 .dimg-ph{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:20px;opacity:.7;white-space:normal}
@@ -160,7 +160,7 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795230208";
+const BUILD_VERSION = "1795230423";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -2776,10 +2776,10 @@ function mealPlanHTML() {
   const today = (new Date().getDay() + 6) % 7;
   const days = P.days.map((d, di) => { const tot = d.meals.reduce((t, m) => ({ kcal: t.kcal + (+m.kcal || 0), p: t.p + (+m.p || 0) }), { kcal: 0, p: 0 });
     return `<details class="card" ${di === 0 ? "open" : ""}><summary><b>${esc(d.day)}</b> <span class="xs mut">· ${r0(tot.kcal)} kcal · P ${r0(tot.p)} g</span></summary>
-      ${d.meals.map((m, mi) => `<div class="meal-card">${dishImg(m.name, { desc: m.photo_en, ings: (m.ingredients || []).map(i => i.name), size: "card" })}<div class="entry" style="align-items:flex-start;border-top:0;padding-top:6px"><div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
+      ${d.meals.map((m, mi) => `<div class="entry" style="align-items:flex-start">${dishImg(m.name, { desc: m.photo_en, ings: (m.ingredients || []).map(i => i.name) })}<div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
         <div class="xs mut">${r0(m.kcal)} kcal · P ${r0(m.p)} · G ${r0(m.c)} · L ${r0(m.f)}</div><div class="xs">${(m.ingredients || []).map(i => `${esc(i.name)} ${r0(i.g)} g`).join(" · ")}</div>
         ${m.steps ? `<details><summary class="xs" style="color:var(--acc)">Recette</summary><div class="xs" style="white-space:pre-wrap">${esc(m.steps)}</div></details>` : ""}</div>
-        <button class="small sec" data-act="mpEat" data-d="${di}" data-m="${mi}">Mangé</button></div></div>`).join("")}</details>`; }).join("");
+        <button class="small sec" data-act="mpEat" data-d="${di}" data-m="${mi}">Mangé</button></div>`).join("")}</details>`; }).join("");
   const shop = (P.shopping || []).map(s => `<h3>${esc(s.aisle)}</h3>${(s.items || []).map(i => `<label class="row" style="gap:8px"><input type="checkbox" style="width:18px;height:18px"><span class="sm">${esc(i.name)} <span class="mut">${esc(i.qty || "")}</span></span></label>`).join("")}`).join("");
   return `${days}<div class="card"><h2>🛒 Liste de courses</h2>${shop || `<p class="mut sm">—</p>`}</div>${P.batch ? `<div class="card"><h2>🍱 Batch cooking</h2><div class="sm" style="white-space:pre-wrap">${esc(P.batch)}</div></div>` : ""}${form}`;
 }
