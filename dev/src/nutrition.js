@@ -59,7 +59,7 @@ function mealPlanHTML() {
   const today = (new Date().getDay() + 6) % 7;
   const days = P.days.map((d, di) => { const tot = d.meals.reduce((t, m) => ({ kcal: t.kcal + (+m.kcal || 0), p: t.p + (+m.p || 0) }), { kcal: 0, p: 0 });
     return `<details class="card" ${di === 0 ? "open" : ""}><summary><b>${esc(d.day)}</b> <span class="xs mut">· ${r0(tot.kcal)} kcal · P ${r0(tot.p)} g</span></summary>
-      ${d.meals.map((m, mi) => `<div class="entry" style="align-items:flex-start"><div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
+      ${d.meals.map((m, mi) => `<div class="entry" style="align-items:flex-start">${dishImg(m.name, { desc: m.photo_en, ings: (m.ingredients || []).map(i => i.name) })}<div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
         <div class="xs mut">${r0(m.kcal)} kcal · P ${r0(m.p)} · G ${r0(m.c)} · L ${r0(m.f)}</div><div class="xs">${(m.ingredients || []).map(i => `${esc(i.name)} ${r0(i.g)} g`).join(" · ")}</div>
         ${m.steps ? `<details><summary class="xs" style="color:var(--acc)">Recette</summary><div class="xs" style="white-space:pre-wrap">${esc(m.steps)}</div></details>` : ""}</div>
         <button class="small sec" data-act="mpEat" data-d="${di}" data-m="${mi}">Mangé</button></div>`).join("")}</details>`; }).join("");
@@ -74,7 +74,7 @@ async function mealPlanGo() {
 Crée un PLAN DE REPAS de ${o.days} jours, ${o.meals} repas par jour, qui atteint chaque jour ≈ ${T.kcal} kcal (±5 %), protéines ≥ ${T.p} g, glucides ≈ ${T.c} g, lipides ≈ ${T.f} g, fibres ≥ 25 g, et des légumes chaque jour (soupes, veloutés, poêlées de surgelés, sauces mixées).
 Temps de cuisine max ${o.time} min par repas. ${o.batch ? "Organise-le en BATCH COOKING : 1 ou 2 sessions de cuisine (dimanche/mercredi) et des restes réutilisés." : ""} Utilise en priorité ce qu'il a : ${fridgeText() || "inconnu"}. Produits faciles à trouver chez Mercadona / Alcampo / Ahorramas. ${o.likes ? "Contraintes : " + o.likes + "." : ""}
 Valeurs nutritionnelles réalistes (tables Ciqual/USDA), ingrédients pesés CRUS en grammes.
-Réponds UNIQUEMENT en JSON : {"days":[{"day":"Lundi","meals":[{"meal":"Petit-déjeuner","name":"...","kcal":0,"p":0,"c":0,"f":0,"prep_min":10,"ingredients":[{"name":"flocons d'avoine","g":80}],"steps":"1. ... 2. ... (temps, feu/four °C)"}]}],"shopping":[{"aisle":"Viandes","items":[{"name":"blanc de poulet","qty":"1,2 kg"}]}],"batch":"plan de la session batch cooking, étape par étape"}`);
+Réponds UNIQUEMENT en JSON : {"days":[{"day":"Lundi","meals":[{"meal":"Petit-déjeuner","name":"...","kcal":0,"p":0,"c":0,"f":0,"prep_min":10,"photo_en":"short English visual description of the finished dish (main ingredients, plating)","ingredients":[{"name":"flocons d'avoine","g":80}],"steps":"1. ... 2. ... (temps, feu/four °C)"}]}],"shopping":[{"aisle":"Viandes","items":[{"name":"blanc de poulet","qty":"1,2 kg"}]}],"batch":"plan de la session batch cooking, étape par étape"}`);
     if (!res?.days?.length) throw { message: "plan vide" };
     Store.set("mealplan", Object.assign(res, { created: Date.now(), opt: clone(o) }));
   } catch (e) { toast(aiErr(e)); }
@@ -85,8 +85,8 @@ const IDEA_CATS = [["breakfast", "🥣 Petit-déj protéiné"], ["fast", "⚡ Pr
 function ideasHTML() {
   return `<div class="card"><h2>Idées de recettes</h2><p class="sm mut">Recettes « mode chef » adaptées à tes macros, ton matériel (four, poêle, casserole, micro-ondes, cuiseur à riz) et tes goûts.</p>
     <div class="chips">${IDEA_CATS.map(([k, l]) => `<button class="chip ${S.ideaCat === k ? "on" : ""}" data-act="ideaGo" data-v="${k}" ${S.busy.idea ? "disabled" : ""}>${l}</button>`).join("")}</div>
-    ${S.busy.idea ? `<p class="sm"><span class="spin"></span> Le chef réfléchit…</p>` : ""}${S.aiOut.idea ? `<div class="ai-out">${esc(S.aiOut.idea)}</div><button class="sec small" data-act="ideaSave">Garder ces idées</button>` : ""}</div>
-    ${(Store.get("notes", { items: [] }).items || []).length ? `<div class="card"><h2>Idées gardées</h2>${Store.get("notes").items.map(n => `<details><summary class="sm">${fmtDay(dateKey(new Date(n.t)))} — ${esc(n.text.split("\n").find(l => l.trim()) || "")}</summary><div class="xs" style="white-space:pre-wrap">${esc(n.text)}</div><button class="danger small" data-act="ideaDel" data-v="${n.id}">Supprimer</button></details>`).join("")}</div>` : ""}`;
+    ${S.busy.idea ? `<p class="sm"><span class="spin"></span> Le chef réfléchit…</p>` : ""}${S.aiOut.idea ? `<div class="ai-out">${aiRich(S.aiOut.idea)}</div><button class="sec small" data-act="ideaSave">Garder ces idées</button>` : ""}</div>
+    ${(Store.get("notes", { items: [] }).items || []).length ? `<div class="card"><h2>Idées gardées</h2>${Store.get("notes").items.map(n => `<details><summary class="sm">${fmtDay(dateKey(new Date(n.t)))} — ${esc((n.text.split("\n").find(l => l.trim()) || "").replace(/^\s*🍽\uFE0F?\s*/u, "").split("|")[0])}</summary><div class="ai-out xs">${aiRich(n.text)}</div><button class="danger small" data-act="ideaDel" data-v="${n.id}">Supprimer</button></details>`).join("")}</div>` : ""}`;
 }
 async function ideaGo(cat) {
   const T = targets(); const L = Object.fromEntries(IDEA_CATS)[cat];

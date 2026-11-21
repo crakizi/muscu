@@ -136,13 +136,28 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .pstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px;text-align:center}.pstats div{background:var(--chip);border-radius:12px;padding:8px 2px}.pstats b{display:block;font-size:18px}.pstats span{font-size:11px;color:var(--mut)}
 
 .exdone{padding:10px 14px;opacity:.85;cursor:pointer}.exdone .b{font-size:15px}
+/* photos des plats */
+.dimg{flex:none;border-radius:10px;overflow:hidden;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.dimg img{width:100%;height:100%;object-fit:cover;display:block;animation:dimgIn .4s ease}
+.dimg-thumb{width:68px;height:68px}
+.dimg-mini{width:38px;height:38px;border-radius:8px;align-self:center}
+.dimg-wide{width:100%;aspect-ratio:4/3;max-height:300px;margin:4px 0 8px;border-radius:12px}
+.dimg-big{width:100%;aspect-ratio:4/3;margin:8px 0;border-radius:14px}
+.dimg-wait{background:linear-gradient(90deg,var(--bg),var(--line),var(--bg));background-size:200% 100%;animation:dimgShim 1.4s linear infinite}
+.dimg-ph{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:20px;opacity:.7;white-space:normal}
+.dimg-ph small{font-size:10px}
+.dimg-mini .dimg-ph{font-size:13px}.dimg-mini .spin,.dimg-thumb .spin{width:14px;height:14px}
+.dish{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);white-space:pre-wrap}
+.dish-name{font-size:16px;margin-bottom:4px}
+@keyframes dimgShim{from{background-position:200% 0}to{background-position:0 0}}
+@keyframes dimgIn{from{opacity:0}to{opacity:1}}
 
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795140030";
+const BUILD_VERSION = "1795229684";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -625,6 +640,142 @@ async function aiBarcodeDigits(blob) {
 }
 const USER_CTX = () => { const p = profile(); const t = targets(); return `Profil : homme ${p.age} ans, ${p.height} cm, ${r1(t.weight)} kg, muscu depuis 7 ans (3-6 séances/sem, split Bras / Pecs-Dos / Jambes, 3×6-8 lourd, foot ou padel 1×/sem). Objectif : ${GOALS[p.goal].label}. Cibles du jour : ${t.kcal} kcal, P ${t.p} g, G ${t.c} g, L ${t.f} g. N'aime pas les fruits de mer ni le poisson (sauf thon, saumon, sardine de temps en temps). Trouve les légumes pénibles à cuisiner : privilégie soupes, veloutés, ratatouille, légumes mixés dans les sauces, surgelés poêlés. Fait ses courses chez Alcampo, Mercadona, Ahorramas (Villanueva de la Cañada, Madrid). Prend whey, créatine, vitamines/oméga-3. Matériel de cuisine : four, micro-ondes, plaques avec poêle et casserole, grille-pain, cuiseur à riz (PAS d'airfryer) : n'utilise que ce matériel.`; };
 
+// ===================== PHOTOS DES PLATS (générées par IA, gardées sur l'appareil) =====================
+// Chaque plat, collation ou recette reçoit une photo réaliste générée une seule fois, puis mise en cache (IndexedDB).
+// 1) Pollinations avec la clé de Profil → Photos des plats (solde gratuit des Quêtes) ; 2) sinon Gemini image, si la clé Gemini y a accès.
+const DI = { db: null, urls: {}, state: {}, meta: {}, src: {}, queue: [], busy: false };
+const DIMG_MODELS = [["tongyi-mai/z-image-turbo", "Réaliste · ≈ 0,004 $ la photo"], ["black-forest-labs/flux.1.1-pro", "Très réaliste · ≈ 0,03 $ la photo"]];
+const DIMG_GEMINI = ["gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-3.1-flash-image-preview", "gemini-2.5-flash-image"];
+const DISH_RULE = `Commence CHAQUE plat, collation ou recette proposé par une ligne seule au format exact : « 🍽️ Nom du plat | short English visual description of the finished dish for a food photo (main ingredients, how it is plated) ». N'utilise le symbole 🍽️ nulle part ailleurs.`;
+
+function dishKey(name) { return String(name || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim().slice(0, 90); }
+function dishHash(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return Math.abs(h) % 1e9; }
+function diDB() {
+  if (DI.db) return Promise.resolve(DI.db);
+  return new Promise((res, rej) => { const r = indexedDB.open("muscu_dishimg", 1); r.onupgradeneeded = () => r.result.createObjectStore("d", { keyPath: "key" }); r.onsuccess = () => { DI.db = r.result; res(DI.db); }; r.onerror = () => rej(r.error); });
+}
+async function diGet(key) { const db = await diDB(); return new Promise(res => { const q = db.transaction("d").objectStore("d").get(key); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+async function diPut(it) { const db = await diDB(); return new Promise(res => { const tx = db.transaction("d", "readwrite"); tx.objectStore("d").put(it); tx.oncomplete = res; tx.onerror = res; }); }
+async function diDel(key) { const db = await diDB(); return new Promise(res => { const tx = db.transaction("d", "readwrite"); tx.objectStore("d").delete(key); tx.oncomplete = res; tx.onerror = res; }); }
+
+function dishPrompt(m) {
+  const what = m.desc ? `${m.desc} (dish name: ${m.name})` : `the dish "${m.name}"`;
+  const ings = (m.ings || []).filter(Boolean).slice(0, 8).join(", ");
+  return `Photorealistic professional food photograph of a real, home-cooked single portion of ${what}.${ings ? " Visible ingredients: " + ings + "." : ""} Served on a simple plate or in a bowl as appropriate, appetizing but realistic, natural soft daylight from a window, 45-degree angle, shallow depth of field, true-to-life colors and textures, kitchen table background. No text, no labels, no watermark, no people, no hands, no cutlery in the foreground.`;
+}
+// Réduit l'image (≤ 900 px, JPEG) pour garder le cache léger.
+async function diShrink(blob) {
+  try { const bm = await createImageBitmap(blob); const s = Math.min(1, 900 / Math.max(bm.width, bm.height)); const c = document.createElement("canvas"); c.width = Math.round(bm.width * s); c.height = Math.round(bm.height * s);
+    c.getContext("2d").drawImage(bm, 0, 0, c.width, c.height); return await new Promise(r => c.toBlob(b => r(b || blob), "image/jpeg", 0.85)); } catch (e) { return blob; }
+}
+async function diGemini(prompt) {
+  const key = typeof aiSettings === "function" ? aiSettings().geminiKey : null;
+  if (!key || !navigator.onLine) return null;
+  let bad = {}; try { bad = JSON.parse(localStorage.getItem("dimg_bad") || "{}"); } catch (e) {}
+  const mark = m => { bad[m] = Date.now(); try { localStorage.setItem("dimg_bad", JSON.stringify(bad)); } catch (e) {} };
+  for (const m of DIMG_GEMINI) {
+    if (bad[m] && Date.now() - bad[m] < 864e5) continue; // modèle refusé : on réessaie demain
+    for (const withCfg of [true, false]) {
+      const gen = withCfg ? { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: "4:3" } } : { responseModalities: ["TEXT", "IMAGE"] };
+      const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 60000); let r;
+      try { r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, { method: "POST", signal: ctl.signal, headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: gen }) }); }
+      catch (e) { clearTimeout(to); return null; } clearTimeout(to);
+      if (r.status === 400 && withCfg) continue; // ancienne version sans imageConfig
+      if (r.status === 429) { const t = await r.text().catch(() => ""); if (/limit:\s*0|free_tier/i.test(t)) { mark(m); break; } return null; } // quota du moment : Pollinations prend le relais
+      if (!r.ok) { mark(m); break; }
+      const j = await r.json().catch(() => ({}));
+      const p = (j.candidates?.[0]?.content?.parts || []).find(x => x.inlineData?.data || x.inline_data?.data);
+      if (!p) { mark(m); break; }
+      const d = p.inlineData || p.inline_data; const bin = atob(d.data); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return { blob: new Blob([u8], { type: d.mimeType || d.mime_type || "image/png" }), src: "Gemini" };
+    }
+  }
+  return null;
+}
+async function diPollinations(prompt, seed) {
+  const st = typeof aiSettings === "function" ? aiSettings() : {};
+  if (!st.pollKey) return null;
+  if (!navigator.onLine) throw { code: "offline" };
+  const model = st.pollModel || DIMG_MODELS[0][0];
+  const url = `https://gen.pollinations.ai/image/${encodeURIComponent(prompt)}?model=${encodeURIComponent(model)}&width=1024&height=768&seed=${seed}`;
+  for (let i = 0; i < 3; i++) {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 120000); let r;
+    try { r = await fetch(url, { signal: ctl.signal, headers: { Authorization: "Bearer " + st.pollKey } }); } catch (e) { clearTimeout(to); throw { code: "net" }; }
+    clearTimeout(to);
+    if (r.ok && /image/.test(r.headers.get("content-type") || "")) return { blob: await r.blob(), src: "Pollinations" };
+    if (r.status === 401) throw { code: "badkey" };
+    if (r.status === 402) throw { code: "nobalance" };
+    if (r.status !== 429 && r.status < 500) throw { code: "err" + r.status };
+    await new Promise(res => setTimeout(res, (+r.headers.get("retry-after") || 5) * 1000));
+  }
+  throw { code: "busy" };
+}
+async function diGenerate(k, fresh) {
+  const m = DI.meta[k]; const prompt = dishPrompt(m); const seed = fresh ? Math.floor(Math.random() * 1e9) : dishHash(k);
+  const out = (await diPollinations(prompt, seed)) || (await diGemini(prompt));
+  if (!out) throw { code: "nokey" };
+  const blob = await diShrink(out.blob); await diPut({ key: k, blob, src: out.src, name: m.name, t: Date.now() });
+  return { blob, src: out.src };
+}
+function diShow(k) {
+  document.querySelectorAll(`[data-dish="${k}"]`).forEach(el => { el.innerHTML = diInner(k); el.classList.toggle("dimg-wait", !DI.urls[k]); });
+  if (S.sheet === dishSheet && S.dishSheet === k) renderSheet();
+}
+function diRevoke(k) { if (String(DI.urls[k] || "").startsWith("blob:")) URL.revokeObjectURL(DI.urls[k]); }
+function diImgErr(k) { if (DI.state[k] === "err") return; DI.state[k] = "err"; diRevoke(k); delete DI.urls[k]; diDel(k).catch(() => {}); diShow(k); }
+function diInner(k) {
+  if (DI.urls[k]) return `<img src="${esc(DI.urls[k])}" alt="" onerror="diImgErr('${k}')">`;
+  if (DI.state[k] === "err") return `<span class="dimg-ph">📷<small>${{ nokey: "Clé à ajouter", badkey: "Clé refusée", nobalance: "Solde vide", offline: "Hors ligne" }[DI.why] || "Réessayer"}</small></span>`;
+  return `<span class="dimg-ph"><span class="spin"></span></span>`;
+}
+async function diPump() {
+  if (DI.busy) return; DI.busy = true;
+  while (DI.queue.length) {
+    const { k, fresh } = DI.queue.shift();
+    try { const r = await diGenerate(k, fresh); diRevoke(k); DI.urls[k] = URL.createObjectURL(r.blob); DI.src[k] = r.src; DI.state[k] = "ok"; DI.why = ""; }
+    catch (e) { DI.state[k] = "err"; DI.why = e?.code || "err";
+      if (["nokey", "badkey", "nobalance"].includes(DI.why)) { const stop = DI.queue.splice(0); stop.forEach(q => { DI.state[q.k] = "err"; diShow(q.k); }); } }
+    diShow(k);
+  }
+  DI.busy = false;
+}
+async function diEnsure(k) {
+  if (DI.state[k]) return; DI.state[k] = "loading";
+  try { const it = window.indexedDB ? await diGet(k) : null; if (it) { DI.urls[k] = URL.createObjectURL(it.blob); DI.src[k] = it.src; DI.state[k] = "ok"; diShow(k); return; } } catch (e) {}
+  DI.queue.push({ k }); diPump();
+}
+// HTML de la photo d'un plat. size : "thumb" (à côté du plat) ou "wide" (au-dessus d'une recette).
+function dishImg(name, o = {}) {
+  const k = dishKey(name); if (!k) return "";
+  DI.meta[k] = Object.assign({ name }, DI.meta[k] || {}, Object.fromEntries(Object.entries({ desc: o.desc, ings: o.ings }).filter(([, v]) => v && (v.length ?? 1))));
+  if (!DI.urls[k]) setTimeout(() => diEnsure(k), 0);
+  return `<div class="dimg dimg-${o.size || "thumb"}${DI.urls[k] ? "" : " dimg-wait"}" data-dish="${k}" data-act="dishView" data-v="${k}">${diInner(k)}</div>`;
+}
+// Texte de l'IA → texte avec une photo pour chaque plat (lignes « 🍽️ Nom | description »).
+function aiRich(t) {
+  t = String(t ?? ""); const pre = [], dishes = []; let cur = null;
+  for (const l of t.split("\n")) {
+    const m = l.match(/^\s*[#*\s]*🍽️?\s*(.+?)\s*$/u);
+    if (m) { const [nm, ...rest] = m[1].split("|"); cur = { name: nm.replace(/^[*#\s:]+|[*#\s:]+$/g, ""), desc: rest.join("|").replace(/[*#]/g, "").trim(), body: [] }; dishes.push(cur); }
+    else (cur ? cur.body : pre).push(l);
+  }
+  if (!dishes.length) return esc(t);
+  return esc(pre.join("\n").trim()) + dishes.map(d => `<div class="dish">${dishImg(d.name, { desc: d.desc, size: "wide" })}<div class="b dish-name">${esc(d.name)}</div>${esc(d.body.join("\n").trim())}</div>`).join("");
+}
+function dishSheet() {
+  const k = S.dishSheet; const m = DI.meta[k] || { name: k };
+  return `<div class="row between"><h2>${esc(m.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+    <div class="dimg dimg-big${DI.urls[k] ? "" : " dimg-wait"}" data-dish="${k}">${diInner(k)}</div>
+    <p class="xs mut">Photo générée par IA${DI.src[k] ? " (" + DI.src[k] + ")" : ""} pour illustrer le plat : l'aspect réel peut varier. Gardée uniquement sur cet appareil.</p>
+    <button class="sec" style="width:100%" data-act="dishRegen" data-v="${k}" ${DI.state[k] === "loading" ? "disabled" : ""}>↻ Nouvelle photo</button>`;
+}
+const DISH_ACT = {
+  dishView: (el, ev) => { ev?.stopPropagation?.(); const k = el.dataset.v; if (DI.state[k] === "err") { if (["nokey", "badkey"].includes(DI.why)) { toast("Ajoute ta clé Pollinations dans Profil → Photos des plats"); return; } if (DI.why === "nobalance") { toast("Solde Pollinations vide : fais une Quête sur enter.pollinations.ai"); return; } delete DI.state[k]; diEnsure(k); diShow(k); return; } if (!DI.urls[k]) return; S.dishSheet = k; openSheet(dishSheet); },
+  dishRegen: async el => { const k = el.dataset.v; DI.state[k] = "loading"; renderSheet();
+    await diDel(k).catch(() => {}); diRevoke(k); delete DI.urls[k]; diShow(k); DI.queue.unshift({ k, fresh: true }); diPump(); },
+};
+
 // ===================== PLATEFORME : APP HORS-LIGNE (PWA) =====================
 // Données : stockées sur l'appareil (fonctionne sans internet), synchronisées avec Supabase dès qu'il y a du réseau.
 const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { toast("Stockage de l'appareil plein !"); return false; } } };
@@ -783,7 +934,12 @@ function syncCardHTML() {
   </div>
   <div class="card"><h2>IA</h2><p class="xs mut">Photo des plats, description, étiquettes, recettes, coach : Google Gemini (clé gratuite sur aistudio.google.com).</p>
     <label>Clé API Gemini</label><input id="aiKey" type="password" value="${esc(st.geminiKey || "")}" placeholder="AIza…"><button class="small" style="margin-top:8px" data-act="aiKeySave">Enregistrer</button>
-    ${st.geminiKey ? `<span class="tag grn" style="margin-left:8px">clé enregistrée</span>` : ""}</div>`;
+    ${st.geminiKey ? `<span class="tag grn" style="margin-left:8px">clé enregistrée</span>` : ""}</div>
+  <div class="card"><h2>Photos des plats</h2><p class="xs mut">Une photo réaliste générée pour chaque plat, collation ou recette créé par l'IA, puis gardée sur l'appareil. Service : Pollinations (enter.pollinations.ai → Keys), payé avec ton solde gratuit des Quêtes.</p>
+    <label>Clé Pollinations</label><input id="pollKey" type="password" value="${esc(st.pollKey || "")}" placeholder="sk_…">
+    <label>Qualité</label><select id="pollModel">${DIMG_MODELS.map(([v, l]) => `<option value="${v}" ${(st.pollModel || DIMG_MODELS[0][0]) === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+    <button class="small" style="margin-top:8px" data-act="pollSave">Enregistrer</button>${st.pollKey ? `<span class="tag grn" style="margin-left:8px">clé enregistrée</span>` : ""}
+    ${S.pollBal ? `<p class="xs" style="margin-top:6px">${esc(S.pollBal)}</p>` : ""}</div>`;
 }
 const PLATFORM_ACT = {
   cfgSave: () => { LS.set("muscu_cfg", { url: $("#cfgUrl").value.trim().replace(/\/$/, ""), anon: $("#cfgAnon").value.trim() }); render(); },
@@ -791,7 +947,9 @@ const PLATFORM_ACT = {
   signup: async () => { try { await Sync.auth("signup", $("#auEmail").value.trim(), $("#auPass").value); toast("Compte créé et connecté"); } catch (e) { toast(e.message); } render(); },
   logout: () => { Sync.logout(); render(); },
   syncNow: async () => { await Sync.run(true); toast(Store.syncErr ? "Erreur : " + Store.syncErr : "Synchronisé"); render(); },
-  aiKeySave: () => { Store.set("settings", Object.assign({}, aiSettings(), { geminiKey: $("#aiKey").value.trim() })); toast("Clé IA enregistrée"); }
+  aiKeySave: () => { Store.set("settings", Object.assign({}, aiSettings(), { geminiKey: $("#aiKey").value.trim() })); toast("Clé IA enregistrée"); },
+  pollSave: () => { const k = $("#pollKey").value.trim(); if (k && !/^sk_/.test(k)) { toast("La clé doit commencer par sk_"); return; }
+    Store.set("settings", Object.assign({}, aiSettings(), { pollKey: k, pollModel: $("#pollModel").value })); Object.keys(DI.state).forEach(x => { if (DI.state[x] !== "ok") delete DI.state[x]; }); toast("Photos des plats : réglages enregistrés"); render(); }
 };
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 // ---------- Mises à jour automatiques ----------
@@ -1983,7 +2141,7 @@ function viewToday() {
   const left = T.kcal - t.kcal;
   const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
   const mini = (lab, v, ref, max) => `<span class="${max ? (v > ref ? "tag red" : "tag") : (v >= ref ? "tag grn" : "tag")}">${lab} ${r1(v)}/${ref} g</span>`;
-  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
+  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}">${e.src === "plan" || e.src === "recette" ? dishImg(e.name, { size: "mini" }) : ""}<div class="grow"><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
   const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
   const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyYesterday" title="Copier tout ce que j'ai mangé hier">↺ Copier hier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
@@ -2012,7 +2170,7 @@ ${weekStripHTML(k)}
     <div class="chips" style="margin-top:10px">${mini("Fibres", t.fib, 30)}${mini("Sucres", t.sugar, sugarMax, 1)}${mini("Sel", t.salt, 5, 1)}${mini("Saturés", t.satfat, satMax, 1)}</div>
     ${Object.keys(t.micro).length ? `<details style="margin-top:8px"><summary class="xs mut">Micronutriments (estimés pour les aliments analysés par l'IA)</summary><div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag ${t.micro[m] >= ref ? "grn" : ""}">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div><p class="xs mut">Repères EFSA pour un homme adulte.</p></details>` : ""}
     <div class="row" style="margin-top:10px;gap:6px"><button class="chip" data-act="aiFinish">💡 Que manger ensuite ?</button><button class="chip" data-act="aiFridge">🧊 Recette avec mon frigo</button></div>
-    ${S.aiOut.today ? `<div class="ai-out">${esc(S.aiOut.today)}</div>` : ""}
+    ${S.aiOut.today ? `<div class="ai-out">${aiRich(S.aiOut.today)}</div>` : ""}
   </div>
   ${meals}`;
 }
@@ -2341,7 +2499,7 @@ function viewCoach() {
     <div class="card"><h2>Bilan IA de la semaine</h2><p class="xs mut">Analyse de tes 7 derniers jours (nutrition, poids, séances, sommeil), fondée sur les études.</p>
       <button data-act="aiWeek" ${S.busy.week ? "disabled" : ""}>${S.busy.week ? '<span class="spin"></span> Analyse…' : "Lancer le bilan"}</button>${S.aiOut.week ? `<div class="ai-out">${esc(S.aiOut.week)}</div>` : ""}</div>
     <div class="card"><h2>Pose une question au coach</h2>
-      ${S.chat.map(m => `<div class="ai-out" style="${m.role === "user" ? "background:var(--acc2)" : ""}">${esc(m.content)}</div>`).join("")}
+      ${S.chat.map(m => `<div class="ai-out" style="${m.role === "user" ? "background:var(--acc2)" : ""}">${m.role === "user" ? esc(m.content) : aiRich(m.content)}</div>`).join("")}
       <textarea id="chatIn" placeholder="ex. Est-ce que je devrais faire mes biceps avant mes triceps ? Combien de créatine par jour ?" style="margin-top:8px"></textarea>
       <div class="row" style="margin-top:6px"><button class="grow" data-act="chatSend" ${S.busy.chat ? "disabled" : ""}>${S.busy.chat ? '<span class="spin"></span>' : "Envoyer"}</button>${S.chat.length ? `<button class="sec" data-act="chatClear">Effacer</button>` : ""}</div></div>`;
 }
@@ -2616,7 +2774,7 @@ function mealPlanHTML() {
   const today = (new Date().getDay() + 6) % 7;
   const days = P.days.map((d, di) => { const tot = d.meals.reduce((t, m) => ({ kcal: t.kcal + (+m.kcal || 0), p: t.p + (+m.p || 0) }), { kcal: 0, p: 0 });
     return `<details class="card" ${di === 0 ? "open" : ""}><summary><b>${esc(d.day)}</b> <span class="xs mut">· ${r0(tot.kcal)} kcal · P ${r0(tot.p)} g</span></summary>
-      ${d.meals.map((m, mi) => `<div class="entry" style="align-items:flex-start"><div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
+      ${d.meals.map((m, mi) => `<div class="entry" style="align-items:flex-start">${dishImg(m.name, { desc: m.photo_en, ings: (m.ingredients || []).map(i => i.name) })}<div class="grow"><div class="xs mut">${esc(m.meal || "")}${m.prep_min ? ` · ${m.prep_min} min` : ""}</div><div class="b sm">${esc(m.name)}</div>
         <div class="xs mut">${r0(m.kcal)} kcal · P ${r0(m.p)} · G ${r0(m.c)} · L ${r0(m.f)}</div><div class="xs">${(m.ingredients || []).map(i => `${esc(i.name)} ${r0(i.g)} g`).join(" · ")}</div>
         ${m.steps ? `<details><summary class="xs" style="color:var(--acc)">Recette</summary><div class="xs" style="white-space:pre-wrap">${esc(m.steps)}</div></details>` : ""}</div>
         <button class="small sec" data-act="mpEat" data-d="${di}" data-m="${mi}">Mangé</button></div>`).join("")}</details>`; }).join("");
@@ -2631,7 +2789,7 @@ async function mealPlanGo() {
 Crée un PLAN DE REPAS de ${o.days} jours, ${o.meals} repas par jour, qui atteint chaque jour ≈ ${T.kcal} kcal (±5 %), protéines ≥ ${T.p} g, glucides ≈ ${T.c} g, lipides ≈ ${T.f} g, fibres ≥ 25 g, et des légumes chaque jour (soupes, veloutés, poêlées de surgelés, sauces mixées).
 Temps de cuisine max ${o.time} min par repas. ${o.batch ? "Organise-le en BATCH COOKING : 1 ou 2 sessions de cuisine (dimanche/mercredi) et des restes réutilisés." : ""} Utilise en priorité ce qu'il a : ${fridgeText() || "inconnu"}. Produits faciles à trouver chez Mercadona / Alcampo / Ahorramas. ${o.likes ? "Contraintes : " + o.likes + "." : ""}
 Valeurs nutritionnelles réalistes (tables Ciqual/USDA), ingrédients pesés CRUS en grammes.
-Réponds UNIQUEMENT en JSON : {"days":[{"day":"Lundi","meals":[{"meal":"Petit-déjeuner","name":"...","kcal":0,"p":0,"c":0,"f":0,"prep_min":10,"ingredients":[{"name":"flocons d'avoine","g":80}],"steps":"1. ... 2. ... (temps, feu/four °C)"}]}],"shopping":[{"aisle":"Viandes","items":[{"name":"blanc de poulet","qty":"1,2 kg"}]}],"batch":"plan de la session batch cooking, étape par étape"}`);
+Réponds UNIQUEMENT en JSON : {"days":[{"day":"Lundi","meals":[{"meal":"Petit-déjeuner","name":"...","kcal":0,"p":0,"c":0,"f":0,"prep_min":10,"photo_en":"short English visual description of the finished dish (main ingredients, plating)","ingredients":[{"name":"flocons d'avoine","g":80}],"steps":"1. ... 2. ... (temps, feu/four °C)"}]}],"shopping":[{"aisle":"Viandes","items":[{"name":"blanc de poulet","qty":"1,2 kg"}]}],"batch":"plan de la session batch cooking, étape par étape"}`);
     if (!res?.days?.length) throw { message: "plan vide" };
     Store.set("mealplan", Object.assign(res, { created: Date.now(), opt: clone(o) }));
   } catch (e) { toast(aiErr(e)); }
@@ -2642,8 +2800,8 @@ const IDEA_CATS = [["breakfast", "🥣 Petit-déj protéiné"], ["fast", "⚡ Pr
 function ideasHTML() {
   return `<div class="card"><h2>Idées de recettes</h2><p class="sm mut">Recettes « mode chef » adaptées à tes macros, ton matériel (four, poêle, casserole, micro-ondes, cuiseur à riz) et tes goûts.</p>
     <div class="chips">${IDEA_CATS.map(([k, l]) => `<button class="chip ${S.ideaCat === k ? "on" : ""}" data-act="ideaGo" data-v="${k}" ${S.busy.idea ? "disabled" : ""}>${l}</button>`).join("")}</div>
-    ${S.busy.idea ? `<p class="sm"><span class="spin"></span> Le chef réfléchit…</p>` : ""}${S.aiOut.idea ? `<div class="ai-out">${esc(S.aiOut.idea)}</div><button class="sec small" data-act="ideaSave">Garder ces idées</button>` : ""}</div>
-    ${(Store.get("notes", { items: [] }).items || []).length ? `<div class="card"><h2>Idées gardées</h2>${Store.get("notes").items.map(n => `<details><summary class="sm">${fmtDay(dateKey(new Date(n.t)))} — ${esc(n.text.split("\n").find(l => l.trim()) || "")}</summary><div class="xs" style="white-space:pre-wrap">${esc(n.text)}</div><button class="danger small" data-act="ideaDel" data-v="${n.id}">Supprimer</button></details>`).join("")}</div>` : ""}`;
+    ${S.busy.idea ? `<p class="sm"><span class="spin"></span> Le chef réfléchit…</p>` : ""}${S.aiOut.idea ? `<div class="ai-out">${aiRich(S.aiOut.idea)}</div><button class="sec small" data-act="ideaSave">Garder ces idées</button>` : ""}</div>
+    ${(Store.get("notes", { items: [] }).items || []).length ? `<div class="card"><h2>Idées gardées</h2>${Store.get("notes").items.map(n => `<details><summary class="sm">${fmtDay(dateKey(new Date(n.t)))} — ${esc((n.text.split("\n").find(l => l.trim()) || "").replace(/^\s*🍽\uFE0F?\s*/u, "").split("|")[0])}</summary><div class="ai-out xs">${aiRich(n.text)}</div><button class="danger small" data-act="ideaDel" data-v="${n.id}">Supprimer</button></details>`).join("")}</div>` : ""}`;
 }
 async function ideaGo(cat) {
   const T = targets(); const L = Object.fromEntries(IDEA_CATS)[cat];
@@ -2751,13 +2909,14 @@ function recipeAsFood(r) {
 function recipesTabHTML() {
   const rs = recipes();
   return `<button class="sec" style="width:100%;margin-bottom:10px" data-act="recNew">+ Créer une recette</button>
-    ${rs.length ? rs.map(r => { const f = recipeAsFood(r); return `<div class="entry"><div class="grow" data-act="recPick" data-v="${r.id}"><div class="b">${esc(r.name)}</div><div class="xs mut">${r.portions || 1} portion(s) · ${r0(f.per100.kcal * f.unit / 100)} kcal et P ${r0(f.per100.p * f.unit / 100)} g par portion</div></div><button class="ghost small" data-act="recEdit" data-v="${r.id}">✎</button></div>`; }).join("")
+    ${rs.length ? rs.map(r => { const f = recipeAsFood(r); return `<div class="entry">${dishImg(r.name, { ings: (r.ings || []).map(i => i.name) })}<div class="grow" data-act="recPick" data-v="${r.id}"><div class="b">${esc(r.name)}</div><div class="xs mut">${r.portions || 1} portion(s) · ${r0(f.per100.kcal * f.unit / 100)} kcal et P ${r0(f.per100.p * f.unit / 100)} g par portion</div></div><button class="ghost small" data-act="recEdit" data-v="${r.id}">✎</button></div>`; }).join("")
       : `<p class="mut sm">Aucune recette. Crée tes plats habituels une fois (ex. ton batch de riz-poulet), puis ajoute-les en 1 clic en choisissant le nombre de portions.</p>`}`;
 }
 function recipePortionSheet(id) {
   return () => {
     const r = recipes().find(x => x.id === id); if (!r) return ""; const f = recipeAsFood(r); const p = S.recPortions || 1; const g = Math.round(f.unit * p);
     return `<div class="row between"><h2>${esc(r.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+      ${dishImg(r.name, { ings: (r.ings || []).map(i => i.name), size: "wide" })}
       <label>Nombre de portions</label><div class="stepper"><button data-act="recP" data-v="-0.5">−</button><input id="recPIn" type="number" step="0.5" value="${p}" data-input="recP"><button data-act="recP" data-v="0.5">+</button></div>
       <p class="sm" id="recPInfo"><b>${r0(f.per100.kcal * g / 100)} kcal</b> · P ${r1(f.per100.p * g / 100)} g · G ${r1(f.per100.c * g / 100)} g · L ${r1(f.per100.f * g / 100)} g · ${g} g</p>
       <button style="width:100%" data-act="recAdd" data-v="${id}">Ajouter à ma journée</button>`;
@@ -3380,7 +3539,7 @@ function itemsFromAI(res) {
 }
 function scheduleTimer() { clearInterval(window._wt); window._wt = setInterval(() => { const w = liveWorkout(); const el = $("#wTimer"); if (w && el) el.textContent = fmtDur(Date.now() - w.start); }, 1000); }
 
-const CHEF_RULES = `Tu es un chef cuisinier pédagogue ET un nutritionniste. Pour chaque recette donne : 1) les ingrédients PESÉS en grammes (poids CRU, en précisant cru/cuit), 2) le matériel (poêle, four, casserole, airfryer…), 3) les étapes numérotées avec durées précises, feu (doux/moyen/vif) ou four (température en °C, chaleur tournante ou statique, préchauffage, position de la grille), 4) les repères de cuisson (température à cœur : poulet 74 °C, porc 63 °C ; couleur, texture), 5) les erreurs à éviter et une astuce de chef, 6) kcal et macros de SA portion. Pas de markdown lourd, français, précis.`;
+const CHEF_RULES = `Tu es un chef cuisinier pédagogue ET un nutritionniste. Pour chaque recette donne : 1) les ingrédients PESÉS en grammes (poids CRU, en précisant cru/cuit), 2) le matériel (poêle, four, casserole, airfryer…), 3) les étapes numérotées avec durées précises, feu (doux/moyen/vif) ou four (température en °C, chaleur tournante ou statique, préchauffage, position de la grille), 4) les repères de cuisson (température à cœur : poulet 74 °C, porc 63 °C ; couleur, texture), 5) les erreurs à éviter et une astuce de chef, 6) kcal et macros de SA portion. Pas de markdown lourd, français, précis. ${DISH_RULE}`;
 const ACT = {
   tab: el => { S.tab = el.dataset.v; S.sheet = null; window.scrollTo(0, 0); render(); },
   closeSheet: () => closeSheet(),
@@ -3467,7 +3626,7 @@ const ACT = {
   aiFridge: () => openSheet(() => `<div class="row between"><h2>Recette avec ce que j'ai</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     ${fridgeItems().length ? `<p class="xs mut">Inventaire du frigo pris en compte automatiquement : ${esc(fridgeText())}</p>` : ""}<label>Autres choses que tu as (optionnel)</label><textarea id="fridge">${esc(Store.get("fridge", {}).txt || "")}</textarea>
     <label class="row" style="gap:6px"><input type="checkbox" id="fridgeKeep" style="width:auto" checked> Garder cette note</label>
-    <button style="width:100%;margin-top:8px" data-act="aiFridgeGo" ${S.busy.fridge ? "disabled" : ""}>${S.busy.fridge ? '<span class="spin"></span>' : "Trouver une recette"}</button>${S.aiOut.fridge ? `<div class="ai-out" id="fridgeOut">${esc(S.aiOut.fridge)}</div>` : `<div id="fridgeOut"></div>`}`),
+    <button style="width:100%;margin-top:8px" data-act="aiFridgeGo" ${S.busy.fridge ? "disabled" : ""}>${S.busy.fridge ? '<span class="spin"></span>' : "Trouver une recette"}</button>${S.aiOut.fridge ? `<div class="ai-out" id="fridgeOut">${aiRich(S.aiOut.fridge)}</div>` : `<div id="fridgeOut"></div>`}`),
   aiFridgeGo: async () => {
     const txt = $("#fridge").value.trim(); if (!txt && !fridgeItems().length) return; if ($("#fridgeKeep").checked) Store.set("fridge", Object.assign(clone(fridgeDoc()) || {}, { txt }));
     const t = dayTotals(S.day), T = targets(); S.busy.fridge = true; S.aiOut.fridge = ""; renderSheet();
@@ -3565,7 +3724,7 @@ const ACT = {
     const q = $("#chatIn").value.trim(); if (!q) return;
     S.chat.push({ role: "user", content: q }); S.chat.push({ role: "assistant", content: "…" }); S.busy.chat = true; render();
     const transcript = S.chat.slice(0, -1).map(m => (m.role === "user" ? "Lui : " : "Toi : ") + m.content).join("\n");
-    try { const txt = await aiText(`${USER_CTX()}\nRésumé de sa semaine (JSON) : ${JSON.stringify(weekSummary())}\nTu es son coach musculation/nutrition. Réponds en français, de façon neutre, scientifique et concise, en t'appuyant sur les études (cite-les brièvement). Pas de markdown lourd.\nConversation :\n${transcript}\nRéponds à sa dernière question.`, t => { S.chat[S.chat.length - 1].content = t; const os = $$(".ai-out"); if (os.length) os[os.length - 1].textContent = t; });
+    try { const txt = await aiText(`${USER_CTX()}\nRésumé de sa semaine (JSON) : ${JSON.stringify(weekSummary())}\nTu es son coach musculation/nutrition. Réponds en français, de façon neutre, scientifique et concise, en t'appuyant sur les études (cite-les brièvement). Pas de markdown lourd. ${DISH_RULE.replace("proposé", "que tu proposes (s'il y en a)")}\nConversation :\n${transcript}\nRéponds à sa dernière question.`, t => { S.chat[S.chat.length - 1].content = t; const os = $$(".ai-out"); if (os.length) os[os.length - 1].textContent = t; });
       S.chat[S.chat.length - 1].content = txt; }
     catch (e) { S.chat[S.chat.length - 1].content = aiErr(e); }
     S.busy.chat = false; render();
@@ -3686,7 +3845,7 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT, FAT_ACT);
+Object.assign(ACT, DISH_ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT, FAT_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });

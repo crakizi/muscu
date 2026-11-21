@@ -72,7 +72,7 @@ function viewToday() {
   const left = T.kcal - t.kcal;
   const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
   const mini = (lab, v, ref, max) => `<span class="${max ? (v > ref ? "tag red" : "tag") : (v >= ref ? "tag grn" : "tag")}">${lab} ${r1(v)}/${ref} g</span>`;
-  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}"><div><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
+  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}">${e.src === "plan" || e.src === "recette" ? dishImg(e.name, { size: "mini" }) : ""}<div class="grow"><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
   const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
   const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyYesterday" title="Copier tout ce que j'ai mangé hier">↺ Copier hier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
@@ -101,7 +101,7 @@ ${weekStripHTML(k)}
     <div class="chips" style="margin-top:10px">${mini("Fibres", t.fib, 30)}${mini("Sucres", t.sugar, sugarMax, 1)}${mini("Sel", t.salt, 5, 1)}${mini("Saturés", t.satfat, satMax, 1)}</div>
     ${Object.keys(t.micro).length ? `<details style="margin-top:8px"><summary class="xs mut">Micronutriments (estimés pour les aliments analysés par l'IA)</summary><div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag ${t.micro[m] >= ref ? "grn" : ""}">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div><p class="xs mut">Repères EFSA pour un homme adulte.</p></details>` : ""}
     <div class="row" style="margin-top:10px;gap:6px"><button class="chip" data-act="aiFinish">💡 Que manger ensuite ?</button><button class="chip" data-act="aiFridge">🧊 Recette avec mon frigo</button></div>
-    ${S.aiOut.today ? `<div class="ai-out">${esc(S.aiOut.today)}</div>` : ""}
+    ${S.aiOut.today ? `<div class="ai-out">${aiRich(S.aiOut.today)}</div>` : ""}
   </div>
   ${meals}`;
 }
@@ -430,7 +430,7 @@ function viewCoach() {
     <div class="card"><h2>Bilan IA de la semaine</h2><p class="xs mut">Analyse de tes 7 derniers jours (nutrition, poids, séances, sommeil), fondée sur les études.</p>
       <button data-act="aiWeek" ${S.busy.week ? "disabled" : ""}>${S.busy.week ? '<span class="spin"></span> Analyse…' : "Lancer le bilan"}</button>${S.aiOut.week ? `<div class="ai-out">${esc(S.aiOut.week)}</div>` : ""}</div>
     <div class="card"><h2>Pose une question au coach</h2>
-      ${S.chat.map(m => `<div class="ai-out" style="${m.role === "user" ? "background:var(--acc2)" : ""}">${esc(m.content)}</div>`).join("")}
+      ${S.chat.map(m => `<div class="ai-out" style="${m.role === "user" ? "background:var(--acc2)" : ""}">${m.role === "user" ? esc(m.content) : aiRich(m.content)}</div>`).join("")}
       <textarea id="chatIn" placeholder="ex. Est-ce que je devrais faire mes biceps avant mes triceps ? Combien de créatine par jour ?" style="margin-top:8px"></textarea>
       <div class="row" style="margin-top:6px"><button class="grow" data-act="chatSend" ${S.busy.chat ? "disabled" : ""}>${S.busy.chat ? '<span class="spin"></span>' : "Envoyer"}</button>${S.chat.length ? `<button class="sec" data-act="chatClear">Effacer</button>` : ""}</div></div>`;
 }

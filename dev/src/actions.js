@@ -9,7 +9,7 @@ function itemsFromAI(res) {
 }
 function scheduleTimer() { clearInterval(window._wt); window._wt = setInterval(() => { const w = liveWorkout(); const el = $("#wTimer"); if (w && el) el.textContent = fmtDur(Date.now() - w.start); }, 1000); }
 
-const CHEF_RULES = `Tu es un chef cuisinier pédagogue ET un nutritionniste. Pour chaque recette donne : 1) les ingrédients PESÉS en grammes (poids CRU, en précisant cru/cuit), 2) le matériel (poêle, four, casserole, airfryer…), 3) les étapes numérotées avec durées précises, feu (doux/moyen/vif) ou four (température en °C, chaleur tournante ou statique, préchauffage, position de la grille), 4) les repères de cuisson (température à cœur : poulet 74 °C, porc 63 °C ; couleur, texture), 5) les erreurs à éviter et une astuce de chef, 6) kcal et macros de SA portion. Pas de markdown lourd, français, précis.`;
+const CHEF_RULES = `Tu es un chef cuisinier pédagogue ET un nutritionniste. Pour chaque recette donne : 1) les ingrédients PESÉS en grammes (poids CRU, en précisant cru/cuit), 2) le matériel (poêle, four, casserole, airfryer…), 3) les étapes numérotées avec durées précises, feu (doux/moyen/vif) ou four (température en °C, chaleur tournante ou statique, préchauffage, position de la grille), 4) les repères de cuisson (température à cœur : poulet 74 °C, porc 63 °C ; couleur, texture), 5) les erreurs à éviter et une astuce de chef, 6) kcal et macros de SA portion. Pas de markdown lourd, français, précis. ${DISH_RULE}`;
 const ACT = {
   tab: el => { S.tab = el.dataset.v; S.sheet = null; window.scrollTo(0, 0); render(); },
   closeSheet: () => closeSheet(),
@@ -96,7 +96,7 @@ const ACT = {
   aiFridge: () => openSheet(() => `<div class="row between"><h2>Recette avec ce que j'ai</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     ${fridgeItems().length ? `<p class="xs mut">Inventaire du frigo pris en compte automatiquement : ${esc(fridgeText())}</p>` : ""}<label>Autres choses que tu as (optionnel)</label><textarea id="fridge">${esc(Store.get("fridge", {}).txt || "")}</textarea>
     <label class="row" style="gap:6px"><input type="checkbox" id="fridgeKeep" style="width:auto" checked> Garder cette note</label>
-    <button style="width:100%;margin-top:8px" data-act="aiFridgeGo" ${S.busy.fridge ? "disabled" : ""}>${S.busy.fridge ? '<span class="spin"></span>' : "Trouver une recette"}</button>${S.aiOut.fridge ? `<div class="ai-out" id="fridgeOut">${esc(S.aiOut.fridge)}</div>` : `<div id="fridgeOut"></div>`}`),
+    <button style="width:100%;margin-top:8px" data-act="aiFridgeGo" ${S.busy.fridge ? "disabled" : ""}>${S.busy.fridge ? '<span class="spin"></span>' : "Trouver une recette"}</button>${S.aiOut.fridge ? `<div class="ai-out" id="fridgeOut">${aiRich(S.aiOut.fridge)}</div>` : `<div id="fridgeOut"></div>`}`),
   aiFridgeGo: async () => {
     const txt = $("#fridge").value.trim(); if (!txt && !fridgeItems().length) return; if ($("#fridgeKeep").checked) Store.set("fridge", Object.assign(clone(fridgeDoc()) || {}, { txt }));
     const t = dayTotals(S.day), T = targets(); S.busy.fridge = true; S.aiOut.fridge = ""; renderSheet();
@@ -194,7 +194,7 @@ const ACT = {
     const q = $("#chatIn").value.trim(); if (!q) return;
     S.chat.push({ role: "user", content: q }); S.chat.push({ role: "assistant", content: "…" }); S.busy.chat = true; render();
     const transcript = S.chat.slice(0, -1).map(m => (m.role === "user" ? "Lui : " : "Toi : ") + m.content).join("\n");
-    try { const txt = await aiText(`${USER_CTX()}\nRésumé de sa semaine (JSON) : ${JSON.stringify(weekSummary())}\nTu es son coach musculation/nutrition. Réponds en français, de façon neutre, scientifique et concise, en t'appuyant sur les études (cite-les brièvement). Pas de markdown lourd.\nConversation :\n${transcript}\nRéponds à sa dernière question.`, t => { S.chat[S.chat.length - 1].content = t; const os = $$(".ai-out"); if (os.length) os[os.length - 1].textContent = t; });
+    try { const txt = await aiText(`${USER_CTX()}\nRésumé de sa semaine (JSON) : ${JSON.stringify(weekSummary())}\nTu es son coach musculation/nutrition. Réponds en français, de façon neutre, scientifique et concise, en t'appuyant sur les études (cite-les brièvement). Pas de markdown lourd. ${DISH_RULE.replace("proposé", "que tu proposes (s'il y en a)")}\nConversation :\n${transcript}\nRéponds à sa dernière question.`, t => { S.chat[S.chat.length - 1].content = t; const os = $$(".ai-out"); if (os.length) os[os.length - 1].textContent = t; });
       S.chat[S.chat.length - 1].content = txt; }
     catch (e) { S.chat[S.chat.length - 1].content = aiErr(e); }
     S.busy.chat = false; render();
@@ -315,7 +315,7 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT, FAT_ACT);
+Object.assign(ACT, DISH_ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT, FAT_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });

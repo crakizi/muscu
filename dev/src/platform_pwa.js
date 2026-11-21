@@ -156,7 +156,12 @@ function syncCardHTML() {
   </div>
   <div class="card"><h2>IA</h2><p class="xs mut">Photo des plats, description, étiquettes, recettes, coach : Google Gemini (clé gratuite sur aistudio.google.com).</p>
     <label>Clé API Gemini</label><input id="aiKey" type="password" value="${esc(st.geminiKey || "")}" placeholder="AIza…"><button class="small" style="margin-top:8px" data-act="aiKeySave">Enregistrer</button>
-    ${st.geminiKey ? `<span class="tag grn" style="margin-left:8px">clé enregistrée</span>` : ""}</div>`;
+    ${st.geminiKey ? `<span class="tag grn" style="margin-left:8px">clé enregistrée</span>` : ""}</div>
+  <div class="card"><h2>Photos des plats</h2><p class="xs mut">Une photo réaliste générée pour chaque plat, collation ou recette créé par l'IA, puis gardée sur l'appareil. Service : Pollinations (enter.pollinations.ai → Keys), payé avec ton solde gratuit des Quêtes.</p>
+    <label>Clé Pollinations</label><input id="pollKey" type="password" value="${esc(st.pollKey || "")}" placeholder="sk_…">
+    <label>Qualité</label><select id="pollModel">${DIMG_MODELS.map(([v, l]) => `<option value="${v}" ${(st.pollModel || DIMG_MODELS[0][0]) === v ? "selected" : ""}>${l}</option>`).join("")}</select>
+    <button class="small" style="margin-top:8px" data-act="pollSave">Enregistrer</button>${st.pollKey ? `<span class="tag grn" style="margin-left:8px">clé enregistrée</span>` : ""}
+    ${S.pollBal ? `<p class="xs" style="margin-top:6px">${esc(S.pollBal)}</p>` : ""}</div>`;
 }
 const PLATFORM_ACT = {
   cfgSave: () => { LS.set("muscu_cfg", { url: $("#cfgUrl").value.trim().replace(/\/$/, ""), anon: $("#cfgAnon").value.trim() }); render(); },
@@ -164,7 +169,9 @@ const PLATFORM_ACT = {
   signup: async () => { try { await Sync.auth("signup", $("#auEmail").value.trim(), $("#auPass").value); toast("Compte créé et connecté"); } catch (e) { toast(e.message); } render(); },
   logout: () => { Sync.logout(); render(); },
   syncNow: async () => { await Sync.run(true); toast(Store.syncErr ? "Erreur : " + Store.syncErr : "Synchronisé"); render(); },
-  aiKeySave: () => { Store.set("settings", Object.assign({}, aiSettings(), { geminiKey: $("#aiKey").value.trim() })); toast("Clé IA enregistrée"); }
+  aiKeySave: () => { Store.set("settings", Object.assign({}, aiSettings(), { geminiKey: $("#aiKey").value.trim() })); toast("Clé IA enregistrée"); },
+  pollSave: () => { const k = $("#pollKey").value.trim(); if (k && !/^sk_/.test(k)) { toast("La clé doit commencer par sk_"); return; }
+    Store.set("settings", Object.assign({}, aiSettings(), { pollKey: k, pollModel: $("#pollModel").value })); Object.keys(DI.state).forEach(x => { if (DI.state[x] !== "ok") delete DI.state[x]; }); toast("Photos des plats : réglages enregistrés"); render(); }
 };
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 // ---------- Mises à jour automatiques ----------

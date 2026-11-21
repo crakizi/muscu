@@ -14,13 +14,14 @@ function recipeAsFood(r) {
 function recipesTabHTML() {
   const rs = recipes();
   return `<button class="sec" style="width:100%;margin-bottom:10px" data-act="recNew">+ Créer une recette</button>
-    ${rs.length ? rs.map(r => { const f = recipeAsFood(r); return `<div class="entry"><div class="grow" data-act="recPick" data-v="${r.id}"><div class="b">${esc(r.name)}</div><div class="xs mut">${r.portions || 1} portion(s) · ${r0(f.per100.kcal * f.unit / 100)} kcal et P ${r0(f.per100.p * f.unit / 100)} g par portion</div></div><button class="ghost small" data-act="recEdit" data-v="${r.id}">✎</button></div>`; }).join("")
+    ${rs.length ? rs.map(r => { const f = recipeAsFood(r); return `<div class="entry">${dishImg(r.name, { ings: (r.ings || []).map(i => i.name) })}<div class="grow" data-act="recPick" data-v="${r.id}"><div class="b">${esc(r.name)}</div><div class="xs mut">${r.portions || 1} portion(s) · ${r0(f.per100.kcal * f.unit / 100)} kcal et P ${r0(f.per100.p * f.unit / 100)} g par portion</div></div><button class="ghost small" data-act="recEdit" data-v="${r.id}">✎</button></div>`; }).join("")
       : `<p class="mut sm">Aucune recette. Crée tes plats habituels une fois (ex. ton batch de riz-poulet), puis ajoute-les en 1 clic en choisissant le nombre de portions.</p>`}`;
 }
 function recipePortionSheet(id) {
   return () => {
     const r = recipes().find(x => x.id === id); if (!r) return ""; const f = recipeAsFood(r); const p = S.recPortions || 1; const g = Math.round(f.unit * p);
     return `<div class="row between"><h2>${esc(r.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+      ${dishImg(r.name, { ings: (r.ings || []).map(i => i.name), size: "wide" })}
       <label>Nombre de portions</label><div class="stepper"><button data-act="recP" data-v="-0.5">−</button><input id="recPIn" type="number" step="0.5" value="${p}" data-input="recP"><button data-act="recP" data-v="0.5">+</button></div>
       <p class="sm" id="recPInfo"><b>${r0(f.per100.kcal * g / 100)} kcal</b> · P ${r1(f.per100.p * g / 100)} g · G ${r1(f.per100.c * g / 100)} g · L ${r1(f.per100.f * g / 100)} g · ${g} g</p>
       <button style="width:100%" data-act="recAdd" data-v="${id}">Ajouter à ma journée</button>`;
