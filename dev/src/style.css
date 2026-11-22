@@ -81,6 +81,7 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .scanmodes label,.scanmodes button{background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:10px 14px;font:600 14px -apple-system,system-ui;cursor:pointer}
 
 .restbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:min(560px,94vw);background:#111827;color:#fff;border-radius:16px;overflow:hidden;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+body:has(#restBar) .toast{bottom:calc(152px + env(safe-area-inset-bottom))}
 .restbar .restfill{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#2563eb,#7c3aed);opacity:.55;transition:width .25s linear}
 .restbar.over .restfill{background:#16a34a;opacity:.8}
 .restbar .restin{position:relative;display:flex;align-items:center;gap:8px;padding:10px 12px}
