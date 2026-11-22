@@ -45,9 +45,8 @@ window.dayType = dayType; window.dayTargets = dayTargets;
 // ---- pastille du type de jour (journal) ----
 function dayTypePillHTML(k) {
   const D = dayTypeInfo(k); const [ic, l] = DAY_TYPES[D.type];
-  const T = dayTargets(k);
   const edit = S.dtEdit === k ? `<div class="chips" style="margin:6px 0 0">${[["", "Auto"], ...Object.entries(DAY_TYPES).map(([v, [i, n]]) => [v, i + " " + n])].map(([v, n]) => `<button class="chip ${(day(k).dayType || "") === v ? "on" : ""}" data-act="dtSet" data-v="${v}">${n}</button>`).join("")}</div>` : "";
-  return `<div class="dtype"><button class="dtpill" data-act="dtEdit">${ic} Jour ${l.toLowerCase()} <span class="xs mut">· ${D.src}${T.cycle ? ` · ${T.kcal} kcal` : ""}</span></button>${edit}</div>`;
+  return `<div class="dtype"><button class="dtpill" data-act="dtEdit">${ic} Jour ${l.toLowerCase()} <span class="xs mut">· ${D.src}</span></button>${edit}</div>`;
 }
 
 // ---- anneaux « restant » : couleur fixe par macro, jamais de rouge ----
@@ -110,7 +109,7 @@ function weightTrendAt(k) {
   for (let i = 180; i >= 0; i--) { const x = addDays(k, -i), w = +(Store.get("d-" + x)?.weight || 0); if (w) { tr = tr == null ? w : tr + WT_ALPHA * (w - tr); raw = w; rawK = x; } }
   return { trend: tr == null ? null : r1(tr), raw, rawK };
 }
-function weightPillVal(d, k) { if (!d.weight) return ""; const W = weightTrendAt(k); return `${W.trend ?? r1(d.weight)} kg <span class="xs mut">tendance · pesée ${r1(d.weight)}</span>`; }
+function weightPillVal(d, k) { if (!d.weight) return ""; const W = weightTrendAt(k); return `${W.trend ?? r1(d.weight)} kg`; } // pesée brute : dans la fiche détail
 function weightLineHTML() { const W = weightTrendAt(); return W.trend == null ? "" : `<div class="row" style="gap:14px;align-items:baseline;margin-bottom:6px"><div><span class="big">${W.trend}</span> <span class="sm">kg</span><div class="xs mut">tendance lissée</div></div><div class="sm mut">dernière pesée : ${r1(W.raw)} kg<div class="xs">${fmtDay(W.rawK)}</div></div></div>`; }
 
 // ---- réglages (profil) ----
@@ -137,3 +136,47 @@ Object.assign(NUT_ACT, {
     const name = ($("#qaN")?.value || "").trim() || "Ajout rapide";
     updDay(d => d.entries.push(quickEntry(name, r0(k), p, c, f, S.add.meal || ""))); toast(`${name} ajouté · ${r0(k)} kcal`); closeSheet(); },
 });
+
+// ===================== NUTRITION — LOT 2 : écran Aujourd'hui épuré =====================
+// Un seul but : voir ce qui reste et noter ce qu'on mange. Le reste est replié.
+function nutEntryRow(e) {
+  return `<div class="entry" data-act="editEntry" data-v="${e.id}">${e.src === "plan" || e.src === "recette" ? dishImg(e.name, { size: "mini" }) : ""}<div class="grow"><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.src === "rapide" ? "ajout rapide" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
+}
+// suivi du jour : pastilles remplies seulement, les vides regroupées en une seule
+function dailyStripN(d, k) {
+  const p = profile(); const sport = (d.acts || []).reduce((t, a) => t + a.min, 0);
+  const items = [["⚖️", weightPillVal(d, k), "poids"], ["👣", d.steps ? d.steps.toLocaleString("fr-FR") + " pas" : "", "pas"], ["😴", d.sleep ? d.sleep + " h" : "", "sommeil"], ["⚽", sport ? sport + " min" : "", "sport"], ...(p.moodTrack ? [["🙂", d.mood ? d.mood + "/5" : "", "humeur"]] : [])];
+  const full = items.filter(i => i[1]), empty = items.filter(i => !i[1]);
+  return `<div class="dstrip">${full.map(([ic, v]) => `<button class="dpill" data-act="openDaily">${ic} ${v}</button>`).join("")}${empty.length ? `<button class="dpill empty" data-act="openDaily">＋ ${empty.map(i => i[2]).join(", ")}</button>` : ""}</div>`;
+}
+// prochain repas seulement (au lieu de tous les repas restants)
+function nextMealLine(k, T) { const M = mealShares(k, T); const m = Object.keys(M).find(x => M[x].kcal); return m ? `<div class="mhint xs mut">Prochain repas · ${esc(m)} ${shareTxt(M[m])}</div>` : ""; }
+function viewTodayN() {
+  const k = S.day, d = day(k), t = dayTotals(k), T = Object.assign(targets(), dayTargets(k)), today = todayKey();
+  const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
+  const prevN = (day(addDays(k, -1)).entries || []).length;
+  const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
+  const mini = (lab, v, ref, max) => `<span class="tag">${lab} ${r1(v)}/${ref} g</span>`;
+  const micro = Object.keys(t.micro).length ? `<div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div>` : "";
+  const more = all.length ? `<details class="nmore" ${S.nMore ? "open" : ""}><summary class="ghost small" onclick="S.nMore=!this.parentNode.open" aria-label="Plus d'options">⋯</summary><div class="nmore-in" onclick="S.nMore=false">
+      <button class="chip" data-act="copyYesterday">↺ Copier hier</button>
+      <button class="chip" data-act="byMeal" data-v="${S.byMeal ? 0 : 1}">${S.byMeal ? "Liste simple" : "Grouper par repas"}</button>
+      <button class="chip" data-act="favMeal" data-v="__all">★ Enregistrer en favori</button></div></details>` : "";
+  const list = !all.length
+    ? `<p class="mut sm" style="margin:6px 0">${k > today ? "Jour à venir : tu peux déjà prévoir tes repas." : "Rien pour l'instant."}</p>
+       ${prevN ? `<button class="sec" style="width:100%;margin:4px 0" data-act="copyYesterday">↺ Même chose qu'hier (${r0(dayTotals(addDays(k, -1)).kcal)} kcal)</button>` : ""}
+       ${k <= today ? `<button class="ghost small" style="width:100%" data-act="estimOpen">Journée oubliée ? Estimer les kcal</button>` : ""}`
+    : S.byMeal ? mealGroupsHTML(k, all, nutEntryRow, T) : all.map(nutEntryRow).join("") + nextMealLine(k, T);
+  return `${statusBanner()}
+  ${k === today ? `${onboardingHTML()}${checkinCardHTML()}${deloadAdvice() && !isDeload() ? deloadCardHTML() : ""}${bilans().length && bilanDue() ? `<button class="sec" style="width:100%;margin-bottom:8px" data-act="blOpen">📸 Bilan photo de la semaine</button>` : ""}` : ""}
+  ${weekStripHTML(k)}
+  ${k > today ? "" : dailyStripN(d, k)}
+  ${dayTypePillHTML(k)}
+  <div class="card" style="margin-top:4px">${remainHTML(t, T)}
+    <details class="ndet"><summary class="xs mut">Fibres, sucres, sel…</summary><div class="chips" style="margin-top:6px">${mini("Fibres", t.fib, 30)}${mini("Sucres", t.sugar, sugarMax, 1)}${mini("Sel", t.salt, 5, 1)}${mini("Saturés", t.satfat, satMax, 1)}</div>${micro}</details>
+    ${k === today ? `<button class="chip" style="margin-top:8px" data-act="aiFinish">💡 Que manger ensuite ?</button>` : ""}
+    ${S.aiOut.today ? `<div class="ai-out">${aiRich(S.aiOut.today)}</div>` : ""}
+  </div>
+  <div class="card"><div class="row between"><h3 style="margin:0">Mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px">${more}<button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
+    ${list}</div>`;
+}
