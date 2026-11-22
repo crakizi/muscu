@@ -109,7 +109,7 @@ function weightTrendAt(k) {
   for (let i = 180; i >= 0; i--) { const x = addDays(k, -i), w = +(Store.get("d-" + x)?.weight || 0); if (w) { tr = tr == null ? w : tr + WT_ALPHA * (w - tr); raw = w; rawK = x; } }
   return { trend: tr == null ? null : r1(tr), raw, rawK };
 }
-function weightPillVal(d, k) { if (!d.weight) return ""; const W = weightTrendAt(k); return `${W.trend ?? r1(d.weight)} kg <span class="xs mut">tendance · pesée ${r1(d.weight)}</span>`; }
+function weightPillVal(d, k) { if (!d.weight) return ""; const W = weightTrendAt(k); return `${W.trend ?? r1(d.weight)} kg`; } // pesée brute : dans la fiche détail
 function weightLineHTML() { const W = weightTrendAt(); return W.trend == null ? "" : `<div class="row" style="gap:14px;align-items:baseline;margin-bottom:6px"><div><span class="big">${W.trend}</span> <span class="sm">kg</span><div class="xs mut">tendance lissée</div></div><div class="sm mut">dernière pesée : ${r1(W.raw)} kg<div class="xs">${fmtDay(W.rawK)}</div></div></div>`; }
 
 // ---- réglages (profil) ----
@@ -158,7 +158,7 @@ function viewTodayN() {
   const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
   const mini = (lab, v, ref, max) => `<span class="tag">${lab} ${r1(v)}/${ref} g</span>`;
   const micro = Object.keys(t.micro).length ? `<div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div>` : "";
-  const more = all.length ? `<details class="nmore"><summary class="ghost small" aria-label="Plus d'options">⋯</summary><div class="nmore-in">
+  const more = all.length ? `<details class="nmore" ${S.nMore ? "open" : ""}><summary class="ghost small" onclick="S.nMore=!this.parentNode.open" aria-label="Plus d'options">⋯</summary><div class="nmore-in" onclick="S.nMore=false">
       <button class="chip" data-act="copyYesterday">↺ Copier hier</button>
       <button class="chip" data-act="byMeal" data-v="${S.byMeal ? 0 : 1}">${S.byMeal ? "Liste simple" : "Grouper par repas"}</button>
       <button class="chip" data-act="favMeal" data-v="__all">★ Enregistrer en favori</button></div></details>` : "";

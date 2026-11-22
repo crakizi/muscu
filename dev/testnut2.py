@@ -60,7 +60,8 @@ async def main():
     ok(e and round(e["n"]["kcal"]) == 750, f"kebab 4/4/9 = 750 kcal ({e and e['n']['kcal']})")
     # poids tendance
     W = json.loads(await pg.evaluate("JSON.stringify(weightTrendAt())")); ok(W["raw"] == 81.2 and W["trend"] != 81.2, f"tendance {W['trend']} ≠ pesée {W['raw']}")
-    pill = await pg.inner_text(".dstrip .dpill"); ok("tendance" in pill and pill.index(str(W["trend"])) < pill.index("81.2"), f"pastille poids : {pill}")
+    pill = await pg.inner_text(".dstrip .dpill"); ok(str(W["trend"]) in pill and "81.2" not in pill, f"pastille poids = tendance seule : {pill}")
+    await pg.click(".dstrip .dpill"); await pg.wait_for_timeout(200); ok(await pg.input_value("#inW") == "81.2", "pesée brute dans la fiche détail"); await pg.evaluate("closeSheet()")
     # réglage profil : désactiver
     await pg.click("nav button[data-v=profile]"); await pg.wait_for_timeout(300)
     await pg.locator("text=Objectifs selon le jour").scroll_into_view_if_needed(); await pg.screenshot(path=SH+"5_profil_reglages.png")
