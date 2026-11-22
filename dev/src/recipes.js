@@ -44,6 +44,18 @@ function saveRecipeFromForm() {
   const R = S.rec; R.name = ($("#recName")?.value || R.name || "").trim(); R.portions = Math.max(1, parseFloat($("#recPortions")?.value) || R.portions || 1); R.cookedG = parseFloat($("#recCooked")?.value) || null;
 }
 // ===================== COPIER UN AUTRE JOUR =====================
+// Retire du frigo ce qui y est pour des lignes de journal copiées. Recette perso → ses ingrédients au prorata ;
+// portion de batch → rien (déjà retiré à la préparation). Renvoie le nombre d'aliments retirés.
+function entriesConsume(es) {
+  let out = 0;
+  (es || []).forEach(e => {
+    if (e.src === "batch" || !(+e.g > 0)) return;
+    const r = e.src === "recette" ? recipes().find(x => x.name === e.name) : null;
+    if (r) { const frac = e.g / (r.cookedG || recipeTotals(r).g || e.g); (r.ings || []).forEach(i => { if (fridgeConsume(i.name, i.g * frac)) out++; }); }
+    else if (fridgeConsume(e.name, +e.g)) out++;
+  });
+  return out;
+}
 function copyDaySheet() {
   const k = S.copyFrom || addDays(S.day, -1); const es = day(k).entries || [];
   if (!S.copySel || S.copySelDay !== k) { S.copySel = es.map(() => true); S.copySelDay = k; }
@@ -96,5 +108,5 @@ const RECIPE_ACT = {
     toast(`${r.name} ajouté (${p} portion${p > 1 ? "s" : ""})`); closeSheet(); },
   copyOpen: () => { S.copyFrom = addDays(S.day, -1); S.copySel = null; openSheet(copyDaySheet); },
   copyNav: el => { const k = addDays(S.copyFrom || addDays(S.day, -1), +el.dataset.v); if (k > todayKey()) return; S.copyFrom = k; S.copySel = null; renderSheet(); },
-  copyGo: () => { const es = (day(S.copyFrom).entries || []).filter((e, i) => S.copySel[i]); updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) copié(s)`); closeSheet(); }
+  copyGo: () => { const es = (day(S.copyFrom).entries || []).filter((e, i) => S.copySel[i]); updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); const out = entriesConsume(es); toast(`${es.length} aliment(s) copié(s)` + (out ? ` · ${out} retiré(s) du frigo` : "")); closeSheet(); }
 };
