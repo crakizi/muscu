@@ -14,6 +14,14 @@ _Décidé le 22 novembre 2026._
 - Avant d'ajouter un bouton, se demander si on peut en retirer un. Chaque livraison dit ce qui a été **retiré ou replié**, pas seulement ce qui a été ajouté.
 - En cas de doute, ne pas ajouter : proposer à Vuthy.
 
+## Règle n°2 : s'inspirer des meilleures apps, à notre sauce
+Avant de proposer ou de coder une fonction, lire ce que font les meilleures apps sur ce point, puis l'améliorer (plus simple, mieux relié sport ↔ nutrition). Dans chaque proposition, dire de quelle app vient l'idée et ce qu'on change.
+- `claude/analyse-apps-detaillee.md` : fiche détaillée de 25 apps testées sur iPhone (écrans, boutons, saisie, design, prix).
+- `claude/analyse-apps-iphone-en-cours.md` : leçons clés et ce qu'il faut éviter.
+- `claude/synthese-demandes-utilisateurs.md` : ce que les utilisateurs demandent, détestent et acceptent de payer (forums et avis, FR + EN).
+- `claude/analyse-apps-reddit.md` et `claude/analyse-fitself.md` : forums et analyse de FitSelf.
+Ces documents sont dans le projet claude.ai (pas dans le dépôt public).
+
 ## Conversation « Design » (esthétique de toute l'app)
 - Elle gère l'esthétique et la navigation de **l'app entière** : couleurs, typographie, espacements, icônes, composants communs (boutons, cartes, onglets, anneaux, listes), clair/sombre, cohérence entre sections, nombre d'éléments par écran.
 - Elle possède le début de `style.css` (variables et composants communs, dans la section « Design system ») et la structure de navigation. Les sections réutilisent ses composants au lieu d'inventer les leurs.
