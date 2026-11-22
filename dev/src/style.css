@@ -160,3 +160,12 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .qagrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 
 .tag.soon{background:var(--acc2);color:var(--acc);font-weight:600}.czsubs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.czsubs .chip{white-space:nowrap;flex:none}.czgauge>i:last-child{border-radius:0 6px 6px 0}
+/* ===== Amis ===== */
+.fr-people{display:flex;gap:14px;overflow-x:auto;padding-bottom:2px}
+.fr-person{background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--txt);min-width:52px;box-shadow:none}
+.fr-av{width:46px;height:46px;border-radius:50%;background:var(--acc2,var(--bg));color:var(--acc);display:grid;place-items:center;font-weight:700;font-size:18px;flex:none}
+.fr-av.fr-me{background:var(--acc);color:#fff}
+.fr-big{width:56px;height:56px;font-size:22px}
+.fr-ic{font-size:20px;width:28px;text-align:center;flex:none}
+.fr-dot{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--acc);color:#fff;font-size:11px;text-align:center;vertical-align:middle}
+.fr-share{margin-top:8px}

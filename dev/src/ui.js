@@ -13,7 +13,7 @@ let pendingRender = false;
 function render() {
   if (isEditing()) { pendingRender = true; return; }
   pendingRender = false;
-  const views = { today: viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
+  const views = { today: viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile, friends: typeof viewFriends === "function" ? viewFriends : viewProfile };
   const sy = window.scrollY;
   $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge"); $("#app").classList.toggle("full", S.tab === "workout" && S.wMode === "3d");
   $("#app").innerHTML = (views[S.tab] || viewToday)();
@@ -469,6 +469,7 @@ function viewProfile() {
     <div class="card"><h2>Apparence</h2><div class="chips">${[["clair", "☀️ Clair"], ["sombre", "🌙 Sombre"], ["auto", "Auto (comme le Mac/iPhone)"]].map(([k, l]) => `<button class="chip ${themePref() === k ? "on" : ""}" data-act="setTheme" data-v="${k}">${l}</button>`).join("")}</div><div class="row between" style="margin-top:10px"><span class="sm">Inverser le sens de rotation à 2 doigts (3D)</span><button class="chip ${localStorage.getItem("muscu_inv3d") === "1" ? "on" : ""}" data-act="inv3d">${localStorage.getItem("muscu_inv3d") === "1" ? "Inversé" : "Normal"}</button></div></div>
     ${syncCardHTML()}
     ${typeof SP !== "undefined" && SP.clientId() ? `<div class="card"><h2>Spotify</h2>${SP.tok() ? `<p class="sm">Connecté ✓ (contrôle depuis l'onglet Séance)</p><button class="small sec" data-act="spLogout">Déconnecter</button>` : `<button class="small" style="background:#1db954" data-act="spLogin">Connecter Spotify</button>`}</div>` : ""}
+    ${typeof frProfileCard === "function" ? frProfileCard() : ""}
     <div class="card"><h2>Données</h2><p class="xs mut">${Store.mode === "cloud" ? "Synchronisées en ligne entre ton iPhone et ton Mac." : "Stockées dans ce navigateur (mode aperçu)."} ${Store.ids("d-").length} jours · ${Store.ids("w-").length} séances · ${Object.keys(myFoods()).length} aliments perso.</p>
       <div class="row"><button class="sec" data-act="exportData">Copier une sauvegarde</button><button class="sec" data-act="importData">Restaurer</button></div></div>
     <div class="card"><h2>Installer sur l'iPhone</h2><p class="sm">Dans Safari : ouvre cette page → bouton Partager → « Sur l'écran d'accueil ». L'app s'ouvre ensuite comme une vraie app.</p></div>`;

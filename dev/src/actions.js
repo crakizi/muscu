@@ -315,7 +315,7 @@ document.addEventListener("input", ev => {
 const _origRenderSheet = renderSheet;
 renderSheet = function () { if (S.sheet === addSheet && !S.add.sel && !S.add.items && S.add.tab === "search") _searchRes = S.add.offRes || searchFoods(S.add.q); _origRenderSheet(); };
 
-Object.assign(ACT, DISH_ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT, FAT_ACT);
+Object.assign(ACT, typeof FR_ACT !== "undefined" ? FR_ACT : {}, DISH_ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_ACT, PH_ACT, BL_ACT, FAT_ACT);
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });

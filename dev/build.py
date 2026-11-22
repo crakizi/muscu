@@ -3,7 +3,7 @@ target = 'pwa' if '--pwa' in sys.argv else ('local' if '--local' in sys.argv els
 src='src/'
 css=open(src+'style.css').read()
 plat=['platform_pwa.js','spotify.js'] if target=='pwa' else ['platform_claude.js']
-js='\n'.join(open(src+f).read() for f in ['data.js','coachdata.js','core.js','dishimg.js',*plat,'scene3d.js','body3d.js','anim.js','scanner.js','ui.js','fridge.js','nutrition.js','nutri2.js','recipes.js','cuisine2.js','extras.js','energy.js','program.js','photos.js','bilan.js','fatigue.js','actions.js'])
+js='\n'.join(open(src+f).read() for f in ['data.js','coachdata.js','core.js','dishimg.js',*plat,'scene3d.js','body3d.js','anim.js','scanner.js','ui.js','fridge.js','nutrition.js','nutri2.js','recipes.js','cuisine2.js','extras.js','energy.js','program.js','photos.js','bilan.js','fatigue.js','friends.js','actions.js'])
 logo=base64.b64encode(open('brand/logo-180.png','rb').read()).decode()
 if target=='pwa':
   cfg=json.load(open('pwa_config.json')) if os.path.exists('pwa_config.json') else {"url":"","anon":""}
