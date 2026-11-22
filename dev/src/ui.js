@@ -16,7 +16,7 @@ function render() {
   const views = { today: typeof viewTodayN === "function" ? viewTodayN : viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
   const sy = window.scrollY;
   $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge"); $("#app").classList.toggle("full", S.tab === "workout" && S.wMode === "3d");
-  $("#app").innerHTML = (views[S.tab] || viewToday)();
+  $("#app").innerHTML = meNavHTML() + (views[S.tab] || viewToday)();
   $("#nav").innerHTML = navHTML();
 
   renderSheet();
@@ -45,12 +45,41 @@ const ICONS = {
   fridge: '<rect x="6" y="2.5" width="12" height="19" rx="2" stroke="currentColor" stroke-width="2" fill="none"/><path d="M6 9.5h12M9 5.5v2M9 12.5v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
   profile: '<circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>'
 };
+// ===================== NAVIGATION (section Design) =====================
+// 4 onglets + bouton « + » au centre. Coach et Profil sont regroupés avec Progrès (onglets en haut de l'écran).
+const NAV_TABS = [["today", "Aujourd'hui"], ["fridge", "Cuisine"], null, ["workout", "Sport"], ["progress", "Progrès"]];
+const NAV_ME = { progress: "Progrès", coach: "Coach", profile: "Profil" };
+const PLUS_SVG = '<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
 function navHTML() {
-  const L = { today: "Aujourd'hui", fridge: "Cuisine", workout: "Séance", progress: "Progrès", coach: "Coach", profile: "Profil" };
-  const btn = k => `<button class="${S.tab === k ? "on" : ""}" data-act="tab" data-v="${k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${L[k]}${k === "workout" && liveWorkout() ? " •" : ""}</button>`;
-  const keys = Object.keys(L);
-  return keys.slice(0, 3).map(btn).join("") + `<button class="scanbtn" data-act="scanHub" aria-label="Scanner un aliment"><span><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 9v6M10 9v6M13 9v6M17 9v6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Scanner</button>` + keys.slice(3).map(btn).join("");
+  const cur = S.tab in NAV_ME ? "progress" : S.tab;
+  return NAV_TABS.map(n => n
+    ? `<button class="${cur === n[0] ? "on" : ""}" data-act="tab" data-v="${n[0]}"><svg viewBox="0 0 24 24">${ICONS[n[0]]}</svg>${n[1]}${n[0] === "workout" && liveWorkout() ? " •" : ""}</button>`
+    : `<button class="plusbtn" data-act="addHub" aria-label="Ajouter : aliment, scanner, poids, séance"><span style="color:var(--on)"><svg viewBox="0 0 24 24">${PLUS_SVG}</svg></span></button>`).join("");
 }
+function meNavHTML() {
+  if (!(S.tab in NAV_ME)) return "";
+  return `<div class="seg">${Object.entries(NAV_ME).map(([k, l]) => `<button class="${S.tab === k ? "on" : ""}" data-act="tab" data-v="${k}">${l}</button>`).join("")}</div>`;
+}
+function addHubSheet() {
+  const row = (act, v, ic, t, sub) => `<button data-act="${act}"${v ? ` data-v="${v}"` : ""}><i><svg viewBox="0 0 24 24">${ic}</svg></i><span>${t}<small>${sub}</small></span></button>`;
+  const st = 'stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  return `<div class="hub">
+    ${row("hubGo", "food", `<path d="M11 21c-4 0-7-3-7-7 0-3 2-5 4-5 1.2 0 2 .5 3 .5S13 9 14.5 9c2 0 3.5 2 3.5 5 0 4-3 7-7 7zM12 9.5c0-3 1.5-5 3.5-6" ${st}/>`, "Aliment", "Rechercher, décrire, photo")}
+    ${row("hubGo", "scan", `<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 9v6M12 9v6M16 9v6" ${st}/>`, "Scanner", "Code-barres")}
+    ${row("hubGo", "weight", `<rect x="4" y="4" width="16" height="16" rx="4" ${st}/><path d="M9 9.5a4 4 0 0 1 6 0l-2 2" ${st}/>`, "Poids", "Pesée du jour")}
+    ${row("hubGo", "workout", ICONS.workout, "Séance", "Démarrer ou reprendre")}
+  </div>`;
+}
+const NAV_ACT = {
+  addHub: () => openSheet(addHubSheet),
+  hubGo: el => {
+    const v = el.dataset.v; closeSheet();
+    if (v === "food") ACT.openAdd({ dataset: {} });
+    else if (v === "scan") ACT.scanHub();
+    else if (v === "weight") ACT.quickWeight();
+    else ACT.tab({ dataset: { v: "workout" } });
+  }
+};
 function statusBanner() {
   if (Store.banner) return Store.banner();
   if (Store.mode === "local") return `<div class="banner">Mode aperçu : les données sont gardées seulement dans ce navigateur. Ouvre l'app depuis son lien claude.ai pour activer la synchro iPhone ↔ Mac.</div>`;
