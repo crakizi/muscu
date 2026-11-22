@@ -171,7 +171,7 @@ async def main():
       wv = await pg.input_value("input[data-input=draft][data-i='0'][data-k=w]")
       check("charge pré-remplie = dernière charge (10 kg)", wv == "10", wv)
       check("rappel « dernière fois »", "Dernière fois" in await pg.inner_text("#app"))
-      check("ligne fantôme série 1", "Série 1 la dernière fois" in await pg.inner_text("#app"))
+      check("série 1 de la dernière fois surlignée", await pg.locator(".card .exlast .nx").count() >= 1)
       await pg.fill("input[data-input=draft][data-i='0'][data-k=r]", "8"); await pg.click("button[data-act=dRir][data-i='0'][data-v='2']"); await pg.click("button[data-act=logSet][data-i='0']"); await pg.wait_for_timeout(300)
       check("record détecté (10×8)", "Nouveau record" in await toast())
       check("minuteur de repos affiché (2:30)", await pg.locator("#restBar").count() == 1 and await pg.evaluate("REST.total") == 150)
@@ -184,15 +184,15 @@ async def main():
       check("résumé vs dernière fois", "1▲ 1＝ 1▼" in await pg.inner_text("#app"))
       await pg.evaluate("window.scrollTo(0,0)"); await shot("10_seance_live.png")
       # refus d'exercice
-      await pg.click("button[data-act=refuse][data-i='1']"); await pg.wait_for_timeout(200)
+      await pg.click("[data-act=exInfo][data-i='1']"); await pg.wait_for_timeout(300); await pg.click(".sheet button[data-act=refuse][data-i='1']"); await pg.wait_for_timeout(200)
       alts = await pg.locator("[data-act=refusePick]").count(); check("🚫 propose des remplaçants", alts >= 1, alts)
       await (await pg.query_selector(".sheet")).screenshot(path=SH + "11_refus.png")
       await pg.check("#banForever"); await pg.click("[data-act=refusePick] >> nth=0"); await pg.wait_for_timeout(250)
       r = await ev("[liveWorkout().ex[1].id, Store.get('program',{}).banned, program()['Bras'].ex.includes('tri_oh_cable')]")
       check("exercice remplacé + banni + retiré du modèle", r[0] != "tri_oh_cable" and "tri_oh_cable" in r[1] and not r[2], r)
       # fiche exercice
-      await pg.click("[data-act=showMusc][data-v=lat_raise_cable] >> nth=0"); await pg.wait_for_timeout(600)
-      ft = await pg.inner_text(".sheet"); check("fiche exercice (muscles, alternatives)", "Rôle des muscles" in ft and "Alternatives" in ft)
+      await pg.click("[data-act=exInfo][data-v=lat_raise_cable] >> nth=0"); await pg.wait_for_timeout(600)
+      ft = await pg.inner_text(".sheet"); check("fiche exercice (muscles ciblés, variantes)", "Ciblé" in ft and "Variantes" in ft)
       await shot("12_fiche_exercice.png"); await pg.evaluate("closeSheet()")
       # terminer → lien nutrition
       await pg.click("#app button[data-act=finishW] >> nth=-1"); await pg.wait_for_timeout(400)

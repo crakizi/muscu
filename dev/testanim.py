@@ -11,7 +11,7 @@ async def main():
     ids = EX or await pg.evaluate("Object.keys(EX_ANIM)")
     first=True
     for i in ids:
-      await pg.evaluate(f"S.bodyEx='{i}'; S.bodyAnim=true; openSheet(exMuscleSheet('{i}'))")
+      await pg.evaluate(f"S.exMedia='3d'; S.bodyEx='{i}'; S.bodyAnim=true; openSheet(exMuscleSheet('{i}'))")
       await pg.wait_for_timeout(9000 if first else 900); first=False
       await pg.evaluate("ANIM.playing=false")
       for t in (0,1):

@@ -248,23 +248,7 @@ function muscleSVG(prim = [], sec = [], focus = [], mini = false, colors = null)
   return `<svg class="musc" viewBox="0 0 210 196" style="width:100%;max-width:420px;display:block;margin:auto">${sil(0)}${shapes(MUSC_FRONT, 0)}${sil(110)}${shapes(MUSC_BACK, 110)}
     ${mini ? "" : `<text x="50" y="195" font-size="6" text-anchor="middle" fill="var(--mut)">Face</text><text x="160" y="195" font-size="6" text-anchor="middle" fill="var(--mut)">Dos</text>`}</svg>`;
 }
-function exMuscleSheet(exId) {
-  return () => {
-    const x = getEx(exId);
-    return `<div class="row between"><h2>${esc(x.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-      <div class="chips" style="margin-bottom:8px"><button class="chip ${S.bodyAnim === false ? "" : "on"}" data-act="bodyMode" data-v="1">🎬 Mouvement</button><button class="chip ${S.bodyAnim === false ? "on" : ""}" data-act="bodyMode" data-v="0">💪 Muscles (statique)</button></div>
-      ${body3DHolderHTML("min(64vh, 620px)", S.bodyAnim !== false)}
-      <div class="row xs" style="gap:12px;justify-content:center;margin:6px 0"><span><b style="color:#d90429">●</b> principal</span><span><b style="color:#ff8a00">●</b> secondaire</span><span>clignote = partie ciblée</span></div>
-      <h3>Muscles principaux</h3><ul class="sm">${x.prim.map(m => `<li>${MUSCLES[m][0]}${x.focus.includes(m) ? " <b>(ciblé)</b>" : ""}</li>`).join("")}</ul>
-      ${x.sec.length ? `<h3>Secondaires</h3><ul class="sm">${x.sec.map(m => `<li>${MUSCLES[m][0]}</li>`).join("")}</ul>` : ""}
-      ${x.note ? `<div class="reco">${esc(x.note)}</div>` : ""}
-      ${EX_VARIANTS[x.id] ? `<h3>Variantes populaires</h3>${EX_VARIANTS[x.id].map(([n, d]) => `<div class="entry" style="align-items:flex-start"><div><div class="sm b">${esc(n)}</div><div class="xs mut">${esc(d)}</div></div></div>`).join("")}` : ""}
-      ${EX_CUES[x.id] ? `<h3>Exécution</h3><ol class="sm">${EX_CUES[x.id].map(c => `<li>${esc(c)}</li>`).join("")}</ol>` : ""}
-      <h3>Rôle des muscles travaillés</h3>${x.prim.concat(x.sec).filter((m, k, a) => a.indexOf(m) === k && MUSCLE_INFO[m]).map(m => `<p class="sm" style="margin:4px 0"><b>${esc(MUSCLES[m][0])}</b> — ${esc(MUSCLE_INFO[m])}</p>`).join("")}
-      ${(() => { const alts = typeof replacementsFor === "function" ? replacementsFor(x.id).slice(0, 3) : []; return alts.length ? `<h3>Alternatives dans ta salle</h3><p class="sm">${alts.map(a => esc(getEx(a).name)).join(" · ")}</p>` : ""; })()}
-      ${(() => { const h = exerciseHistory(x.id)[0]; const ws = h ? (h.sets || []).filter(z => !z.wu) : []; if (!ws.length) return ""; return `<p class="xs mut">🔥 Ta dernière fois (${ws.map(z => z.w + "×" + z.r).join(", ")}) ≈ ${r0(exKcal(x.id, ws))} kcal (<a href="#" data-act="energyInfo" style="color:var(--acc)">calcul</a>)</p>`; })()}`;
-  };
-}
+// fiche exercice (exMuscleSheet) : voir program.js (section Muscu)
 
 // ===================== SÉANCE =====================
 function viewWorkout() {
@@ -303,34 +287,7 @@ function liveView(w) {
     <div class="card"><label>Notes de séance</label><textarea id="wNotes" placeholder="sensations, douleurs, machine prise…">${esc(w.notes || "")}</textarea>
     <div class="row" style="margin-top:10px"><button class="danger grow" data-act="cancelW">Abandonner</button><button class="grow" data-act="finishW">Terminer la séance</button></div></div>`;
 }
-function exCard(w, e, i) {
-  if (e.done) { const x0 = getEx(e.id); const ws = (e.sets || []).filter(s => !s.wu);
-    return `<div class="card exdone" data-act="exReopen" data-i="${i}"><div class="row between" style="align-items:center"><div><div class="b">✅ ${esc(x0.name)}</div>
-      <div class="xs mut">${ws.length} série${ws.length > 1 ? "s" : ""} · ${ws.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div></div><button class="ghost small" data-act="exReopen" data-i="${i}">Modifier</button></div></div>`; }
-  const x = getEx(e.id); const sug = suggestion(e.id, w._id); const hist = exerciseHistory(e.id, w._id);
-  const last = hist[0]; const [lo, hi] = repRange(e.id);
-  const lastW = (e.sets || []).filter(s => !s.wu).slice(-1)[0]; const dr = S.draft[i] || (S.draft[i] = { w: lastW?.w ?? sug.w ?? "", r: lastW?.r ?? "", rir: null, wu: false });
-  const alts = ALTERNATIVES[e.id] || [];
-  const prev = (e.sets || []);
-  const dl = isDeload() ? `<div class="reco xs" style="margin:6px 0">🔋 Décharge : fais environ <b>${Math.max(1, Math.round((program()[w.name]?.sets?.[e.id] || 3) / 2))} série(s)</b> à la charge habituelle, en gardant 3-4 reps en réserve.</div>` : "";
-  return `<div class="card">${dl}<div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer;text-align:center" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}<div class="xs" style="color:var(--acc,#3b82f6)">🎬 Comment faire</div></div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
-    <div class="row" style="gap:2px">${alts.length ? `<button class="ghost small" data-act="swapEx" data-i="${i}" title="Variante">⇄</button>` : ""}<button class="ghost small" data-act="refuse" data-i="${i}" title="Je ne veux pas faire cet exercice">🚫</button><button class="ghost small" data-act="exUp" data-i="${i}" title="Monter">↑</button><button class="danger small" data-act="rmEx" data-i="${i}" title="Retirer">✕</button></div></div>
-    <div class="row sm" style="margin:6px 0;gap:6px;flex-wrap:wrap"><span class="mut">Fourchette :</span><select data-act="range" data-v="${e.id}" style="width:auto;padding:4px 6px">${[[6, 8], [6, 10], [8, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) => `<option value="${a}-${b}" ${a === lo && b === hi ? "selected" : ""}>${a}-${b} reps</option>`).join("")}</select></div>
-    ${last ? `<div class="xs mut">Dernière fois (${fmtDay(dateKey(new Date(last.date)))}) : ${last.sets.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div>` : ""}
-    <div class="reco ${sug.up ? "good" : ""} sm">${esc(sug.text)}</div>
-    ${prev.length ? `<div class="set xs mut"><span>#</span><span>kg</span><span>reps</span><span>RIR · repos</span><span></span></div>` : ""}
-    ${prev.map((s, j) => { const rest = j > 0 ? s.t - prev[j - 1].t : null; const n = prev.slice(0, j + 1).filter(z => !z.wu).length; const ghostSet = !s.wu && last ? (last.sets || []).filter(z => !z.wu)[n - 1] : null;
-      return `<div class="set ${s.wu ? "wu" : ""}"><span class="mut">${s.wu ? "É" : n}</span><span class="b">${s.w}</span><span class="b">${s.r} ${s.wu ? "" : ghostBadge(ghostCmp(s, ghostSet))}</span><span class="xs">${s.rir != null && !s.wu ? "RIR " + s.rir : ""}${rest ? ` · ${fmtDur(rest)}` : ""}</span><button class="danger small" data-act="delSet" data-i="${i}" data-j="${j}">✕</button></div>`; }).join("")}
-    ${ghostSummary(e, last)}
-    ${(() => { const done = prev.length ? exKcal(e.id, prev) : 0; const nW = prev.filter(z => !z.wu).length; const gs = last ? (last.sets || []).filter(z => !z.wu)[nW] : null;
-      return `${gs ? `<div class="ghostline xs">👻 Série ${nW + 1} la dernière fois : <b>${gs.w} kg × ${gs.r}</b>${gs.rir != null ? ` @RIR ${gs.rir}` : ""} — à égaler ou battre</div>` : ""}
-      <div class="xs mut" style="margin-top:4px">🔥 ${done ? `≈ <b>${r0(done)} kcal</b> pour ces séries` : `Prévu (${hi} reps à ${dr.w || "?"} kg) : ≈ ${dr.w ? r0(setKcal(e.id, +dr.w, hi)) : "?"} kcal / série`} <a href="#" data-act="energyInfo" style="color:var(--acc)">comment ?</a></div>`; })()}
-    <div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">
-      <div class="row"><div class="grow"><div class="xs mut">Charge (kg)</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="w" data-v="-${profile().increment}">−</button><input type="number" inputmode="decimal" value="${dr.w}" data-input="draft" data-i="${i}" data-k="w"><button data-act="dStep" data-i="${i}" data-k="w" data-v="${profile().increment}">+</button></div>${BARBELL.has(e.id) && dr.w ? plateHTML(+dr.w) : ""}</div>
-      <div class="grow"><div class="xs mut">Reps</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="r" data-v="-1">−</button><input type="number" inputmode="numeric" value="${dr.r}" data-input="draft" data-i="${i}" data-k="r" placeholder="${hi}"><button data-act="dStep" data-i="${i}" data-k="r" data-v="1">+</button></div></div></div>
-      <div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="xs mut">RIR (reps en réserve)</span>${[0, 1, 2, 3, 4].map(v => `<button class="chip ${dr.rir === v && !dr.wu ? "on" : ""}" data-act="dRir" data-i="${i}" data-v="${v}">${v === 4 ? "4+" : v}</button>`).join("")}<button class="chip ${dr.wu ? "on" : ""}" data-act="dWu" data-i="${i}">Échauff.</button></div>
-      <div class="row" style="margin-top:8px;gap:8px"><button class="grow" data-act="logSet" data-i="${i}">Valider la série</button>${prev.some(z => !z.wu) ? `<button class="sec small" style="flex:none;padding:8px 12px" data-act="exDone" data-i="${i}" title="Replier l'exercice">✓ Exercice fini</button>` : ""}</div></div></div>`;
-}
+// carte d'exercice en séance (exCard) : voir program.js (section Muscu)
 function exPickerSheet(mode, idx) {
   return () => {
     const q = (S.exQ || "").toLowerCase();

@@ -173,3 +173,14 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .cztabs .czbadge{position:absolute;top:6px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--acc);color:#fff;font-size:11px;line-height:18px}
 .cztabs .ktab.on .czbadge{background:#fff;color:var(--acc)}
 .czfold{display:flex;align-items:center}
+/* ===================== Muscu (section Muscu) ===================== */
+.exhead[data-act]{cursor:pointer;align-items:center}.exth{width:64px;flex:none}.exmore{font-size:22px;color:var(--mut);padding:0 4px;line-height:1}
+.exlast .nx{color:var(--txt);font-weight:700;background:rgba(124,58,237,.1);border-radius:6px;padding:0 4px}
+.exin{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}.exrir{margin-top:8px;gap:5px;align-items:center;flex-wrap:nowrap;overflow-x:auto}.exrir .chip{padding:6px 10px;flex:none}
+.exmedia{margin:8px 0}.exph{position:relative;aspect-ratio:850/567;border-radius:14px;overflow:hidden;background:var(--chip)}
+.exph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.exph img.b{animation:exflip 2.6s ease-in-out infinite}
+@keyframes exflip{0%,35%{opacity:0}50%,85%{opacity:1}100%{opacity:0}}
+.exmus{margin:10px 0 4px;line-height:2}.exmus .xs{margin-right:6px}.mtag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;margin:0 4px 0 0;background:rgba(255,138,0,.15);color:var(--txt);line-height:1.6}.mtag.p{background:rgba(217,4,41,.15);font-weight:600}
+.exvar{display:none;margin-top:4px}.exvar.on{display:block}.exv{align-items:center}.exvt{width:56px;height:38px;flex:none;border-radius:8px;overflow:hidden;background:var(--chip)}.exvt img{width:100%;height:100%;object-fit:cover}
+.exhow{margin-top:12px}.exhow summary{font-weight:600;cursor:pointer;padding:6px 0}
+.exacts{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:8px}.exacts select{width:auto;padding:4px 6px;margin-left:6px}.exacts .ghost.dangertxt{color:var(--red)}

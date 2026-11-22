@@ -27,7 +27,7 @@ async def main():
     await pg.click('button[data-act=logSet][data-i="0"]'); await pg.wait_for_timeout(300)
     await pg.click('button[data-act=dStep][data-i="1"][data-k=w][data-v="2.5"]'); await pg.wait_for_timeout(200)
     await pg.screenshot(path="s3.png", full_page=True)
-    await pg.click('div[data-act=showMusc][data-v=lat_raise_cable]'); await pg.wait_for_timeout(300)
+    await pg.click('div[data-act=exInfo][data-v=lat_raise_cable]'); await pg.wait_for_timeout(300)
     await pg.screenshot(path="s4.png")
     await pg.click("button[data-act=closeSheet]")
     await pg.click("button[data-act=finishW]"); await pg.wait_for_timeout(300)
