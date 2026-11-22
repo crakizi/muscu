@@ -144,6 +144,15 @@ async def main():
       check("batch « Mangé » → portions 3→2", bl[0] == 2)
       check("batch « Mangé » → journal +560 kcal", round(bl[1] - k0) == 560 and bl[2] == "Chili con carne", bl)
       await shot("08_batch.png")
+      # lot 2 Cuisine : une seule navigation, besoins repliés dans Plan, « Mangé » au jour affiché sans toucher au frigo
+      check("Cuisine : une seule rangée de 4 onglets", await pg.locator(".cztabs .ktab").count() == 4 and await pg.locator(".czsubs").count() == 0)
+      check("Plan : « Mes besoins » replié, accessible", await pg.locator("button[data-act=czFold][data-v=besoins]").count() == 1)
+      y = await pg.evaluate("addDays(todayKey(),-1)"); ny0 = await pg.evaluate(f"day('{y}').entries.length"); fr0 = await pg.evaluate("JSON.stringify(pantryList())")
+      await pg.evaluate(f"S.day='{y}'"); await pg.click("button[data-act=czBatchEat][data-v=bDemo1]"); await pg.wait_for_timeout(250)
+      bx = await ev(f"[day('{y}').entries.length, day('{y}').entries.slice(-1)[0].name, batchItems().find(b=>b.id==='bDemo1').left]")
+      check("batch « Mangé » au jour affiché (hier)", bx[0] == ny0 + 1 and bx[1] == "Chili con carne" and bx[2] == 1, bx)
+      check("batch « Mangé » ne retire rien du frigo", await pg.evaluate("JSON.stringify(pantryList())") == fr0)
+      await pg.evaluate(f"S.day=todayKey(); saveDay('{y}', Object.assign(clone(day('{y}')), {{entries: day('{y}').entries.slice(0,{ny0})}})); const d=clone(Store.get('batch')); d.items.find(b=>b.id==='bDemo1').left=2; Store.set('batch',d); render()")
       # noter un repas avec un aliment du frigo
       await pg.evaluate("S.tab='today'; render(); resetAdd('Déjeuner'); openSheet(addSheet); S.add.sel={name:'Blanc de poulet (cuit)',per100:DEMO.foods.poulet[1]}; S.add.g=150; renderSheet()")
       await pg.wait_for_timeout(100); await pg.fill("#gIn", "150"); await pg.click("button[data-act=selAdd]"); await pg.wait_for_timeout(250)
