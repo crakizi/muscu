@@ -1,0 +1,3 @@
+Modèle anatomique dérivé de BodyParts3D, © The Database Center for Life Science (DBCLS),
+licence Creative Commons Attribution-Share Alike 2.1 Japan (CC BY-SA 2.1 JP).
+http://lifesciencedb.jp/bp3d/ — Modifications : sélection de 214 pièces, simplification des maillages, quantification.

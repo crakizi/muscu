@@ -80,8 +80,12 @@ async def main():
       await pg.evaluate("S.day = addDays(todayKey(), -1); render()"); await pg.wait_for_timeout(100)
       ny = await pg.evaluate("day(addDays(todayKey(),-1)).entries.length"); n0 = await pg.evaluate("day(todayKey()).entries.length")
       await pg.evaluate("S.day = todayKey(); render()"); await pg.wait_for_timeout(100)
+      fz0 = await pg.evaluate("JSON.stringify(Store.get('fridge'))"); bf0 = await pg.evaluate("pantryList().find(i=>i.name==='bœuf haché 5%').qty")
       await pg.click(".nmore summary"); await pg.click("button[data-act=copyYesterday] >> nth=0"); await pg.wait_for_timeout(250)
       n1 = await pg.evaluate("day(todayKey()).entries.length"); check("« Copier hier » ajoute tout hier", ny > 0 and n1 == n0 + ny, f"{n0}+{ny}→{n1}")
+      bf1 = await pg.evaluate("pantryList().find(i=>i.name==='bœuf haché 5%').qty"); gy = await pg.evaluate("day(addDays(todayKey(),-1)).entries.filter(e=>e.name.startsWith('Bœuf')).reduce((t,e)=>t+e.g,0)")
+      check("« Copier hier » retire du frigo (bœuf d'hier)", gy > 0 and bf1 == bf0 - gy, f"{bf0}-{gy}→{bf1}")
+      await pg.evaluate(f"Store.set('fridge', {fz0})")  # frigo remis comme avant : la suite du scénario garde ses chiffres
       ids = await ev("day(todayKey()).entries.map(e=>e.id)"); check("copies avec des id neufs", len(set(ids)) == len(ids))
       await pg.evaluate("updDay(d=>d.entries=d.entries.slice(0," + str(n0) + ")); render()")
       # journée oubliée
@@ -116,7 +120,7 @@ async def main():
       await pg.click(f"[data-act=fridgeEdit][data-v='{fid}'] >> nth=0"); await pg.wait_for_timeout(150); await pg.click(f"button[data-act=fridgeDel][data-v='{fid}']"); await pg.wait_for_timeout(200)
       check("retrait du frigo", not await pg.evaluate("pantryHas('emmental râpé')") and await pg.evaluate("fridgeItems().length") == 21)
       # avec ce que j'ai
-      await pg.click("button[data-act=czSub][data-v=recettes]"); await pg.wait_for_timeout(300); txt = await pg.inner_text("#app")
+      await pg.click("button[data-act=kTab][data-v=recettes]"); await pg.wait_for_timeout(300); txt = await pg.inner_text("#app")
       check("recette 3/4 il manque oignon", "3/4 — il manque : oignon" in txt)
       check("recette 1/4 (lentilles chorizo)", "1/4 — il manque" in txt)
       check("omelette : emmental retiré → 2/3", "2/3 — il manque : emmental râpé" in txt)
@@ -124,17 +128,16 @@ async def main():
       await pg.click("button[data-act=czRecShop][data-v=rDemo2]"); await pg.wait_for_timeout(200)
       items = await ev("shopItems().map(s=>[s.name,s.qty,s.unit])"); check("« Ajouter les manquants » n'ajoute que l'oignon", items == [["oignon", 100, "g"]], items)
       # cocher → frigo + budget
-      await pg.click("button[data-act=czSub][data-v=budget]"); await pg.wait_for_timeout(200); b0 = await pg.inner_text("#app")
+      await pg.click("button[data-act=kTab][data-v=courses]"); await pg.click("button[data-act=czFold][data-v=budget]"); await pg.wait_for_timeout(200); b0 = await pg.inner_text("#app")
       check("budget : oignon prévu 0,16 €", "0,00 € achetés + 0,16 € sur la liste" in b0)
-      await pg.click("button[data-act=czSub][data-v=courses]"); await pg.wait_for_timeout(200)
       await pg.check("input[data-act=czShopChk] >> nth=0"); await pg.wait_for_timeout(300)
       o = await ev("pantryList().find(i=>i.name==='oignon')"); check("coché → oignon dans le frigo (100 g)", o and o["qty"] == 100, o)
       await shot("06_courses.png")
-      await pg.click("button[data-act=czSub][data-v=budget]"); await pg.wait_for_timeout(200); b1 = await pg.inner_text("#app")
-      check("budget recalculé (0,16 € achetés, reste 59,84 €)", "0,16 € achetés + 0,00 € sur la liste" in b1 and "reste 59,84 €" in b1)
+      await pg.wait_for_timeout(100); b1 = await pg.inner_text("#app")
+      check("budget recalculé (0,16 € achetés, reste 59,84 €)", "0,16 € achetés + 0,00 € sur la liste" in b1 and "reste 59,84 €" in b1, b1[b1.find("Budget"):b1.find("Budget")+400].replace(chr(10)," | "))
       await shot("07_budget.png")
       # batch
-      await pg.click("button[data-act=czSub][data-v=batch]"); await pg.wait_for_timeout(200)
+      await pg.click("button[data-act=kTab][data-v=plan]"); await pg.wait_for_timeout(200)
       k0 = await pg.evaluate("dayTotals(todayKey()).kcal")
       await pg.click("button[data-act=czBatchEat][data-v=bDemo1]"); await pg.wait_for_timeout(250)
       bl = await ev("[batchItems().find(b=>b.id==='bDemo1').left, dayTotals(todayKey()).kcal, day(todayKey()).entries.slice(-1)[0].name]")

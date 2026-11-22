@@ -168,3 +168,8 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .nmore-in{position:absolute;right:0;top:calc(100% + 4px);z-index:5;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--card,#fff);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.15);white-space:nowrap}
 .ndet{margin-top:8px}.ndet>summary{cursor:pointer}
 .wkrev .wkrev-l{display:grid;gap:3px;margin-top:6px;font-size:14px;cursor:pointer}
+/* ===================== Cuisine (lot 2) : une seule navigation ===================== */
+.cztabs .ktab{position:relative}
+.cztabs .czbadge{position:absolute;top:6px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--acc);color:#fff;font-size:11px;line-height:18px}
+.cztabs .ktab.on .czbadge{background:#fff;color:var(--acc)}
+.czfold{display:flex;align-items:center}

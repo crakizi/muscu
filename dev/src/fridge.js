@@ -44,13 +44,9 @@ function pantryHas(nom) { return !!fridgeFind(nom); }
 function pantryUse(nom, qte) { return fridgeConsume(nom, +qte || 0); }
 Object.assign(window, { pantryList, pantryHas, pantryUse });
 
-const CZ_SUBS = [["frigo", "🧊 Frigo"], ["courses", "🛒 Courses"], ["recettes", "🍲 Avec ce que j'ai"], ["batch", "🍱 Batch"], ["budget", "💶 Budget"]];
 function viewFridge() {
-  const items = fridgeItems(); const sub = S.cz || "frigo";
-  const cnt = { courses: typeof shopItems === "function" ? shopItems().filter(x => !x.done).length : 0, batch: typeof batchItems === "function" ? batchItems().reduce((t, b) => t + (b.left > 0 ? b.left : 0), 0) : 0 };
-  const subs = `<div class="chips czsubs" style="margin-bottom:10px">${CZ_SUBS.map(([k, l]) => `<button class="chip ${sub === k ? "on" : ""}" data-act="czSub" data-v="${k}">${l}${cnt[k] ? ` <b>${cnt[k]}</b>` : ""}</button>`).join("")}</div>`;
-  const head = `${statusBanner()}<div class="row between"><h1>Mon frigo</h1></div>${subs}`;
-  if (sub !== "frigo" && typeof cuisineSubHTML === "function") return head + cuisineSubHTML(sub);
+  const items = fridgeItems();
+  const head = ""; // les onglets Cuisine sont dessinés par viewKitchen (cuisine2.js)
   const soon = items.filter(expSoon).sort((a, b) => expDays(a) - expDays(b));
   const soonCard = soon.length ? `<div class="card czsoon"><h3>⏳ À finir vite <span class="mut sm">${soon.length}</span></h3>${soon.map(fridgeRow).join("")}<button class="sec small" style="margin-top:6px" data-act="czSub" data-v="recettes">Recettes qui les utilisent</button></div>` : "";
   const zones = Object.keys(FRIDGE_ZONES).map(z => {
@@ -59,10 +55,8 @@ function viewFridge() {
   }).join("");
   return `${head}${soonCard}
     <div id="scene3d" style="height:60vh;min-height:380px;border-radius:16px;overflow:hidden;margin-bottom:10px;background:var(--chip)"></div>
-    <p class="xs mut c" style="margin-top:-4px">Fais glisser pour tourner, pince pour zoomer, touche un aliment pour le modifier.</p>
-    <div class="row" style="margin-bottom:10px"><button class="grow" data-act="fridgeAddOpen">+ Ajouter</button><button class="sec grow" data-act="fridgeShop">Courses (IA)</button></div>
-    <button class="sec" style="width:100%;margin-bottom:12px" data-act="aiFridge">👨‍🍳 Recette avec ce que j'ai</button>
-    ${zones || `<div class="card"><p class="mut sm">Ton frigo est vide. Ajoute ce que tu as (même partiellement) : quand tu manges un aliment présent dans le frigo, il est retiré automatiquement.</p></div>`}`;
+    <div class="row" style="margin-bottom:12px"><button class="grow" data-act="fridgeAddOpen">+ Ajouter</button><button class="sec grow" data-act="fridgeShop">🧾 Ranger mes courses</button></div>
+    ${zones || `<div class="card"><p class="mut sm">Frigo vide. Ce que tu manges et qui y est en sera retiré tout seul.</p></div>`}`;
 }
 function fridgeItemSheet(id) {
   return () => {
