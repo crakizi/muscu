@@ -40,7 +40,7 @@ async def main():
     ok(not red, "aucun anneau rouge")
     await pg.evaluate("updDay(d=>d.entries=d.entries.filter(e=>e.name!=='Pizza')); render()")
     # objectif par repas
-    await pg.click("button[data-act=byMeal][data-v='1']"); await pg.wait_for_timeout(200)
+    await pg.click(".nmore summary"); await pg.click("button[data-act=byMeal][data-v='1']"); await pg.wait_for_timeout(200)
     h = await pg.locator(".mhint").count(); ok(h >= 2, f"objectif sous les repas vides ({h})")
     await pg.evaluate("window.scrollTo(0, document.querySelector('.mhint').getBoundingClientRect().top + scrollY - 400)"); await pg.wait_for_timeout(200)
     await pg.screenshot(path=SH+"2_par_repas.png")

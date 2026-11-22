@@ -138,32 +138,25 @@ const NUT_ACT = {
 // Poids de la semaine = moyenne des pesées du lundi au dimanche (jusqu'à 7), plus fiable qu'une seule pesée.
 function weekWeights(ws0) { const w = []; for (let i = 0; i < 7; i++) { const v = day(addDays(ws0, i)).weight; if (v) w.push(+v); } return { n: w.length, avg: w.length ? r1(w.reduce((a, b) => a + b, 0) / w.length) : null }; }
 function weekIntake(ws0) { const k = []; for (let i = 0; i < 7; i++) { const x = addDays(ws0, i); const t = dayTotals(x); if (t.kcal >= 800 && !day(x).incomplete) k.push(t.kcal); } return { n: k.length, avg: k.length ? r0(k.reduce((a, b) => a + b, 0) / k.length) : null }; }
-function checkinData() {
-  const cur = weekKey(), last = addDays(cur, -7), prev = addDays(cur, -14);
-  const W = weekWeights(last), Wp = weekWeights(prev), I = weekIntake(last);
-  const T = targets(), A = Store.get("adjust", {}) || {}, ad = adaptiveTDEE(), p = profile(), G = GOALS[p.goal];
-  const dW = W.avg != null && Wp.avg != null ? r1(W.avg - Wp.avg) : null;
-  const why = [];
-  if (!ad.ok) why.push(`Pas encore assez de données pour mesurer ta vraie dépense (il faut au moins 10 jours notés et 4 pesées sur 4 semaines ; tu en as ${ad.days} et ${ad.weighs}). Ton objectif vient pour l'instant de la formule.`);
-  else {
-    why.push(`Sur les 4 dernières semaines tu as mangé en moyenne <b>${r0(ad.avgIntake)} kcal/j</b> et ton poids tendance a bougé de <b>${ad.slopeWeek >= 0 ? "+" : ""}${r1(ad.slopeWeek)} kg/semaine</b> → ta dépense réelle est d'environ <b>${r0(ad.tdee)} kcal/j</b>.`);
-    why.push(`Objectif « ${esc(G.label)} » = dépense ${G.factor >= 0 ? "+" : ""}${Math.round(G.factor * 100)} % → <b>${T.kcal} kcal/j</b>.`);
-  }
-  if (A.prev && A.kcal && A.week === cur) { const d = A.kcal - A.prev; why.push(d === 0 ? "Objectif inchangé par rapport à la semaine dernière." : `C'est <b>${d > 0 ? "+" : ""}${d} kcal</b> par rapport à la semaine dernière (${A.prev} kcal).`); }
-  return { week: last, W, Wp, dW, I, T, why };
+// Bilan de la semaine : une carte courte et neutre, 3 lignes (poids tendance, apport moyen, objectif + pourquoi).
+function weekReview() {
+  const cur = weekKey(), last = addDays(cur, -7);
+  const w1 = weightTrendAt(addDays(cur, -1)).trend, w0 = weightTrendAt(addDays(last, -1)).trend, n = weekWeights(last).n;
+  const I = weekIntake(last), T = targets(), A = Store.get("adjust", {}) || {}, ad = adaptiveTDEE(), G = GOALS[profile().goal];
+  const diff = A.prev && A.kcal && A.week === cur ? A.kcal - A.prev : null;
+  const pct = Math.round(G.factor * 100);
+  const why = ad.ok ? `dépense ≈ ${r0(ad.tdee)}${pct ? ` ${pct > 0 ? "+" : "−"} ${Math.abs(pct)} %` : ""}` : "calculé par formule (peu de pesées)";
+  return { week: last, n, I, T, diff, why, w1, dW: w1 != null && w0 != null ? r1(w1 - w0) : null };
 }
 function checkinCardHTML() {
-  const seen = Store.get("checkinSeen", {}) || {}; const cur = weekKey();
-  if (seen.week === cur) return "";
-  const C = checkinData(); if (!C.W.n && !C.I.n) return "";
-  return `<div class="card" style="border:2px solid var(--acc)"><div class="row between"><b>📋 Check-in de la semaine</b><button class="ghost small" data-act="checkinSeen">OK</button></div>
-    <div class="row" style="gap:14px;margin:8px 0;flex-wrap:wrap">
-      <div><div class="xs mut">Poids moyen (${C.W.n}/7 pesées)</div><div class="big" style="font-size:22px">${C.W.avg ?? "—"} kg</div>${C.dW != null ? `<div class="xs">${C.dW > 0 ? "+" : ""}${C.dW} kg vs semaine d'avant</div>` : ""}</div>
-      <div><div class="xs mut">Mangé en moyenne (${C.I.n} j)</div><div class="big" style="font-size:22px">${C.I.avg ?? "—"}</div><div class="xs">kcal / jour</div></div>
-      <div><div class="xs mut">Nouvel objectif</div><div class="big" style="font-size:22px">${C.T.kcal}</div><div class="xs">kcal · P ${C.T.p} g</div></div></div>
-    <p class="sm" style="margin:4px 0">${C.why.join(" ")}</p>
-    ${C.W.n < 4 ? `<p class="xs mut">Astuce : pèse-toi chaque matin au réveil, à jeun, après être passé aux toilettes. Plus tu as de pesées dans la semaine (jusqu'à 7), plus la moyenne est fiable.</p>` : ""}
-    <button class="sec small" data-act="checkinHist">Historique des check-ins</button></div>`;
+  const seen = Store.get("checkinSeen", {}) || {}; if (seen.week === weekKey()) return "";
+  const R = weekReview(); if (!R.n && !R.I.n) return "";
+  const sg = v => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v);
+  return `<div class="card wkrev"><div class="row between"><b class="sm">Bilan de la semaine</b><button class="ghost small" data-act="checkinSeen" aria-label="Fermer">✕</button></div>
+    <div class="wkrev-l" data-act="checkinHist">
+      <div>Poids tendance <b>${R.w1 != null ? R.w1 + " kg" : "—"}</b>${R.dW != null ? ` <span class="mut">${sg(R.dW)} kg</span>` : ""}</div>
+      <div>Apport moyen <b>${R.I.avg != null ? R.I.avg + " kcal" : "—"}</b> <span class="mut">sur ${R.I.n} j</span></div>
+      <div>Objectif <b>${R.T.kcal} kcal</b>${R.diff ? ` <span class="mut">(${sg(R.diff)})</span>` : ""} <span class="mut">· ${R.why}</span></div></div></div>`;
 }
 function checkinHistSheet() {
   const cur = weekKey(); const A = Store.get("adjust", {}) || {}; const hist = Object.fromEntries((A.hist || []).concat(A.kcal ? [[A.week, A.kcal]] : []));
