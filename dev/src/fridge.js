@@ -24,19 +24,40 @@ function fridgeAdd(list) {
   const items = clone(fridgeDoc().items || []);
   list.forEach(n => {
     const ex = items.find(i => normN(i.name) === normN(n.name) && i.unit === n.unit && (i.zone || "frigo") === (n.zone || "frigo"));
-    if (ex) ex.qty += n.qty; else items.push(Object.assign({ id: uid(), added: Date.now(), zone: "frigo", unit: "g" }, n, { cat: n.cat || guessCat(n.name) }));
+    if (ex) { ex.qty += n.qty; if (n.exp && (!ex.exp || n.exp < ex.exp)) ex.exp = n.exp; } else items.push(Object.assign({ id: uid(), added: Date.now(), zone: "frigo", unit: "g" }, n, { cat: n.cat || guessCat(n.name) }));
   });
   saveFridgeItems(items);
 }
 function fridgeText() { return fridgeItems().map(i => `${i.name} (${qtyTxt(i)}, ${FRIDGE_ZONES[i.zone || "frigo"]})`).join(", "); }
 
+// ---- péremption (date facultative « exp » sur chaque article, AAAA-MM-JJ) ----
+function expDays(it) { if (!it || !it.exp) return null; const d = parseKey(it.exp), t = parseKey(todayKey()); return Math.round((d - t) / 864e5); }
+const expSoon = it => { const d = expDays(it); return d != null && d <= 3; };
+const expTxt = it => { const d = expDays(it); return d == null ? "" : d < 0 ? "périmé" : d === 0 ? "aujourd'hui" : d === 1 ? "demain" : `dans ${d} j`; };
+function fridgeRow(i) {
+  const e = expTxt(i);
+  return `<div class="entry"><div data-act="fridgeEdit" data-v="${i.id}" style="flex:1"><div>${esc(i.name)}${e ? ` <span class="tag${expSoon(i) ? " soon" : ""}">${e}</span>` : ""}</div><div class="xs mut">${qtyTxt(i)} · ${FRIDGE_CATS[i.cat] || ""}</div></div><button class="small sec" data-act="fridgeEat" data-v="${i.id}">Manger</button></div>`;
+}
+// ---- API frigo pour les autres modules ----
+function pantryList() { return fridgeItems().map(i => ({ id: i.id, name: i.name, qty: i.qty, unit: i.unit || "g", gPerPc: i.gPerPc || null, zone: i.zone || "frigo", cat: i.cat || "", exp: i.exp || null, daysLeft: expDays(i) })); }
+function pantryHas(nom) { return !!fridgeFind(nom); }
+function pantryUse(nom, qte) { return fridgeConsume(nom, +qte || 0); }
+Object.assign(window, { pantryList, pantryHas, pantryUse });
+
+const CZ_SUBS = [["frigo", "🧊 Frigo"], ["courses", "🛒 Courses"], ["recettes", "🍲 Avec ce que j'ai"], ["batch", "🍱 Batch"], ["budget", "💶 Budget"]];
 function viewFridge() {
-  const items = fridgeItems();
+  const items = fridgeItems(); const sub = S.cz || "frigo";
+  const cnt = { courses: typeof shopItems === "function" ? shopItems().filter(x => !x.done).length : 0, batch: typeof batchItems === "function" ? batchItems().reduce((t, b) => t + (b.left > 0 ? b.left : 0), 0) : 0 };
+  const subs = `<div class="chips czsubs" style="margin-bottom:10px">${CZ_SUBS.map(([k, l]) => `<button class="chip ${sub === k ? "on" : ""}" data-act="czSub" data-v="${k}">${l}${cnt[k] ? ` <b>${cnt[k]}</b>` : ""}</button>`).join("")}</div>`;
+  const head = `${statusBanner()}<div class="row between"><h1>Mon frigo</h1></div>${subs}`;
+  if (sub !== "frigo" && typeof cuisineSubHTML === "function") return head + cuisineSubHTML(sub);
+  const soon = items.filter(expSoon).sort((a, b) => expDays(a) - expDays(b));
+  const soonCard = soon.length ? `<div class="card czsoon"><h3>⏳ À finir vite <span class="mut sm">${soon.length}</span></h3>${soon.map(fridgeRow).join("")}<button class="sec small" style="margin-top:6px" data-act="czSub" data-v="recettes">Recettes qui les utilisent</button></div>` : "";
   const zones = Object.keys(FRIDGE_ZONES).map(z => {
     const list = items.filter(i => (i.zone || "frigo") === z); if (!list.length) return "";
-    return `<div class="card"><h3>${FRIDGE_ZONES[z]} <span class="mut sm">${list.length}</span></h3>${list.map(i => `<div class="entry"><div data-act="fridgeEdit" data-v="${i.id}" style="flex:1"><div>${esc(i.name)}</div><div class="xs mut">${qtyTxt(i)} · ${FRIDGE_CATS[i.cat] || ""}</div></div><button class="small sec" data-act="fridgeEat" data-v="${i.id}">Manger</button></div>`).join("")}</div>`;
+    return `<div class="card"><h3>${FRIDGE_ZONES[z]} <span class="mut sm">${list.length}</span></h3>${list.map(fridgeRow).join("")}</div>`;
   }).join("");
-  return `${statusBanner()}<div class="row between"><h1>Mon frigo</h1></div>
+  return `${head}${soonCard}
     <div id="scene3d" style="height:60vh;min-height:380px;border-radius:16px;overflow:hidden;margin-bottom:10px;background:var(--chip)"></div>
     <p class="xs mut c" style="margin-top:-4px">Fais glisser pour tourner, pince pour zoomer, touche un aliment pour le modifier.</p>
     <div class="row" style="margin-bottom:10px"><button class="grow" data-act="fridgeAddOpen">+ Ajouter</button><button class="sec grow" data-act="fridgeShop">Courses (IA)</button></div>
@@ -52,6 +73,7 @@ function fridgeItemSheet(id) {
       <div class="grow"><label>g par pièce</label><input id="fiP" type="number" inputmode="decimal" value="${it.gPerPc || ""}"></div></div>
       <div class="row"><div class="grow"><label>Rangement</label><select id="fiZ">${Object.entries(FRIDGE_ZONES).map(([k, v]) => `<option value="${k}" ${(it.zone || "frigo") === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>
       <div class="grow"><label>Catégorie</label><select id="fiC">${Object.entries(FRIDGE_CATS).map(([k, v]) => `<option value="${k}" ${it.cat === k ? "selected" : ""}>${v}</option>`).join("")}</select></div></div>
+      <label>À consommer avant (facultatif)</label><input id="fiE" type="date" value="${it.exp || ""}">
       <div class="row" style="margin-top:12px"><button class="danger grow" data-act="fridgeDel" data-v="${id}">Supprimer</button><button class="sec grow" data-act="fridgeEat" data-v="${id}">Manger</button><button class="grow" data-act="fridgeSave" data-v="${id}">Enregistrer</button></div>`;
   };
 }
@@ -84,6 +106,7 @@ function fridgeQtySheet(food) {
     <div><label>Unité</label><select id="fqU"><option value="g" ${food.unit ? "" : "selected"}>g</option><option value="pc" ${food.unit ? "selected" : ""}>pièces</option></select></div>
     <div class="grow"><label>g par pièce</label><input id="fqP" type="number" inputmode="decimal" value="${food.unit || ""}"></div></div>
     <label>Rangement</label><select id="fqZ">${Object.entries(FRIDGE_ZONES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>
+    <label>À consommer avant (facultatif)</label><input id="fqE" type="date">
     <button style="width:100%;margin-top:10px" data-act="fridgeQtyGo">Ajouter</button>`;
 }
 function fridgeShopSheet() {

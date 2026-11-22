@@ -14,7 +14,7 @@ function recipeAsFood(r) {
 function recipesTabHTML() {
   const rs = recipes();
   return `<button class="sec" style="width:100%;margin-bottom:10px" data-act="recNew">+ Créer une recette</button>
-    ${rs.length ? rs.map(r => { const f = recipeAsFood(r); return `<div class="entry">${dishImg(r.name, { ings: (r.ings || []).map(i => i.name) })}<div class="grow" data-act="recPick" data-v="${r.id}"><div class="b">${esc(r.name)}</div><div class="xs mut">${r.portions || 1} portion(s) · ${r0(f.per100.kcal * f.unit / 100)} kcal et P ${r0(f.per100.p * f.unit / 100)} g par portion</div></div><button class="ghost small" data-act="recEdit" data-v="${r.id}">✎</button></div>`; }).join("")
+    ${rs.length ? rs.map(r => { const f = recipeAsFood(r); return `<div class="entry">${dishImg(r.name, { ings: (r.ings || []).map(i => i.name) })}<div class="grow" data-act="recPick" data-v="${r.id}"><div class="b">${esc(r.name)}</div><div class="xs mut">${r.portions || 1} portion(s) · ${r0(f.per100.kcal * f.unit / 100)} kcal et P ${r0(f.per100.p * f.unit / 100)} g par portion${typeof czAvail === "function" ? (A => A.n ? ` · ${A.have}/${A.n} au frigo` : "")(czAvail(r.ings)) : ""}</div></div><button class="ghost small" data-act="recEdit" data-v="${r.id}">✎</button></div>`; }).join("")
       : `<p class="mut sm">Aucune recette. Crée tes plats habituels une fois (ex. ton batch de riz-poulet), puis ajoute-les en 1 clic en choisissant le nombre de portions.</p>`}`;
 }
 function recipePortionSheet(id) {

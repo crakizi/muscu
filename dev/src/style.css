@@ -148,3 +148,5 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .dimg-card{width:100%;aspect-ratio:16/10;border-radius:14px;margin-top:4px}
 .meal-card{padding:10px 0 4px;border-top:1px solid var(--line)}.meal-card:first-of-type{border-top:0}
 .dimg-big{max-height:70vh}
+
+.tag.soon{background:var(--acc2);color:var(--acc);font-weight:600}.czsubs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.czsubs .chip{white-space:nowrap;flex:none}.czgauge>i:last-child{border-radius:0 6px 6px 0}
