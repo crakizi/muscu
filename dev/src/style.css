@@ -148,3 +148,12 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .dimg-card{width:100%;aspect-ratio:16/10;border-radius:14px;margin-top:4px}
 .meal-card{padding:10px 0 4px;border-top:1px solid var(--line)}.meal-card:first-of-type{border-top:0}
 .dimg-big{max-height:70vh}
+/* ---- nutrition lot 1 ---- */
+:root{--kc:#0d9488}html.dark{--kc:#2dd4bf}
+.ring .in .big.over,.mring .over{color:var(--mut)}
+.mrings{display:flex;gap:2px;justify-content:space-between}.mring{text-align:center;flex:1}
+.ring.sm2{width:60px;height:60px;margin:0 auto 2px}.ring.sm2 .in{flex-direction:row;gap:1px;align-items:baseline;justify-content:center;padding-top:20px}.ring.sm2 b{font-size:14px}.mring{min-width:0}.mring .xs{white-space:nowrap}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.dtype{margin:2px 0 6px}.dtpill{background:var(--chip);color:var(--txt);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600}
+.mhint{padding:4px 2px;opacity:.85}.pgoal{gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}.pgoal input{width:70px;padding:6px}
+.qagrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}

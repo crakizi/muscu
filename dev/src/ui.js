@@ -68,18 +68,19 @@ function macroBar(label, v, max, color) {
   return `<div class="grow"><div class="row between xs"><span class="b">${label}</span><span class="mut">${r0(v)} / ${max} g</span></div><div class="bar"><i style="width:${Math.min(100, max ? v / max * 100 : 0)}%;background:${v > max * 1.1 ? "var(--red)" : color}"></i></div></div>`;
 }
 function viewToday() {
-  const k = S.day, d = day(k), t = dayTotals(k), T = targets();
+  const k = S.day, d = day(k), t = dayTotals(k), T = Object.assign(targets(), typeof dayTargets === "function" ? dayTargets(k) : {});
   const left = T.kcal - t.kcal;
   const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
   const mini = (lab, v, ref, max) => `<span class="${max ? (v > ref ? "tag red" : "tag") : (v >= ref ? "tag grn" : "tag")}">${lab} ${r1(v)}/${ref} g</span>`;
-  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}">${e.src === "plan" || e.src === "recette" ? dishImg(e.name, { size: "mini" }) : ""}<div class="grow"><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
+  const entryRow = e => `<div class="entry" data-act="editEntry" data-v="${e.id}">${e.src === "plan" || e.src === "recette" ? dishImg(e.name, { size: "mini" }) : ""}<div class="grow"><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.src === "rapide" ? "ajout rapide" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}${e.src === "ia" ? " · estimé IA" : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
   const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
   const groups = S.byMeal ? ["", ...MEALS].map(m => [m, all.filter(e => (e.meal || "") === m)]).filter(([m, es]) => es.length) : [];
   const meals = `<div class="card"><div class="row between"><h3 style="margin:0">Ce que j'ai mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px"><button class="small sec" data-act="copyYesterday" title="Copier tout ce que j'ai mangé hier">↺ Copier hier</button><button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
     ${all.length ? `<div class="row xs" style="margin:8px 0 2px;gap:6px"><button class="chip ${S.byMeal ? "" : "on"}" data-act="byMeal" data-v="0">Tout</button><button class="chip ${S.byMeal ? "on" : ""}" data-act="byMeal" data-v="1">Par repas</button>${all.length ? `<button class="ghost small" style="margin-left:auto" data-act="favMeal" data-v="__all">★ Favori</button>` : ""}</div>` : ""}
     ${!all.length && (day(addDays(k, -1)).entries || []).length ? `<button class="sec" style="width:100%;margin:6px 0" data-act="copyYesterday">↺ Même chose qu'hier (${r0(dayTotals(addDays(k, -1)).kcal)} kcal) : tout copier</button>` : ""}
     ${!all.length && k <= todayKey() ? `<button class="ghost small" style="width:100%;margin:2px 0 4px" data-act="estimOpen">🤷 Journée oubliée ? Mets une estimation de tes kcal de la journée</button>` : ""}
-    ${!all.length ? `<p class="mut sm">${k > todayKey() ? "Jour à venir : prépare tes repas à l'avance, ils seront comptés ce jour-là." : "Rien pour l'instant."} Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("") : all.map(entryRow).join("")}
+    ${!all.length ? `<p class="mut sm">${k > todayKey() ? "Jour à venir : prépare tes repas à l'avance, ils seront comptés ce jour-là." : "Rien pour l'instant."} Touche <b>Scanner</b> en bas, ou « + Ajouter ». Pas besoin de choisir un repas.</p>` : S.byMeal ? (typeof mealGroupsHTML === "function" ? mealGroupsHTML(k, all, entryRow, T) : groups.map(([m, es]) => `<div class="xs b mut" style="margin-top:10px">${esc(mealLabel(m))} · ${r0(es.reduce((s, e) => s + e.n.kcal, 0))} kcal</div>` + es.map(entryRow).join("")).join("")) : all.map(entryRow).join("")}
+    ${!S.byMeal && typeof mealHintLine === "function" ? mealHintLine(k, T) : ""}
   </div>`;
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   const h = new Date().getHours(); const hello = h < 6 ? "Bonne nuit" : h < 13 ? "Bonjour" : h < 19 ? "Salut" : "Bonsoir";
@@ -92,12 +93,13 @@ function viewToday() {
   <div class="qa"><button data-act="openAdd" data-v=""><span>🍽️</span>Aliment</button><button data-act="tab" data-v="workout"><span>🏋️</span>Séance</button><button data-act="quickWeight"><span>⚖️</span>Poids</button><button data-act="tab" data-v="fridge"><span>🧊</span>Frigo</button></div>` : ""}
 ${weekStripHTML(k)}
   ${k > todayKey() ? "" : dailyStripHTML(d)}
-  <div class="card" style="margin-top:4px"><div class="row" style="gap:14px">
+  ${typeof dayTypePillHTML === "function" ? dayTypePillHTML(k) : ""}
+  <div class="card" style="margin-top:4px">${typeof remainHTML === "function" ? remainHTML(t, T) : `<div class="row" style="gap:14px">
     <div class="ring">${ring(t.kcal, T.kcal, "var(--acc)")}<div class="in"><div class="big">${r0(Math.abs(left))}</div><div class="xs mut">${left >= 0 ? "kcal restantes" : "kcal en trop"}</div></div></div>
     <div class="grow" style="display:flex;flex-direction:column;gap:9px">
       <div class="xs mut">${r0(t.kcal)} / ${T.kcal} kcal${t.actKcal ? ` · sport +${r0(t.actKcal)} kcal` : ""}</div>
       ${macroBar("Protéines", t.p, T.p, "var(--p)")}${macroBar("Glucides", t.c, T.c, "var(--c)")}${macroBar("Lipides", t.f, T.f, "var(--f)")}
-    </div></div>
+    </div></div>`}
     <div class="chips" style="margin-top:10px">${mini("Fibres", t.fib, 30)}${mini("Sucres", t.sugar, sugarMax, 1)}${mini("Sel", t.salt, 5, 1)}${mini("Saturés", t.satfat, satMax, 1)}</div>
     ${Object.keys(t.micro).length ? `<details style="margin-top:8px"><summary class="xs mut">Micronutriments (estimés pour les aliments analysés par l'IA)</summary><div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag ${t.micro[m] >= ref ? "grn" : ""}">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div><p class="xs mut">Repères EFSA pour un homme adulte.</p></details>` : ""}
     <div class="row" style="margin-top:10px;gap:6px"><button class="chip" data-act="aiFinish">💡 Que manger ensuite ?</button><button class="chip" data-act="aiFridge">🧊 Recette avec mon frigo</button></div>
@@ -110,7 +112,7 @@ ${weekStripHTML(k)}
 function dailyStripHTML(d) {
   const p = profile(); const sport = (d.acts || []).reduce((t, a) => t + a.min, 0);
   const pill = (ico, val, ph) => `<button class="dpill ${val ? "" : "empty"}" data-act="openDaily">${ico} ${val || ph}</button>`;
-  return `<div class="dstrip">${pill("⚖️", d.weight ? r1(d.weight) + " kg" : "", "Poids")}${pill("👣", d.steps ? d.steps.toLocaleString("fr-FR") : "", "Pas")}${pill("😴", d.sleep ? d.sleep + " h" : "", "Sommeil")}${pill("⚽", sport ? sport + " min" : "", "Sport")}${p.moodTrack ? pill("🙂", d.mood ? d.mood + "/5" : "", "Humeur") : ""}</div>`;
+  return `<div class="dstrip">${pill("⚖️", typeof weightPillVal === "function" ? weightPillVal(d, S.day) : d.weight ? r1(d.weight) + " kg" : "", "Poids")}${pill("👣", d.steps ? d.steps.toLocaleString("fr-FR") : "", "Pas")}${pill("😴", d.sleep ? d.sleep + " h" : "", "Sommeil")}${pill("⚽", sport ? sport + " min" : "", "Sport")}${p.moodTrack ? pill("🙂", d.mood ? d.mood + "/5" : "", "Humeur") : ""}</div>`;
 }
 function dailySheet() {
   const d = day(S.day); const p = profile();
@@ -147,7 +149,7 @@ function LS_get(k) { try { return localStorage.getItem(k); } catch (e) { return 
 // ---------- Feuille d'ajout ----------
 function addSheet() {
   const A = S.add;
-  const tabs = [["search", "Rechercher"], ["scan", "📷 Scanner"], ["photo", "Photo du plat"], ["ia", "Décrire (IA)"], ["recipes", "Recettes"], ["fav", "Favoris"]];
+  const tabs = [["search", "Rechercher"], ["scan", "📷 Scanner"], ["photo", "Photo du plat"], ["ia", "Décrire (IA)"], ["recipes", "Recettes"], ["fav", "Favoris"], ["quick", "⚡ Rapide"]];
   let body = "";
   if (A.items) body = pendingItemsHTML();
   else if (A.sel) body = selFoodHTML();
@@ -177,6 +179,7 @@ function addSheet() {
         <label class="btn" style="display:block;text-align:center;background:var(--chip);color:var(--txt)">📸 Photo du produit et/ou de ses valeurs nutritionnelles<input type="file" accept="image/*" multiple data-file="prodphotos" style="display:none"></label>
         <p class="xs mut c" style="margin:6px 0 14px">1 à 3 photos : l'avant du paquet, le tableau « Información nutricional »… L'IA lit le nom et les valeurs.</p>
         <div class="row"><label class="btn sec small" style="background:var(--chip);color:var(--txt);white-space:nowrap">Photo du code<input type="file" accept="image/*" capture="environment" data-file="barcode" style="display:none"></label><input id="bcManual" inputmode="numeric" placeholder="ou tape le code"><button class="small sec" data-act="bcManual">OK</button></div>`;
+  } else if (A.tab === "quick" && typeof quickAddHTML === "function") { body = quickAddHTML();
   } else if (A.tab === "recipes") { body = recipesTabHTML();
   } else if (A.tab === "fav") {
     const favs = Store.get("favs", { items: [] }).items || [];
@@ -198,6 +201,7 @@ function selFoodHTML() {
     <label>Portion</label><div class="chips">${ports.map(([l, v]) => `<button class="chip ${+S.add.g === v ? "on" : ""}" data-act="gSet" data-v="${v}">${esc(l)} <span class="xs" style="opacity:.7">${v} g</span></button>`).join("")}</div>
     <label>Quantité (g)</label><div class="stepper"><button data-act="gStep" data-v="-10">−</button><input id="gIn" type="number" inputmode="decimal" value="${g}" data-input="g"><button data-act="gStep" data-v="10">+</button></div>
     <div class="row xs" style="gap:6px;margin-top:6px"><span class="mut">Nombre :</span>${[0.5, 1, 2, 3].map(k => `<button class="chip" data-act="gMul" data-v="${k}">×${k}</button>`).join("")}</div>
+    ${typeof portionGoalHTML === "function" ? portionGoalHTML(f) : ""}
     <div class="card" style="margin-top:10px" id="selN"><b>${r0(n.kcal)} kcal</b> · P ${r1(n.p)} g · G ${r1(n.c)} g · L ${r1(n.f)} g</div>
     <div class="row"><button class="sec grow" data-act="selBack">Retour</button><button class="grow" data-act="selAdd">Ajouter</button></div>`;
 }
@@ -358,7 +362,7 @@ function viewProgress() {
   const recs = exIds.map(id => { const h = exerciseHistory(id); const best = h.flatMap(x => x.sets).reduce((b, s) => !b || e1rm(s) > e1rm(b) ? s : b, null); return { id, best }; }).filter(x => x.best);
   return `${statusBanner()}<h1>Progrès</h1>
     ${bilanCardHTML()}
-    <div class="card"><h2>Poids</h2><canvas id="chW" height="180"></canvas><p class="xs mut">Points = pesées · ligne = tendance lissée (moins sensible à l'eau et au sel).</p></div>
+    <div class="card"><h2>Poids</h2>${typeof weightLineHTML === "function" ? weightLineHTML() : ""}<canvas id="chW" height="180"></canvas><p class="xs mut">Points = pesées · ligne = tendance lissée (moins sensible à l'eau et au sel).</p></div>
     <div class="card"><h2>Calories (14 derniers jours)</h2><canvas id="chK" height="180"></canvas></div>
     <div class="card"><h2>Progression par exercice</h2>${exIds.length ? `<select data-act="progEx">${exIds.map(id => `<option value="${id}" ${id === S.progEx ? "selected" : ""}>${esc(getEx(id).name)}</option>`).join("")}</select><canvas id="chE" height="180" style="margin-top:8px"></canvas><p class="xs mut">1RM estimé (formule d'Epley) de ta meilleure série + charge max de chaque séance.</p>` : `<p class="mut sm">Enregistre des séances pour voir ta progression.</p>`}</div>
     <div class="card"><h2>Volume des 7 derniers jours</h2><p class="xs mut">Séries dures par muscle (secondaire = ½). Repère des études : ~10-20 séries/semaine pour l'hypertrophie (Schoenfeld 2017, Pelland 2024).</p>
@@ -449,7 +453,7 @@ function viewProfile() {
   const nDays = Store.ids("d-").filter(k => (Store.get(k)?.entries || []).length).length;
   return `${statusBanner()}<h1>Profil</h1>
     <div class="card profhead"><div class="row" style="gap:14px;align-items:center"><div class="avatar">V</div><div><div class="b" style="font-size:20px">Vuthy</div>
-      <div class="xs mut">${p.age || "?"} ans · ${p.height || "?"} cm · ${wk.avg ?? r1(latestWeight())} kg${wk.avg ? " (moyenne de la semaine)" : ""}</div><div class="xs">🎯 ${esc(GOALS[p.goal].label)} · ${T.kcal} kcal</div></div></div>
+      <div class="xs mut">${p.age || "?"} ans · ${p.height || "?"} cm · ${typeof weightTrendAt === "function" && weightTrendAt().trend != null ? `${weightTrendAt().trend} kg tendance · pesée ${r1(weightTrendAt().raw)}` : `${wk.avg ?? r1(latestWeight())} kg${wk.avg ? " (moyenne de la semaine)" : ""}`}</div><div class="xs">🎯 ${esc(GOALS[p.goal].label)} · ${T.kcal} kcal</div></div></div>
       <div class="pstats"><div><b>${nW}</b><span>séances</span></div><div><b>${nDays}</b><span>jours notés</span></div><div><b>🔥 ${typeof streakDays === "function" ? streakDays() : 0}</b><span>d'affilée</span></div><div><b>${nB}</b><span>bilans</span></div></div>
       <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:10px"><button class="sec small" data-act="blOpen">📸 Bilan de la semaine</button><button class="sec small" data-act="checkinHist">📋 Check-ins</button><button class="sec small" data-act="quickWeight">⚖️ Mon poids</button></div></div>
     <div class="card"><h2>Objectif</h2><div class="chips">${Object.entries(GOALS).map(([k, g]) => `<button class="chip ${p.goal === k ? "on" : ""}" data-act="setGoal" data-v="${k}">${g.label}</button>`).join("")}</div>
@@ -461,6 +465,7 @@ function viewProfile() {
       ${f("manualKcal", "Kcal manuelles (vide = auto)", p.manualKcal, "10")}${f("increment", "Cran de charge (kg)", p.increment, "0.5")}</div>
       <button style="margin-top:10px" data-act="saveProfile">Enregistrer</button>
       <p class="xs mut">Cibles actuelles : ${T.kcal} kcal · P ${T.p} g · G ${T.c} g · L ${T.f} g. Le poids utilisé est ta dernière pesée (${r1(T.weight)} kg).</p></div>
+    ${typeof dayTypeCardHTML === "function" ? dayTypeCardHTML() : ""}
     <div class="card"><h2>Apparence</h2><div class="chips">${[["clair", "☀️ Clair"], ["sombre", "🌙 Sombre"], ["auto", "Auto (comme le Mac/iPhone)"]].map(([k, l]) => `<button class="chip ${themePref() === k ? "on" : ""}" data-act="setTheme" data-v="${k}">${l}</button>`).join("")}</div><div class="row between" style="margin-top:10px"><span class="sm">Inverser le sens de rotation à 2 doigts (3D)</span><button class="chip ${localStorage.getItem("muscu_inv3d") === "1" ? "on" : ""}" data-act="inv3d">${localStorage.getItem("muscu_inv3d") === "1" ? "Inversé" : "Normal"}</button></div></div>
     ${syncCardHTML()}
     ${typeof SP !== "undefined" && SP.clientId() ? `<div class="card"><h2>Spotify</h2>${SP.tok() ? `<p class="sm">Connecté ✓ (contrôle depuis l'onglet Séance)</p><button class="small sec" data-act="spLogout">Déconnecter</button>` : `<button class="small" style="background:#1db954" data-act="spLogin">Connecter Spotify</button>`}</div>` : ""}
