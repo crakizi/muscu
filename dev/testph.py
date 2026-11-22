@@ -10,7 +10,7 @@ async def main():
     await pg.wait_for_timeout(500)
     await pg.click("nav button[data-v=progress]"); await pg.wait_for_timeout(1500)
     el = await pg.query_selector(".card:has(h2:text('Photos de physique'))"); await el.screenshot(path="ph.png")
-    await pg.evaluate("S.bodyEx='seated_leg_curl'; openSheet(exMuscleSheet('seated_leg_curl'))"); await pg.wait_for_timeout(5000)
+    await pg.evaluate("S.exMedia='3d'; S.bodyEx='seated_leg_curl'; openSheet(exMuscleSheet('seated_leg_curl'))"); await pg.wait_for_timeout(5000)
     await pg.screenshot(path="exs.png", full_page=False)
     await pg.evaluate("document.querySelector('.sheet').scrollTop=600"); await pg.wait_for_timeout(300); await pg.screenshot(path="exs2.png")
     print("\n".join(errs) or "no errors"); await b.close()

@@ -7,7 +7,7 @@ async def main():
     pg.on("pageerror", lambda e: errs.append("PAGEERR "+str(e)))
     pg.on("console", lambda m: m.type=="error" and errs.append("CONSOLE "+m.text))
     await pg.goto("http://localhost:8765/index.local.html"); await pg.wait_for_timeout(800)
-    await pg.evaluate("S.bodyEx='lat_raise_cable'; openSheet(exMuscleSheet('lat_raise_cable'))"); await pg.wait_for_timeout(6000)
+    await pg.evaluate("S.exMedia='3d'; S.bodyEx='lat_raise_cable'; openSheet(exMuscleSheet('lat_raise_cable'))"); await pg.wait_for_timeout(6000)
     el = await pg.query_selector(".sheet"); await el.screenshot(path="body1.png")
     await pg.click("button[data-act=bodyView][data-v=back]"); await pg.wait_for_timeout(1200)
     await (await pg.query_selector("#body3d")).screenshot(path="body2.png")
