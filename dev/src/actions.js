@@ -88,7 +88,7 @@ const ACT = {
   delAct: el => { updDay(d => d.acts.splice(+el.dataset.v, 1)); if (S.sheet) renderSheet(); },
   toggleIncomplete: el => updDay(d => d.incomplete = el.checked),
   aiFinish: async () => {
-    const t = dayTotals(S.day), T = targets(); const eaten = day(S.day).entries.map(e => `${e.meal}: ${e.name} ${e.g} g`).join("; ") || "rien";
+    const t = dayTotals(S.day), T = tDay(S.day); const eaten = day(S.day).entries.map(e => `${e.meal}: ${e.name} ${e.g} g`).join("; ") || "rien";
     S.aiOut.today = "…"; render();
     try { await aiText(`${USER_CTX()}\nAujourd'hui il a déjà mangé : ${eaten}. Total : ${r0(t.kcal)} kcal, P ${r0(t.p)} g, G ${r0(t.c)} g, L ${r0(t.f)} g, fibres ${r0(t.fib)} g. Il est ${new Date().getHours()} h.\nIl lui reste : ${r0(T.kcal - t.kcal)} kcal, P ${r0(T.p - t.p)} g, G ${r0(T.c - t.c)} g, L ${r0(T.f - t.f)} g.\nCe qu'il a dans son frigo/placard : ${fridgeText() || "inconnu"}. Propose 2 options concrètes pour finir la journée, en privilégiant ce qu'il a déjà. ${CHEF_RULES} Si le budget est déjà dépassé, dis-le simplement et propose comment compenser demain sans extrême. Réponds en français, court, sans markdown lourd.`, txt => { S.aiOut.today = txt; const o = $(".ai-out"); if (o) o.textContent = txt; }); }
     catch (e) { S.aiOut.today = aiErr(e); } render();
@@ -99,7 +99,7 @@ const ACT = {
     <button style="width:100%;margin-top:8px" data-act="aiFridgeGo" ${S.busy.fridge ? "disabled" : ""}>${S.busy.fridge ? '<span class="spin"></span>' : "Trouver une recette"}</button>${S.aiOut.fridge ? `<div class="ai-out" id="fridgeOut">${aiRich(S.aiOut.fridge)}</div>` : `<div id="fridgeOut"></div>`}`),
   aiFridgeGo: async () => {
     const txt = $("#fridge").value.trim(); if (!txt && !fridgeItems().length) return; if ($("#fridgeKeep").checked) Store.set("fridge", Object.assign(clone(fridgeDoc()) || {}, { txt }));
-    const t = dayTotals(S.day), T = targets(); S.busy.fridge = true; S.aiOut.fridge = ""; renderSheet();
+    const t = dayTotals(S.day), T = tDay(S.day); S.busy.fridge = true; S.aiOut.fridge = ""; renderSheet();
     try { await aiText(`${USER_CTX()}\nIl a chez lui : ${txt}${fridgeText() ? ". Inventaire de son frigo : " + fridgeText() : ""}.\nIl lui reste aujourd'hui ${r0(T.kcal - t.kcal)} kcal et ${r0(T.p - t.p)} g de protéines.\nPropose 1 à 2 recettes faites avec ces ingrédients (il peut manquer au plus 1-2 basiques : sel, épices, huile), qui intègrent des légumes sans effort. ${CHEF_RULES} Ajoute à la fin la version batch pour 3-4 jours (quantités ×, conservation au frigo/congélateur, réchauffage).`, txt2 => { S.aiOut.fridge = txt2; const o = $("#fridgeOut"); if (o) { o.className = "ai-out"; o.textContent = txt2; } }); }
     catch (e) { S.aiOut.fridge = aiErr(e); }
     S.busy.fridge = false; renderSheet();

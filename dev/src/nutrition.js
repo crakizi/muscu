@@ -97,7 +97,7 @@ async function ideaGo(cat) {
 }
 // ---- besoins journaliers ----
 function needsHTML() {
-  const T = targets(); const p = profile(); const w = r1(T.weight); const t = dayTotals(S.day || todayKey());
+  const T = tDay(S.day || todayKey()); const p = profile(); const w = r1(T.weight); const t = dayTotals(S.day || todayKey());
   const row = (l, cur, goal, u, note) => { const pct = goal ? Math.min(100, cur / goal * 100) : 0; return `<div style="margin:8px 0"><div class="row between sm"><span><b>${l}</b> <span class="xs mut">${note || ""}</span></span><span>${cur != null ? r0(cur) + " / " : ""}${goal} ${u}</span></div>${cur != null ? `<div class="bar"><i style="width:${pct}%;background:${pct >= 100 ? "#16a34a" : "var(--acc)"}"></i></div>` : ""}</div>`; };
   const A = Store.get("adjust", null);
   return `<div class="card"><h2>Tes besoins du jour</h2>

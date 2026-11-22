@@ -70,6 +70,7 @@ function adaptiveTDEE() {
   const avg = intake.reduce((a, b) => a + b, 0) / intake.length;
   return { ok: true, tdee: avg - slope * 7700, avgIntake: avg, slopeWeek: slope * 7, days: intake.length, weighs: pts.length };
 }
+function tDay(k) { return Object.assign(targets(), typeof dayTargets === "function" ? dayTargets(k || todayKey()) : {}); }
 function targets() {
   const p = profile(); const w = latestWeight();
   const formula = bmr(p, w) * p.activity;
