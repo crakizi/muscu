@@ -12,7 +12,7 @@ App PWA muscu + nutrition de Vuthy (crakizi.github.io/muscu). Réponds en franç
 Peu de fonctions, mais bonnes. Un écran = un but principal, 2 ou 3 actions visibles au plus, le reste replié. Textes courts. Chaque livraison dit ce qui a été retiré ou replié. En cas de doute, ne pas ajouter : demander à Vuthy.
 
 ## Règles de travail
-- Une branche par section (`sec/<section>`), partie de `integ-lot1` (puis de `main` une fois publiée). Jamais de push sur `main`, jamais de modification de `index.html` / `sw.js` à la racine : seule la Coordination publie, après accord de Vuthy.
+- Une branche par section (`sec/<section>`), partie de `main` (à jour). Jamais de push sur `main`, jamais de modification de `index.html` / `sw.js` à la racine : seule la Coordination publie, après accord de Vuthy.
 - Rester dans les fichiers de sa section ; petits points d'accroche seulement dans `ui.js`, `core.js`, `actions.js`, `build.py` ; CSS ajouté en fin de `style.css` dans une section à son nom.
 - Économiser les tokens : grep avant de lire, ne pas relire des fichiers entiers inutilement.
 - Compiler : voir `dev/README.md` (`python3 build.py --local`). Tests de bout en bout : `dev/testscenarios.py` avec les données `dev/demo_seed.js` (jamais incluses dans l'app).

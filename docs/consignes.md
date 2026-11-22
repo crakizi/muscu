@@ -2,6 +2,8 @@
 
 _Écrites par la conversation Coordination (centre de contrôle). Chaque conversation lit **sa** partie, l'applique, puis dit « fait » ou « prêt à fusionner ». Règles communes et règle de simplicité : `claude/organisation-conversations.md`._
 
+**22/11 au soir : version publiée.** Nutrition lots 1-2, Cuisine lots 1-2 et Muscu lot 1 sont maintenant sur `main` (en ligne). Avant de continuer, chaque section met sa branche à jour depuis `main` (`git fetch && git merge origin/main`). Amis, Design et Programmes partent aussi de `main`.
+
 ## Nutrition — lot 2 (22/11)
 1. Fais le ménage dans l'écran Aujourd'hui : compte les boutons et les textes visibles, et replie ou retire ce qui n'est pas essentiel. Montre un avant/après à Vuthy.
 2. Bilan de la semaine en une carte courte et neutre : poids tendance, apport moyen, nouvel objectif et pourquoi, en 3 lignes au maximum.
