@@ -93,8 +93,8 @@ function recipesAvailHTML() {
       ${r.A.urgent.length ? `<div class="xs">⏳ utilise : ${r.A.urgent.map(i => `${esc(i.name)} (${expTxt(i)})`).join(", ")}</div>` : ""}
       <div class="xs mut">${r.per.kcal ? `${r0(r.per.kcal)} kcal · P ${r0(r.per.p)} g / portion` : "macros non précisées"}${r.fit >= 0.7 ? ` · <b style="color:var(--acc)">colle à ce qu'il te reste</b>` : ""} · ${costTxt(r.C, r.portions)}${r.portions > 1 ? "/portion" : ""}</div>
       <div class="row" style="gap:6px;margin-top:4px">${r.kind === "perso" ? `<button class="small" data-act="recPick" data-v="${r.id}">Manger</button>` : ""}${r.A.miss.length ? `<button class="small sec" data-act="czRecShop" data-v="${esc(r.id)}">🛒 Ajouter les manquants</button>` : ""}</div></div></div>`;
-  return `<div class="card"><h2>Avec ce que j'ai</h2><p class="xs mut">Il te reste aujourd'hui ${r0(R.kcal)} kcal · P ${r0(R.p)} g · G ${r0(R.c)} g · L ${r0(R.f)} g. Tri : ingrédients déjà au frigo (ceux à finir vite d'abord), puis adéquation à ce qu'il te reste.</p>
-    ${rows.length ? rows.map(card).join("") : `<p class="mut sm">Aucune recette pour l'instant : crée tes recettes (+ Ajouter un aliment → Recettes) ou garde des idées dans « Idées recettes ».</p>`}</div>`;
+  return `<div class="card"><h2>Avec ce que j'ai</h2><p class="xs mut">Reste du jour : ${r0(R.kcal)} kcal · P ${r0(R.p)} g</p>
+    ${rows.length ? rows.map(card).join("") : `<p class="mut sm">Aucune recette pour l'instant. Crée-en une, ou garde des idées ci-dessous.</p>`}</div>`;
 }
 
 // ---- liste de courses ----
@@ -124,12 +124,12 @@ function shopListHTML() {
   const groups = CZ_AISLES.map(([k, l]) => { const L = its.filter(s => (s.aisle || "autre") === k); if (!L.length) return "";
     return `<h3>${l}</h3>${L.map(s => { const c = shopCost(s); return `<label class="entry czshop" style="align-items:center;cursor:pointer;margin:0;color:var(--txt);font-size:15px"><span class="row" style="gap:8px"><input type="checkbox" style="width:20px;height:20px" data-act="czShopChk" data-v="${s.id}" ${s.done ? "checked" : ""}><span${s.done ? ' style="text-decoration:line-through;opacity:.55"' : ""}>${esc(s.name)} <span class="xs mut">${shopQtyTxt(s)}</span></span></span><span class="xs mut">${c != null ? eur(c) : ""}</span><button class="ghost small" data-act="czShopDel" data-v="${s.id}">✕</button></label>`; }).join("")}`; }).join("");
   return `<div class="card"><div class="row between"><h2>🛒 Liste de courses</h2><span class="sm b">${tot.k ? "≈ " + eur(tot.c) : ""}</span></div>
-    <p class="xs mut">Cocher un article le range dans le frigo. Depuis le plan de repas ou une recette, seul ce qui manque est ajouté.</p>
+    ${its.length ? `<p class="xs mut">Coché = rangé dans le frigo.</p>` : ""}
     ${its.length ? groups : `<p class="mut sm">Liste vide.</p>`}
     <input id="czShopN" placeholder="Ajouter un article (ex. 6 œufs, 500 g de riz)" style="margin-top:10px"><div class="row" style="margin-top:6px;gap:6px"><select id="czShopA" class="grow">${CZ_AISLES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}<option value="" selected>Rayon auto</option></select><button class="small" data-act="czShopAdd">+</button></div>
     <div class="row" style="margin-top:8px;gap:6px">${Store.get("mealplan", null) ? `<button class="sec small grow" data-act="czPlanShop">Depuis mon plan de repas</button>` : ""}${todo.length ? `<button class="sec small grow" data-act="czShare">Partager la liste</button>` : ""}${its.some(s => s.done) ? `<button class="sec small grow" data-act="czShopClear">Retirer les cochés</button>` : ""}</div>
     ${S.czShare ? `<textarea id="czShareTxt" readonly style="margin-top:8px;height:140px">${esc(shopText())}</textarea>` : ""}
-    ${tot.k < todo.length ? `<p class="xs mut">${todo.length - tot.k} article(s) sans prix : renseigne-les dans 💶 Budget pour un total complet.</p>` : ""}</div>`;
+    ${tot.k < todo.length ? `<p class="xs mut">${todo.length - tot.k} article(s) sans prix : prix à renseigner dans 💶 Budget.</p>` : ""}</div>`;
 }
 
 // ---- budget ----
@@ -159,8 +159,11 @@ function batchHTML() {
   const row = b => `<div class="entry czbatch" style="align-items:center"><div class="grow"><div class="b sm">${esc(b.name)}</div><div class="xs mut">${b.left}/${b.portions} portion(s) · ${r0(b.per.kcal)} kcal · P ${r0(b.per.p)} · G ${r0(b.per.c)} · L ${r0(b.per.f)} · préparé ${b.date ? fmtDay(b.date) : ""}</div></div>${b.left > 0 ? `<button class="small" data-act="czBatchEat" data-v="${b.id}">Mangé</button>` : `<button class="ghost small" data-act="czBatchDel" data-v="${b.id}">✕</button>`}</div>`;
   const f = (id, l, v, t = "number") => `<div class="grow"><label>${l}</label><input id="${id}" type="${t}" ${t === "number" ? 'inputmode="decimal"' : ""} value="${esc(v ?? "")}"></div>`;
   return `<div class="card"><h2>🍱 Mes préparations</h2>${live.length ? live.map(row).join("") : `<p class="mut sm">Aucune préparation en cours.</p>`}${done.length ? `<details><summary class="xs mut">Terminées (${done.length})</summary>${done.map(row).join("")}</details>` : ""}</div>
-    <div class="card"><h2>Nouvelle préparation</h2>
-      ${recipes().length ? `<label>Partir d'une recette (facultatif)</label><select data-cz="bRec"><option value="">—</option>${recipes().map(r => `<option value="${r.id}" ${B.rec === r.id ? "selected" : ""}>${esc(r.name)}</option>`).join("")}</select>` : ""}
+    ${czFold("batchNew", "+ Nouvelle préparation", () => batchFormHTML(B, f))}`;
+}
+function batchFormHTML(B, f) {
+  return `<div class="card"><h2>Nouvelle préparation</h2>
+      ${recipes().length ? `<label>Partir d'une recette (facultatif)</label><select data-cz="bRec"><option value="">—</option>${recipes().map(r => `<option value="${r.id}" ${B.rec === r.id ? "selected" : ""}>${esc(r.name)}</option>`).join("")}</select>${B.rec ? `<p class="xs mut" style="margin:4px 0 0">Ses ingrédients seront retirés du frigo.</p>` : ""}` : ""}
       ${f("czBN", "Nom", B.name, "text")}
       <div class="row">${f("czBP", "Portions", B.portions || 4)}${f("czBG", "Poids d'une portion (g)", B.portionG || "")}</div>
       <div class="row">${f("czBk", "kcal / portion", B.kcal)}${f("czBp", "P (g)", B.p)}${f("czBc", "G (g)", B.c)}${f("czBf", "L (g)", B.f)}</div>
@@ -177,11 +180,39 @@ function planExtrasHTML() {
   return `<div class="card czplan"><h2>💶 Coût estimé du plan</h2>${days.map(d => `<div class="row between sm"><span>${esc(d.day)}</span><span>${costTxt(d.C)}</span></div>`).join("")}
     <div class="row between sm b" style="margin-top:6px"><span>Total</span><span>${costTxt(tot)}</span></div>
     <button class="sec" style="width:100%;margin-top:10px" data-act="czPlanShop">🛒 Ajouter ce qui manque à ma liste</button>
-    <p class="xs mut">Ingrédients du plan moins ce qui est déjà dans ton frigo. Prix : 💶 Budget dans le Frigo.</p></div>`;
+    </div>`;
 }
-if (typeof viewKitchen === "function") { const _czKitchen = viewKitchen; viewKitchen = function () { const h = _czKitchen(); if ((S.kTab || "frigo") !== "plan") return h; const x = planExtrasHTML(); const at = h.indexOf('<div class="card"><h2>🛒 Liste de courses'); return at >= 0 ? h.slice(0, at) + x + h.slice(at) : h + x; }; }
 
-function cuisineSubHTML(sub) { return sub === "courses" ? shopListHTML() : sub === "recettes" ? recipesAvailHTML() : sub === "batch" ? batchHTML() : sub === "budget" ? budgetHTML() : ""; }
+// ---- navigation Cuisine (lot 2) : une seule rangée de 4 onglets ----
+// Frigo · Recettes (avec ce que j'ai + idées IA) · Plan (plan + batch + besoins) · Courses (liste + budget).
+// Remplace la vue de nutrition.js sans modifier ce fichier (cuisine2.js est chargé après).
+const CZ_TABS = [["frigo", "🧊", "Frigo"], ["recettes", "🍲", "Recettes"], ["plan", "📅", "Plan"], ["courses", "🛒", "Courses"]];
+const CZ_OLD = { idees: "recettes", besoins: "plan", batch: "plan", budget: "courses" }; // anciens onglets → nouveaux
+const czTab = () => { const k = CZ_OLD[S.kTab] || S.kTab; return CZ_TABS.some(t => t[0] === k) ? k : "frigo"; };
+const czFold = (key, label, html) => { const on = (S.czFold || {})[key];
+  return `<button class="sec czfold" style="width:100%;margin:2px 0 10px;justify-content:space-between" data-act="czFold" data-v="${key}"><span>${label}</span><span>${on ? "▴" : "▾"}</span></button>${on ? html() : ""}`; };
+function budgetLine() { const B = +priceDoc().week || 0; if (!B) return "💶 Budget et prix"; return `💶 Budget : ${eur(weekSpent())} / ${eur(B)}`; }
+// Plan de repas (nutrition.js) : sa liste de courses fait doublon avec l'onglet Courses → remplacée par le coût + « ajouter ce qui manque »
+function czPlanHTML() {
+  const T = document.createElement("template"); T.innerHTML = mealPlanHTML();
+  const shop = [...T.content.querySelectorAll(".card")].find(c => /Liste de courses/.test(c.querySelector("h2")?.textContent || ""));
+  const x = document.createElement("template"); x.innerHTML = planExtrasHTML();
+  if (shop) shop.replaceWith(x.content); else T.content.appendChild(x.content);
+  // un plan existe déjà : le formulaire « Refaire un plan » est replié
+  const form = Store.get("mealplan", null)?.days?.length ? [...T.content.querySelectorAll(".card")].find(c => (c.querySelector("h2")?.textContent || "").trim() === "Plan de repas") : null;
+  let formH = ""; if (form) { formH = form.outerHTML; form.remove(); }
+  const d = document.createElement("div"); d.appendChild(T.content); return d.innerHTML + (form ? czFold("planNew", "🔄 Refaire un plan", () => formH) : "");
+}
+function viewKitchen() {
+  const k = czTab(); const n = shopItems().filter(x => !x.done).length;
+  const tabs = `<div class="ktabs cztabs">${CZ_TABS.map(([v, ic, l]) => `<button class="ktab ${k === v ? "on" : ""}" data-act="kTab" data-v="${v}"><span>${ic}</span>${l}${v === "courses" && n ? ` <b class="czbadge">${n}</b>` : ""}</button>`).join("")}</div>`;
+  let body;
+  if (k === "frigo") body = viewFridge();
+  else if (k === "recettes") body = recipesAvailHTML() + czFold("idees", "💡 Nouvelles idées (IA)", ideasHTML);
+  else if (k === "plan") body = czPlanHTML() + batchHTML() + czFold("besoins", "📊 Mes besoins du jour", needsHTML);
+  else body = shopListHTML() + czFold("budget", budgetLine(), budgetHTML);
+  return statusBanner() + tabs + body;
+}
 
 // ---- saisie (prix, budget, recette de départ du batch) ----
 document.addEventListener("change", ev => {
@@ -193,14 +224,20 @@ document.addEventListener("change", ev => {
 });
 
 const CZ_ACT = {
-  czSub: el => { S.kTab = "frigo"; S.cz = el.dataset.v; S.czShare = false; window.scrollTo(0, 0); render(); },
+  czSub: el => { S.kTab = CZ_OLD[el.dataset.v] || el.dataset.v; S.czShare = false; window.scrollTo(0, 0); render(); },
+  czFold: el => { S.czFold = S.czFold || {}; S.czFold[el.dataset.v] = !S.czFold[el.dataset.v]; render(); },
+  // « Copier hier » (bouton du journal) : remplace la version d'actions.js pour retirer aussi du frigo ce qui y est
+  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; if (!es.length) { toast("Rien de noté la veille"); return; }
+    updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); const out = entriesConsume(es);
+    toast(`${es.length} aliment(s) copiés d'hier` + (out ? ` · ${out} retiré(s) du frigo` : "")); render(); },
   czRecShop: el => { const r = czRecipes().find(x => x.id === el.dataset.v); if (!r) return; const n = shopAddMissing(r.ings, r.name); toast(n ? `${n} article(s) ajouté(s) à la liste` : "Tout est déjà dans ton frigo"); },
   czPlanShop: () => { const P = Store.get("mealplan", null); let ings = planIngs(P);
     if (!ings.length) ings = (P?.shopping || []).flatMap(s => (s.items || []).map(i => parseIngLine(`${i.qty || ""} ${i.name}`) || { name: i.name }));
     const n = shopAddMissing(ings, "plan"); toast(n ? `${n} article(s) manquant(s) ajouté(s)` : "Rien ne manque"); },
   czShopAdd: () => { const t = ($("#czShopN")?.value || "").trim(); if (!t) return; const p = parseIngLine(t) || { name: t }; const a = $("#czShopA")?.value;
     saveShop(d => d.items.push({ id: uid(), name: p.name, qty: p.g ? r0(p.g) : p.pc || 0, unit: p.g ? "g" : p.pc ? "pc" : "", aisle: a || czAisle(p.name), done: false, src: "main" })); },
-  czShopChk: el => { const s = shopItems().find(x => x.id === el.dataset.v); if (!s) return; const on = el.checked;
+  czShopChk: el => { el.blur(); // sinon la case garde le focus et l'écran (total, budget) ne se met à jour qu'au tap suivant
+    const s = shopItems().find(x => x.id === el.dataset.v); if (!s) return; const on = el.checked;
     const zone = s.aisle === "surgele" ? "congel" : s.aisle === "epicerie" || s.aisle === "boisson" ? "placard" : "frigo";
     if (on) fridgeAdd([{ name: s.name, qty: s.qty || 1, unit: s.unit === "g" ? "g" : "pc", zone }]);
     else fridgeConsume(s.name, s.unit === "g" ? s.qty : (s.qty || 1) * (gPerPcOf(s.name) || 100));
@@ -215,12 +252,16 @@ const CZ_ACT = {
   czBatchSave: () => { const v = id => $("#" + id)?.value || ""; const num = id => parseFloat(v(id).replace(",", ".")) || 0; const name = v("czBN").trim(); const portions = Math.max(1, Math.round(num("czBP")));
     if (!name) { toast("Donne un nom à la préparation"); return; }
     const d = clone(Store.get("batch", { items: [] })); d.items = d.items || [];
-    d.items.unshift({ id: uid(), name, portions, left: portions, portionG: num("czBG") || null, per: { kcal: num("czBk"), p: num("czBp"), c: num("czBc"), f: num("czBf") }, date: v("czBD") || todayKey(), recipeId: S.czB?.rec || null });
-    S.czB = {}; Store.set("batch", d); toast("Préparation enregistrée"); },
+    // les ingrédients sont retirés du frigo à la préparation (recette de départ × portions préparées / portions de la recette)
+    const r = recipes().find(x => x.id === S.czB?.rec); let out = 0;
+    if (r) { const k = portions / (r.portions || 1); (r.ings || []).forEach(i => { if (fridgeConsume(i.name, (+i.g || 0) * k)) out++; }); }
+    d.items.unshift({ id: uid(), name, portions, left: portions, portionG: num("czBG") || null, per: { kcal: num("czBk"), p: num("czBp"), c: num("czBc"), f: num("czBf") }, date: v("czBD") || todayKey(), recipeId: r?.id || null, used: !!r });
+    S.czB = {}; S.czFold = Object.assign(S.czFold || {}, { batchNew: false }); Store.set("batch", d); toast("Préparation enregistrée" + (out ? ` · ${out} ingrédient(s) retiré(s) du frigo` : "")); },
+  // « Mangé » : note 1 portion au jour affiché dans le journal (S.day) ; ne retire rien du frigo (déjà fait à la préparation)
   czBatchEat: el => { const d = clone(Store.get("batch", { items: [] })); const b = (d.items || []).find(x => x.id === el.dataset.v); if (!b || !(b.left > 0)) return;
     const g = b.portionG || 100; const per100 = { kcal: b.per.kcal / g * 100, p: b.per.p / g * 100, c: b.per.c / g * 100, f: b.per.f / g * 100, fib: 0, sugar: 0, satfat: 0, salt: 0 };
-    const k = todayKey(); const dd = clone(day(k)); dd.entries = dd.entries || []; dd.acts = dd.acts || []; dd.entries.push(makeEntry({ name: b.name, per100, src: "batch" }, g, "")); saveDay(k, dd);
-    b.left -= 1; Store.set("batch", d); toast(`${b.name} : 1 portion notée (reste ${b.left})`); },
+    const k = S.day || todayKey(); const dd = clone(day(k)); dd.entries = dd.entries || []; dd.acts = dd.acts || []; dd.entries.push(makeEntry({ name: b.name, per100, src: "batch" }, g, "")); saveDay(k, dd);
+    b.left -= 1; Store.set("batch", d); toast(`${b.name} : 1 portion notée ${k === todayKey() ? "aujourd'hui" : "le " + fmtDay(k)} (reste ${b.left})`); },
   czBatchDel: el => { const d = clone(Store.get("batch", { items: [] })); d.items = (d.items || []).filter(x => x.id !== el.dataset.v); Store.set("batch", d); },
 };
 Object.assign(RECIPE_ACT, CZ_ACT);

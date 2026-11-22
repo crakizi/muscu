@@ -160,3 +160,9 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .qagrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 
 .tag.soon{background:var(--acc2);color:var(--acc);font-weight:600}.czsubs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.czsubs .chip{white-space:nowrap;flex:none}.czgauge>i:last-child{border-radius:0 6px 6px 0}
+
+/* ===================== Cuisine (lot 2) : une seule navigation ===================== */
+.cztabs .ktab{position:relative}
+.cztabs .czbadge{position:absolute;top:6px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--acc);color:#fff;font-size:11px;line-height:18px}
+.cztabs .ktab.on .czbadge{background:#fff;color:var(--acc)}
+.czfold{display:flex;align-items:center}
