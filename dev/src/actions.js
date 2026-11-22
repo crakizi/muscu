@@ -150,7 +150,7 @@ const ACT = {
   // ----- frigo
   fridgeEdit: el => openSheet(fridgeItemSheet(el.dataset.v)),
   fridgeSave: el => { const items = clone(fridgeDoc().items || []); const it = items.find(i => i.id === el.dataset.v); if (!it) return;
-    it.qty = parseFloat($("#fiQ").value) || 0; it.unit = $("#fiU").value; it.gPerPc = parseFloat($("#fiP").value) || null; it.zone = $("#fiZ").value; it.cat = $("#fiC").value;
+    it.qty = parseFloat($("#fiQ").value) || 0; it.unit = $("#fiU").value; it.gPerPc = parseFloat($("#fiP").value) || null; it.zone = $("#fiZ").value; it.cat = $("#fiC").value; if ($("#fiE")) it.exp = $("#fiE").value || null;
     saveFridgeItems(items.filter(i => i.qty > 0)); closeSheet(); },
   fridgeDel: el => { saveFridgeItems((fridgeDoc().items || []).filter(i => i.id !== el.dataset.v)); closeSheet(); },
   fridgeEat: el => openSheet(fridgeEatSheet(el.dataset.v)),
@@ -164,7 +164,7 @@ const ACT = {
   fridgeAddOpen: () => { S.fq = ""; openSheet(fridgeAddSheet); },
   fridgePick: el => { const i = +el.dataset.i; const f = i < 0 ? { name: S.fq } : S._fres[i]; S._fpick = f; openSheet(fridgeQtySheet(f)); },
   fridgeQtyGo: () => { const f = S._fpick; const q = parseFloat($("#fqQ").value); if (!(q > 0)) return;
-    fridgeAdd([{ name: f.name, qty: q, unit: $("#fqU").value, gPerPc: parseFloat($("#fqP").value) || null, zone: $("#fqZ").value, per100: f.per100 || null, micro100: f.micro100 || null }]); toast("Rangé dans le frigo"); closeSheet(); },
+    fridgeAdd([{ name: f.name, qty: q, unit: $("#fqU").value, gPerPc: parseFloat($("#fqP").value) || null, zone: $("#fqZ").value, exp: $("#fqE")?.value || null, per100: f.per100 || null, micro100: f.micro100 || null }]); toast("Rangé dans le frigo"); closeSheet(); },
   fridgeShop: () => { S.shop = {}; openSheet(fridgeShopSheet); },
   shopGo: async () => { const txt = $("#shopTxt").value.trim(); if (!txt) return; S.shop.txt = txt; S.shop.busy = true; S.shop.err = ""; renderSheet();
     try { const r = await aiShop(txt); S.shop.items = (r?.items || []).filter(x => x && x.name && x.qty > 0); if (!S.shop.items.length) S.shop.err = "Rien reconnu."; } catch (e) { S.shop.err = aiErr(e); }
