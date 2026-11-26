@@ -2,7 +2,7 @@
 // INACTIF par défaut. Ne s'allume que si l'adresse contient « ?ds=… » (page dev/apercu-design.html).
 // N'écrit RIEN dans le stockage ni dans les réglages : tout passe par l'adresse ou par postMessage
 // de la page d'aperçu (même origine). Ne touche à aucune donnée ni à aucun calcul.
-const DS = { ctrl: false, on: false, o: { muscu: "cherry", style: "c", commun: "neutre", mode: "" } };
+const DS = { ctrl: false, on: false, o: { muscu: "cherry", style: "c", commun: "contextuel", mode: "" } };
 const DS_UNIV = { today: "nutrition", fridge: "cuisine", workout: "muscu", progress: "progression", coach: "commun", profile: "commun", home: "commun" };
 
 function dsSet(o) {
@@ -83,7 +83,7 @@ function dsHomeHTML() {
     else _render.apply(this, arguments);
     dsAfter();
   };
-  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || "cherry", style: q.get("s") || "c", commun: q.get("c") || "neutre", mode: q.get("mode") || "" });
+  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || "cherry", style: q.get("s") || "c", commun: q.get("c") || "contextuel", mode: q.get("mode") || "" });
   window.addEventListener("message", e => {
     if (e.origin !== location.origin || !e.data || !e.data.ds) return;
     const d = e.data.ds; dsSet(d);

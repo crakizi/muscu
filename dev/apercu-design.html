@@ -66,7 +66,7 @@ const VIEWS = {
   device: ["Mobile / ordinateur", "Le même écran sur iPhone et sur un écran d'ordinateur."],
   avant: ["Avant / après", "À gauche le design actuel (en ligne), à droite la proposition."]
 };
-const st = Object.assign({ view: "univers", mode: "light", muscu: "cherry", style: "c", commun: "neutre", screen: "live", on: true }, (() => { try { return JSON.parse(localStorage.getItem("ds_apercu_ui") || "{}"); } catch (e) { return {}; } })());
+const st = Object.assign({ view: "univers", mode: "light", muscu: "cherry", style: "c", commun: "contextuel", screen: "live", on: true }, (() => { try { return JSON.parse(localStorage.getItem("ds_apercu_ui") || "{}"); } catch (e) { return {}; } })());
 const save = () => { try { localStorage.setItem("ds_apercu_ui", JSON.stringify(st)); } catch (e) {} };
 
 function seg(label, key, opts, fmt) {

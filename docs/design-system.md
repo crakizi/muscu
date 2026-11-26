@@ -8,7 +8,7 @@ _Référence pour toutes les sessions. Mis à jour le 26/11/2026 (design system 
 | Formes façon **Liftin'** (cartes très arrondies, grands titres, police système, barre floutée) | ✅ Validé (26/11) — gardé dans le design system 2 |
 | Palettes **Nutrition** (Deep Ocean), **Cuisine** (Warm Earth), **Progression** (Slate Blue) | ✅ Validées par Vuthy (26/11) |
 | Palette **Musculation** : **Black Cherry (option 19)** | ✅ Choisie par Vuthy (26/11, « je choisi black cherry ») ; les 4 autres restent dans l'aperçu pour mémoire |
-| **Identité commune** (accueil, barre d'onglets, profil, réglages) : neutre / bleu pétrole / neutre + accents par univers | ⏳ **À choisir par Vuthy** — propositions seulement |
+| **Identité commune** (accueil, barre d'onglets, profil, réglages) : **neutre + accents par univers** (« contextuel ») | ✅ Choisie par Vuthy (26/11, « Neutre + accents ») : surfaces neutres, l'onglet actif prend la couleur de son univers. Neutre seul et bleu pétrole écartés |
 | **Intensité** : couleurs **affirmées** demandées (« pas assez prononcé ») d'après sa maquette : fonds bien teintés, grande carte profonde par univers, boutons pastel pleins à texte profond → style **C renforcé** | ✅ Direction validée (26/11) ; C est la valeur par défaut de l'aperçu. A et B restent comparables |
 | Accent unique bleu `#1f6bff` (`sec/design-liftin`, choisi le 26/11 en journée) | ⚠️ Remplacé par les couleurs par univers ; le bleu du logo reste possible pour la marque (identité commune non tranchée) |
 | Personnalisation par l'utilisateur (mode, palette muscu, intensité) | 🧩 Architecture prête, **pas** dans les réglages avant validation |
@@ -34,7 +34,7 @@ Le fichier est concaténé **après** `style.css` par `build.py`. **Tout est sou
 
 Attributs sur `<html>` : `data-ds` (allumé), `data-u` (univers de l'écran), `data-ds-muscu` (`cherry|ruby|pome|graphite|carbon`), `data-ds-style` (`a|b|c`), `data-ds-commun` (`neutre|petrole|contextuel`), classe `dark`.
 Univers par écran : Aujourd'hui → `nutrition`, Cuisine → `cuisine`, Séance → `muscu`, Progrès → `progression`, Coach/Profil/barre d'onglets/accueil → `commun`. Le minuteur de repos garde la couleur muscu sur tous les onglets.
-Valeurs par défaut de l'aperçu : Black Cherry et style C (choix de Vuthy) ; identité commune « neutre » seulement pour afficher quelque chose (**pas un choix**).
+Valeurs par défaut de l'aperçu : Black Cherry et style C (choix de Vuthy) ; identité commune « contextuel » (choix de Vuthy).
 
 ## 3. Les palettes et leurs rôles
 | Univers | deep (actions) | accent (texte) | mid (graphiques) | pastel | wash (fond) | Sombre : accent / bouton |
@@ -49,7 +49,7 @@ Valeurs par défaut de l'aperçu : Black Cherry et style C (choix de Vuthy) ; id
 | Muscu 28 Carbon Yellow ⏳ | `#20211D` (texte jaune `#E9DB76`) | `#494B39` | `#C7BA49` | `#E9DB76` | `#F7F5E5` | `#C7BA49` / `#E9DB76` |
 | Commun neutre (proposition) | `#1F2329` | `#1F2329` | `#4A515C` | `#DADDE2` | `#F3F4F6` | `#E6E8EB` |
 | Commun bleu pétrole (proposition) | = Nutrition | | | | `#F1F5F6` | = Nutrition |
-| Commun contextuel (proposition) | = neutre, mais l'onglet actif de la barre prend la couleur de son univers | | | | | |
+| Commun contextuel ✅ choisi | = neutre, mais l'onglet actif de la barre prend la couleur de son univers | | | | | |
 
 \* Nuances **dérivées** pour l'accessibilité (les couleurs d'origine restent dans les primitives) : `#1A6F75` (turquoise assombri : `#208A91` ne fait que 4,1:1 sur blanc), `#6EB2B7` (mélange turquoise/pastel), `#2B1A10` (texte sur sable), `#DE88A6` (rubis éclairci pour le sombre), `#5E3A28` (carte principale Cuisine en style C).
 Les teintes « 900 » des palettes muscu (`#361923`, `#50182D`, `#58232D`…) servent aux cartes principales du style C et au minuteur de repos.
@@ -111,7 +111,7 @@ Les choix tiennent en 4 valeurs : mode (`clair|sombre|auto`, existe déjà dans 
 ## Historique
 - 22/11 : direction verte (`sec/design`) — non retenue.
 - 26/11 (journée) : direction Liftin' (`sec/design-liftin`), accent bleu choisi.
-- 26/11 (soir) : design system 2 par univers (`sec/design-systeme`) : 3 palettes validées ; puis Black Cherry choisie pour la muscu et couleurs affirmées (style C renforcé, accueil en tuiles) d'après la maquette de Vuthy. Identité commune encore en attente.
+- 26/11 (soir) : design system 2 par univers (`sec/design-systeme`) : 3 palettes validées ; puis Black Cherry choisie pour la muscu et couleurs affirmées (style C renforcé, accueil en tuiles) d'après la maquette de Vuthy. Puis identité commune « neutre + accents par univers » choisie.
 
 ## Références visuelles
 Captures réelles des apps concurrentes (privées, sur le Mac) : `~/Applications/WDA/_shots/galerie-muscu.jpg`, `galerie-nutrition.jpg`, et `liftin/` (10 écrans de Liftin').
