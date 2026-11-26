@@ -11,7 +11,7 @@ _Référence pour toutes les sessions. Mis à jour le 26/11/2026 (design system 
 | **Identité commune** (accueil, barre d'onglets, profil, réglages) : **neutre + accents par univers** (« contextuel ») | ✅ Choisie par Vuthy (26/11, « Neutre + accents ») : surfaces neutres, l'onglet actif prend la couleur de son univers. Neutre seul et bleu pétrole écartés |
 | **Intensité** : couleurs **affirmées** demandées (« pas assez prononcé ») d'après sa maquette : fonds bien teintés, grande carte profonde par univers, boutons pastel pleins à texte profond → style **C renforcé** | ✅ Direction validée (26/11) ; C est la valeur par défaut de l'aperçu. A et B restent comparables |
 | Accent unique bleu `#1f6bff` (`sec/design-liftin`, choisi le 26/11 en journée) | ⚠️ Remplacé par les couleurs par univers ; le bleu du logo reste possible pour la marque (identité commune non tranchée) |
-| **Écran Accueil** + barre à 5 onglets (Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès) ; Coach et Profil en icônes en haut de l'accueil | ✅ Accueil validé par Vuthy (26/11, « Oui, l'accueil ») ; la barre est une proposition de Coordination visible dans l'aperçu, à confirmer en le regardant |
+| **Écran Accueil** + barre à 5 onglets (Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès) ; Coach et Profil en icônes en haut de l'accueil | ✅ Accueil validé par Vuthy (26/11, « Oui, l'accueil ») ; barre d'onglets validée aussi (27/11, « Oui, elle me va »), avec « Nutrition » à la place de « Aujourd'hui » |
 | Personnalisation par l'utilisateur (mode, palette muscu, intensité) | 🧩 Architecture prête, **pas** dans les réglages avant validation |
 
 ## 1. Comment voir et comparer (sans toucher au code)

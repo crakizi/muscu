@@ -29,6 +29,7 @@ _Ne contient que ce que Vuthy a réellement validé (sa réponse entre guillemet
 | 26/11 | Palette musculation : **Black Cherry** (option 19) ; couleurs **affirmées** comme sa maquette (fonds teintés, grande carte profonde par univers, boutons pastel) → style C renforcé | « je choisi black cherry » ; « pas assez prononcé […] on voit vrmt le contraste de couleur jaie bcp » |
 | 26/11 | Identité des écrans communs : **neutre + accents par univers** (onglet actif à la couleur de son univers) | « Neutre + accents » |
 | 26/11 | Écran **Accueil** en tuiles par univers (d'après sa maquette) ; il devient le premier onglet | « Oui, l'accueil » |
+| 27/11 | Barre d'onglets : Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès ; Coach et Profil en icônes en haut de l'accueil ; « Aujourd'hui » renommé « Nutrition » | « Oui, elle me va » |
 | 26/11 | Migrer tout le développement vers Claude Code, spécialisation par domaine et coordination centrale | demande du 26/11 |
 
 ## Idées abandonnées ou refusées
