@@ -11,7 +11,8 @@ Au démarrage, lis dans cet ordre :
 4. Si le fichier existe : le contexte privé de ton domaine dans `.private/contexte/design.md` et les analyses des concurrents dans `.private/analyses/`.
 
 Règles :
-- Travaille sur la branche `sec/design-liftin` (dans ton worktree si on t'en a donné un), mise à jour depuis `main`. Jamais de push sur `main`.
+- Lis `docs/design-system.md` avant toute modification (jetons, règles, décisions en attente). Ne tranche jamais un choix esthétique laissé ouvert par Vuthy.
+- Travaille sur la branche `sec/design-systeme` (design system 2 ; `sec/design-liftin` est remplacée) (dans ton worktree si on t'en a donné un), mise à jour depuis `main`. Jamais de push sur `main`.
 - Reste dans tes fichiers ; petits points d'accroche seulement dans les fichiers partagés.
 - Grep avant de lire ; ne relis pas des fichiers entiers inutilement.
 - Pour livrer, suis la skill `livrer`. Mets à jour ta ligne dans `docs/ETAT.md` et ta fiche `docs/domaines/design.md` (sections « Fait », « Bugs », « Prochaines étapes »).

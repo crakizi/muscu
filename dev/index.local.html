@@ -87,6 +87,7 @@ nav.tabs button.scanbtn svg{width:28px;height:28px}
 .scanmodes label,.scanmodes button{background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:10px 14px;font:600 14px -apple-system,system-ui;cursor:pointer}
 
 .restbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));width:min(560px,94vw);background:#111827;color:#fff;border-radius:16px;overflow:hidden;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+body:has(#restBar) .toast{bottom:calc(152px + env(safe-area-inset-bottom))}
 .restbar .restfill{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#2563eb,#7c3aed);opacity:.55;transition:width .25s linear}
 .restbar.over .restfill{background:#16a34a;opacity:.8}
 .restbar .restin{position:relative;display:flex;align-items:center;gap:8px;padding:10px 12px}
@@ -165,6 +166,289 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .qagrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
 
 .tag.soon{background:var(--acc2);color:var(--acc);font-weight:600}.czsubs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.czsubs .chip{white-space:nowrap;flex:none}.czgauge>i:last-child{border-radius:0 6px 6px 0}
+
+/* ===================== Nutrition ===================== */
+.nmore{position:relative}
+.nmore>summary{list-style:none;cursor:pointer;padding:6px 10px}
+.nmore>summary::-webkit-details-marker{display:none}
+.nmore-in{position:absolute;right:0;top:calc(100% + 4px);z-index:5;display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--card,#fff);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.15);white-space:nowrap}
+.ndet{margin-top:8px}.ndet>summary{cursor:pointer}
+.wkrev .wkrev-l{display:grid;gap:3px;margin-top:6px;font-size:14px;cursor:pointer}
+/* ===================== Cuisine (lot 2) : une seule navigation ===================== */
+.cztabs .ktab{position:relative}
+.cztabs .czbadge{position:absolute;top:6px;right:8px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--acc);color:#fff;font-size:11px;line-height:18px}
+.cztabs .ktab.on .czbadge{background:#fff;color:var(--acc)}
+.czfold{display:flex;align-items:center}
+/* ===================== Muscu (section Muscu) ===================== */
+.exhead[data-act]{cursor:pointer;align-items:center}.exth{width:64px;flex:none}.exmore{font-size:22px;color:var(--mut);padding:0 4px;line-height:1}
+.exlast .nx{color:var(--txt);font-weight:700;background:rgba(124,58,237,.1);border-radius:6px;padding:0 4px}
+.exin{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}.exrir{margin-top:8px;gap:5px;align-items:center;flex-wrap:nowrap;overflow-x:auto}.exrir .chip{padding:6px 10px;flex:none}
+.exmedia{margin:8px 0}.exph{position:relative;aspect-ratio:850/567;border-radius:14px;overflow:hidden;background:var(--chip)}
+.exph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.exph img.b{animation:exflip 2.6s ease-in-out infinite}
+@keyframes exflip{0%,35%{opacity:0}50%,85%{opacity:1}100%{opacity:0}}
+.exmus{margin:10px 0 4px;line-height:2}.exmus .xs{margin-right:6px}.mtag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;margin:0 4px 0 0;background:rgba(255,138,0,.15);color:var(--txt);line-height:1.6}.mtag.p{background:rgba(217,4,41,.15);font-weight:600}
+.exvar{display:none;margin-top:4px}.exvar.on{display:block}.exv{align-items:center}.exvt{width:56px;height:38px;flex:none;border-radius:8px;overflow:hidden;background:var(--chip)}.exvt img{width:100%;height:100%;object-fit:cover}
+.exhow{margin-top:12px}.exhow summary{font-weight:600;cursor:pointer;padding:6px 0}
+.exacts{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:8px}.exacts select{width:auto;padding:4px 6px;margin-left:6px}.exacts .ghost.dangertxt{color:var(--red)}
+
+/* =====================================================================
+   DESIGN SYSTEM 2 (section Design) — APERÇU, NON PUBLIÉ
+   Actif SEULEMENT quand <html data-ds> est présent (page dev/apercu-design.html).
+   Sans cet attribut, l'app reste exactement comme aujourd'hui.
+   Documentation : docs/design-system.md
+   Couches : 1 primitives → 2 rôles par univers → 3 jetons sémantiques
+             → 4 modes / styles → 5 composants.
+   Couches 1-2 et 5 : sélecteurs :where() (priorité nulle, l'ordre suffit).
+   Couches 3-4 : sélecteurs html[data-ds] (doivent battre :root et html.dark de style.css).
+   ===================================================================== */
+
+/* ---------- 1. PRIMITIVES (palettes d'origine, ne pas modifier) ---------- */
+:where(html[data-ds]){
+  /* Nutrition — Deep Ocean (validée) */
+  --ocean-900:#103B49;--ocean-600:#208A91;--ocean-200:#BBD9DD;--ocean-50:#EDF4F5;--ocean-ink:#172B36;
+  /* Cuisine — Warm Earth (validée) */
+  --earth-900:#81543D;--earth-600:#B77C55;--earth-400:#D4AB86;--earth-200:#EBD6C1;--earth-50:#F6EFE6;
+  /* Progression — Slate Blue (validée) */
+  --slate-900:#303E5C;--slate-600:#526889;--slate-400:#8296B5;--slate-200:#C6D2E4;--slate-50:#EDF0F6;
+  /* Musculation — 5 finalistes (en attente du choix de Vuthy) */
+  --cherry-900:#361923;--cherry-600:#702D44;--cherry-400:#A65C75;--cherry-200:#DFC0CE;--cherry-50:#F6EAF0;
+  --ruby-900:#50182D;--ruby-600:#A12C53;--ruby-400:#D36D90;--ruby-200:#F1C9D8;--ruby-50:#FCEFF4;
+  --pome-900:#58232D;--pome-600:#B34559;--pome-400:#DD8998;--pome-200:#F1CED5;--pome-50:#FBEFF1;
+  --graph-900:#181818;--graph-600:#383838;--graph-400:#737373;--graph-200:#C7C7C7;--graph-50:#F0F0F0;
+  --carbon-900:#20211D;--carbon-600:#494B39;--carbon-400:#C7BA49;--carbon-200:#E9DB76;--carbon-50:#F7F5E5;
+  /* Neutres (communs à tous les univers) */
+  --n-0:#FFFFFF;--n-50:#F6F6F7;--n-100:#EEEFF1;--n-200:#E2E4E8;--n-500:#5F6670;--n-800:#2A2F37;--n-900:#16181D;
+  --d-bg:#0F1114;--d-card:#181B20;--d-raise:#20242A;--d-chip:#262A31;--d-line:#2C313A;--d-txt:#ECEEF1;--d-mut:#9AA1AC;
+
+  /* ---------- Couleurs fonctionnelles (indépendantes des univers) ---------- */
+  --fn-ok:#2E7D4F;--fn-err:#C8372D;--fn-warn:#9A5B00;--fn-warn-fill:#E9A23B;--fn-info:#2F5FB3;
+  --fn-record:#A0710A;              /* toujours avec 🏆 ou « record » */
+  --fn-up:var(--fn-ok);--fn-down:var(--n-500); /* baisse = gris neutre, jamais rouge (règle 3) */
+  --mac-p:#4F6BED;--mac-c:#B87512;--mac-f:#9B6BDF;--mac-fib:#3F8A5D;
+  --musc-prim:#C8553D;--musc-sec:#E3A15A;
+  --rec-ok:#3F9C6B;--rec-mid:#E3A15A;--rec-low:#C8553D;
+
+  /* ---------- Typographie, espaces, arrondis, mouvement ---------- */
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
+  --fs-xs:12px;--fs-sm:13px;--fs-md:16px;--fs-lg:17px;--fs-xl:22px;--fs-2xl:28px;
+  --fw-reg:400;--fw-med:500;--fw-semi:600;--fw-bold:700;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;
+  --r-sm:10px;--r-md:14px;--r-lg:20px;--r-pill:999px;
+  --dur-fast:120ms;--dur:200ms;--ease:cubic-bezier(.2,.8,.2,1);
+  --elev-1:0 1px 2px rgba(16,24,40,.04),0 2px 10px rgba(16,24,40,.05);
+  --elev-2:0 6px 24px rgba(16,24,40,.10);
+}
+:where(html[data-ds].dark){
+  --fn-ok:#6CC495;--fn-err:#F2867C;--fn-warn:#F0B44C;--fn-warn-fill:#F0B44C;--fn-info:#8DB2F0;--fn-record:#E8C15A;--fn-down:var(--d-mut);
+  --mac-p:#8EA2F5;--mac-c:#E9A23B;--mac-f:#B99AEE;--mac-fib:#6CC495;
+  --musc-prim:#EE8A70;--musc-sec:#F2BE7E;--rec-ok:#6CC495;--rec-mid:#F2BE7E;--rec-low:#EE8A70;
+  --elev-1:none;--elev-2:0 8px 28px rgba(0,0,0,.5);
+}
+
+/* ---------- 2. RÔLES PAR UNIVERS (valeurs fixes, définies une fois) ----------
+   deep = actions importantes · accent = texte/icônes accentués (≥ 4,5:1)
+   mid = graphiques · soft/pastel = surfaces douces · wash = fond teinté
+   *-dk = adaptations au mode sombre (nuances dérivées, documentées) */
+:where(html[data-ds]){
+  --nut-deep:var(--ocean-900);--nut-accent:#1A6F75;--nut-mid:var(--ocean-600);--nut-soft:#6EB2B7;--nut-pastel:var(--ocean-200);--nut-wash:var(--ocean-50);--nut-on:#fff;
+  --nut-accent-dk:#6EB2B7;--nut-action-dk:var(--ocean-200);--nut-on-dk:var(--ocean-900);--nut-tint-dk:var(--ocean-ink);
+  --cui-deep:var(--earth-900);--cui-accent:var(--earth-900);--cui-mid:var(--earth-600);--cui-soft:var(--earth-400);--cui-pastel:var(--earth-200);--cui-wash:var(--earth-50);--cui-on:#fff;
+  --cui-accent-dk:var(--earth-400);--cui-action-dk:var(--earth-400);--cui-on-dk:#2B1A10;--cui-tint-dk:#2A1E17;
+  --pro-deep:var(--slate-900);--pro-accent:var(--slate-600);--pro-mid:var(--slate-600);--pro-soft:var(--slate-400);--pro-pastel:var(--slate-200);--pro-wash:var(--slate-50);--pro-on:#fff;
+  --pro-accent-dk:var(--slate-400);--pro-action-dk:var(--slate-200);--pro-on-dk:var(--slate-900);--pro-tint-dk:#1B2233;
+  /* Commun : 3 propositions (attribut data-ds-commun) — « neutre » par défaut */
+  --com-deep:#1F2329;--com-accent:#1F2329;--com-mid:#4A515C;--com-soft:#8A919C;--com-pastel:#DADDE2;--com-wash:#F3F4F6;--com-on:#fff;
+  --com-accent-dk:#E6E8EB;--com-action-dk:#E6E8EB;--com-on-dk:#15181C;--com-tint-dk:#16191E;
+}
+:where(html[data-ds][data-ds-commun=petrole]){
+  --com-deep:var(--ocean-900);--com-accent:var(--ocean-900);--com-mid:var(--ocean-600);--com-soft:#6EB2B7;--com-pastel:var(--ocean-200);--com-wash:#F1F5F6;--com-on:#fff;
+  --com-accent-dk:#6EB2B7;--com-action-dk:var(--ocean-200);--com-on-dk:var(--ocean-900);--com-tint-dk:var(--ocean-ink);
+}
+/* Musculation : la palette choisie remplit les rôles --mus-* (data-ds-muscu) */
+:where(html[data-ds]),:where(html[data-ds][data-ds-muscu=ruby]){
+  --mus-deep:var(--ruby-600);--mus-accent:var(--ruby-600);--mus-mid:var(--ruby-600);--mus-soft:var(--ruby-400);--mus-pastel:var(--ruby-200);--mus-wash:var(--ruby-50);--mus-on:#fff;--mus-hero:var(--ruby-900);
+  --mus-accent-dk:#DE88A6;--mus-action-dk:var(--ruby-200);--mus-on-dk:var(--ruby-900);--mus-tint-dk:#24121A;
+}
+:where(html[data-ds][data-ds-muscu=cherry]){
+  --mus-deep:var(--cherry-600);--mus-accent:var(--cherry-600);--mus-mid:var(--cherry-600);--mus-soft:var(--cherry-400);--mus-pastel:var(--cherry-200);--mus-wash:var(--cherry-50);--mus-on:#fff;--mus-hero:var(--cherry-900);
+  --mus-accent-dk:var(--cherry-200);--mus-action-dk:var(--cherry-200);--mus-on-dk:var(--cherry-900);--mus-tint-dk:#1F1216;
+}
+:where(html[data-ds][data-ds-muscu=pome]){
+  --mus-deep:var(--pome-600);--mus-accent:var(--pome-600);--mus-mid:var(--pome-600);--mus-soft:var(--pome-400);--mus-pastel:var(--pome-200);--mus-wash:var(--pome-50);--mus-on:#fff;--mus-hero:var(--pome-900);
+  --mus-accent-dk:var(--pome-400);--mus-action-dk:var(--pome-200);--mus-on-dk:var(--pome-900);--mus-tint-dk:#251417;
+}
+:where(html[data-ds][data-ds-muscu=graphite]){
+  --mus-deep:var(--graph-900);--mus-accent:var(--graph-600);--mus-mid:var(--graph-600);--mus-soft:var(--graph-400);--mus-pastel:var(--graph-200);--mus-wash:var(--graph-50);--mus-on:#fff;--mus-hero:var(--graph-900);
+  --mus-accent-dk:var(--graph-200);--mus-action-dk:var(--graph-50);--mus-on-dk:var(--graph-900);--mus-tint-dk:#141414;
+}
+:where(html[data-ds][data-ds-muscu=carbon]){
+  --mus-deep:var(--carbon-900);--mus-accent:var(--carbon-600);--mus-mid:var(--carbon-400);--mus-soft:var(--carbon-400);--mus-pastel:var(--carbon-200);--mus-wash:var(--carbon-50);--mus-on:var(--carbon-200);--mus-hero:var(--carbon-900);
+  --mus-accent-dk:var(--carbon-400);--mus-action-dk:var(--carbon-200);--mus-on-dk:var(--carbon-900);--mus-tint-dk:#191A16;
+}
+
+/* L'univers d'un élément (data-u) recopie ses rôles dans --u-* (commun d'abord = valeur par défaut) */
+:where(html[data-ds]),:where(html[data-ds][data-u=commun]),:where(html[data-ds]) :where([data-u=commun]){--u-deep:var(--com-deep);--u-accent:var(--com-accent);--u-mid:var(--com-mid);--u-soft:var(--com-soft);--u-pastel:var(--com-pastel);--u-wash:var(--com-wash);--u-on:var(--com-on);--u-hero:var(--com-deep);--u-accent-dk:var(--com-accent-dk);--u-action-dk:var(--com-action-dk);--u-on-dk:var(--com-on-dk);--u-tint-dk:var(--com-tint-dk)}
+:where(html[data-ds][data-u=nutrition]),:where(html[data-ds]) :where([data-u=nutrition]){--u-deep:var(--nut-deep);--u-accent:var(--nut-accent);--u-mid:var(--nut-mid);--u-soft:var(--nut-soft);--u-pastel:var(--nut-pastel);--u-wash:var(--nut-wash);--u-on:var(--nut-on);--u-hero:var(--nut-deep);--u-accent-dk:var(--nut-accent-dk);--u-action-dk:var(--nut-action-dk);--u-on-dk:var(--nut-on-dk);--u-tint-dk:var(--nut-tint-dk)}
+:where(html[data-ds][data-u=cuisine]),:where(html[data-ds]) :where([data-u=cuisine]){--u-deep:var(--cui-deep);--u-accent:var(--cui-accent);--u-mid:var(--cui-mid);--u-soft:var(--cui-soft);--u-pastel:var(--cui-pastel);--u-wash:var(--cui-wash);--u-on:var(--cui-on);--u-hero:#5E3A28;--u-accent-dk:var(--cui-accent-dk);--u-action-dk:var(--cui-action-dk);--u-on-dk:var(--cui-on-dk);--u-tint-dk:var(--cui-tint-dk)}
+:where(html[data-ds][data-u=muscu]),:where(html[data-ds]) :where([data-u=muscu]){--u-deep:var(--mus-deep);--u-accent:var(--mus-accent);--u-mid:var(--mus-mid);--u-soft:var(--mus-soft);--u-pastel:var(--mus-pastel);--u-wash:var(--mus-wash);--u-on:var(--mus-on);--u-hero:var(--mus-hero);--u-accent-dk:var(--mus-accent-dk);--u-action-dk:var(--mus-action-dk);--u-on-dk:var(--mus-on-dk);--u-tint-dk:var(--mus-tint-dk)}
+:where(html[data-ds][data-u=progression]),:where(html[data-ds]) :where([data-u=progression]){--u-deep:var(--pro-deep);--u-accent:var(--pro-accent);--u-mid:var(--pro-mid);--u-soft:var(--pro-soft);--u-pastel:var(--pro-pastel);--u-wash:var(--pro-wash);--u-on:var(--pro-on);--u-hero:var(--pro-deep);--u-accent-dk:var(--pro-accent-dk);--u-action-dk:var(--pro-action-dk);--u-on-dk:var(--pro-on-dk);--u-tint-dk:var(--pro-tint-dk)}
+
+/* ---------- 3. JETONS SÉMANTIQUES (re-calculés là où l'univers change) ----------
+   Les anciens noms (--bg, --card, --acc…) sont conservés : tous les composants
+   existants suivent automatiquement, sans toucher au code des domaines. */
+html[data-ds],html[data-ds] [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-wash) 60%,var(--n-50));
+  --surface-card:var(--n-0);
+  --surface-soft:color-mix(in srgb,var(--u-pastel) 30%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 28%,var(--n-100));
+  --text-1:var(--n-900);--text-2:var(--n-500);
+  --border:color-mix(in srgb,var(--u-pastel) 35%,var(--n-200));
+  --separator:color-mix(in srgb,var(--u-pastel) 25%,var(--n-100));
+  --action:var(--u-deep);--on-action:var(--u-on);
+  --action-soft:color-mix(in srgb,var(--u-pastel) 40%,var(--n-0));--on-action-soft:var(--u-accent);
+  --title:color-mix(in srgb,var(--u-accent) 80%,var(--n-900));
+  --accent:var(--u-accent);--chart-1:var(--u-mid);--chart-2:var(--u-soft);--chart-3:var(--u-pastel);
+  --focus:var(--u-accent);
+  /* alias des anciens noms */
+  --bg:var(--surface-page);--card:var(--surface-card);--txt:var(--text-1);--mut:var(--text-2);--line:var(--border);
+  --chip:var(--surface-sunken);--acc:var(--accent);--acc2:var(--action-soft);--grad:var(--action);--kc:var(--u-mid);
+  --red:var(--fn-err);--org:var(--fn-warn-fill);--grn:var(--fn-ok);--p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  --shadow:var(--elev-1);
+}
+/* Mode sombre : un fond commun, des surfaces légèrement différenciées, accents éclaircis */
+html[data-ds].dark,html[data-ds].dark [data-u]{
+  --surface-page:var(--d-bg);--surface-card:var(--d-card);
+  --surface-soft:color-mix(in srgb,var(--u-tint-dk) 60%,var(--d-card));
+  --surface-sunken:var(--d-chip);
+  --text-1:var(--d-txt);--text-2:var(--d-mut);
+  --border:var(--d-line);--separator:var(--d-line);
+  --action:var(--u-action-dk);--on-action:var(--u-on-dk);
+  --action-soft:color-mix(in srgb,var(--u-accent-dk) 16%,var(--d-card));--on-action-soft:var(--u-accent-dk);
+  --title:var(--u-accent-dk);--accent:var(--u-accent-dk);--chart-1:var(--u-accent-dk);--chart-2:color-mix(in srgb,var(--u-accent-dk) 60%,var(--d-card));--chart-3:color-mix(in srgb,var(--u-accent-dk) 30%,var(--d-card));
+  --kc:var(--u-accent-dk);
+}
+
+/* ---------- 4. TROIS NIVEAUX D'INTENSITÉ (data-ds-style = a | b | c) ---------- */
+/* B — Immersif : fonds plus teintés, cartes secondaires colorées */
+html[data-ds][data-ds-style=b],html[data-ds][data-ds-style=b] [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-pastel) 30%,var(--u-wash));
+  --surface-card:color-mix(in srgb,var(--u-pastel) 14%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 55%,var(--n-0));
+  --border:color-mix(in srgb,var(--u-pastel) 60%,var(--n-0));
+}
+html[data-ds][data-ds-style=b].dark,html[data-ds][data-ds-style=b].dark [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-tint-dk) 70%,var(--d-bg));
+  --surface-card:color-mix(in srgb,var(--u-tint-dk) 55%,var(--d-card));
+  --surface-sunken:color-mix(in srgb,var(--u-tint-dk) 40%,var(--d-chip));
+  --border:color-mix(in srgb,var(--u-tint-dk) 40%,var(--d-line));
+}
+/* C — Premium contrasté : fond doux, carte principale profonde */
+html[data-ds][data-ds-style=c],html[data-ds][data-ds-style=c] [data-u]{
+  --surface-page:var(--u-wash);
+}
+html[data-ds][data-ds-style=c].dark,html[data-ds][data-ds-style=c].dark [data-u]{
+  --surface-page:var(--d-bg);
+}
+/* La carte principale (.ds-hero, posée par theme.js) devient profonde en style C */
+html[data-ds][data-ds-style=c] .ds-hero{
+  --surface-card:var(--u-hero);--card:var(--u-hero);
+  --txt:#fff;--mut:color-mix(in srgb,#fff 74%,var(--u-hero));
+  --chip:color-mix(in srgb,#fff 14%,var(--u-hero));--line:color-mix(in srgb,#fff 16%,var(--u-hero));
+  --acc:var(--u-pastel);--acc2:color-mix(in srgb,#fff 14%,var(--u-hero));--on-action-soft:#fff;--grad:var(--u-pastel);--on-action:var(--u-hero);
+  --surface-soft:color-mix(in srgb,#fff 12%,var(--u-hero));--kc:var(--u-pastel);--p:#AFC0FF;--c:#F4C77A;--f:#D4BDF7;
+  background:var(--u-hero)!important;color:#fff;box-shadow:var(--elev-2);
+}
+html[data-ds][data-ds-style=c].dark .ds-hero{
+  --u-hero-dk:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));
+  --card:var(--u-hero-dk);--txt:var(--d-txt);--mut:#B9BFC8;--chip:color-mix(in srgb,#fff 10%,var(--u-hero-dk));--line:color-mix(in srgb,#fff 12%,var(--u-hero-dk));
+  --surface-soft:color-mix(in srgb,#fff 8%,var(--u-hero-dk));--acc:var(--u-accent-dk);--acc2:color-mix(in srgb,#fff 10%,var(--u-hero-dk));--on-action-soft:var(--d-txt);--grad:var(--u-action-dk);--on-action:var(--u-on-dk);--kc:var(--u-accent-dk);
+  --p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  background:var(--u-hero-dk)!important;color:var(--d-txt);
+}
+
+/* ---------- 5. COMPOSANTS (mêmes classes que l'app ; aucune couleur en dur) ---------- */
+:where(html[data-ds]) body{font-family:var(--font);background:var(--bg);color:var(--txt);transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+:where(html[data-ds]) h1{font-size:var(--fs-2xl);font-weight:var(--fw-bold);letter-spacing:-.02em}
+:where(html[data-ds][data-ds-style=b]) h1,:where(html[data-ds][data-ds-style=c]) h1{color:var(--title)}
+:where(html[data-ds]) .card{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--shadow);transition:background-color var(--dur) var(--ease)}
+:where(html[data-ds].dark) .card{border:1px solid var(--line)}
+/* boutons : principal = action profonde, texte lisible garanti */
+:where(html[data-ds]) button,:where(html[data-ds]) .btn{background:var(--grad);color:var(--on-action);border-radius:var(--r-md);transition:transform var(--dur-fast) var(--ease),filter var(--dur-fast),background-color var(--dur) var(--ease)}
+:where(html[data-ds]) button.sec{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) button.ghost{background:transparent;color:var(--acc)}
+:where(html[data-ds]) button.danger{background:transparent;color:var(--red)}
+:where(html[data-ds]) button:disabled{opacity:.45;cursor:not-allowed;filter:saturate(.4)}
+:where(html[data-ds]) :is(button,a,input,select,textarea,summary,.chip):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (hover:hover){:where(html[data-ds]) button:not(:disabled):hover{filter:brightness(1.07)}:where(html[data-ds].dark) button:not(:disabled):hover{filter:brightness(1.12)}}
+:where(html[data-ds]) .chip{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) .chip.on,:where(html[data-ds]) .scale button.on{background:var(--grad);color:var(--on-action)}
+:where(html[data-ds]) .stepper button{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) input,:where(html[data-ds]) select,:where(html[data-ds]) textarea{background:var(--card);border-color:var(--line);color:var(--txt);border-radius:var(--r-md)}
+:where(html[data-ds]) .ds-hero :is(input,select,textarea){background:var(--chip)}
+:where(html[data-ds]) .banner{background:var(--surface-soft);color:var(--txt)}
+:where(html[data-ds]) .reco{background:var(--surface-soft)}
+:where(html[data-ds]) .toast{background:var(--n-900);color:#fff;box-shadow:var(--elev-2)}
+:where(html[data-ds].dark) .toast{background:var(--d-txt);color:var(--d-bg)}
+:where(html[data-ds]) .sheet{background:var(--card)}
+:where(html[data-ds]) .sheet-bg{background:rgba(10,12,16,.45);backdrop-filter:blur(2px)}
+/* étiquettes fonctionnelles : couleur + texte, jamais la couleur seule */
+:where(html[data-ds]) .tag.red{background:color-mix(in srgb,var(--fn-err) 13%,var(--card));color:var(--fn-err)}
+:where(html[data-ds]) .tag.grn,:where(html[data-ds]) .pill{background:color-mix(in srgb,var(--fn-ok) 14%,var(--card));color:var(--fn-ok)}
+:where(html[data-ds]) .tag.org{background:color-mix(in srgb,var(--fn-warn-fill) 20%,var(--card));color:var(--fn-warn)}
+:where(html[data-ds]) .tag.soon{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) .gh.up{color:var(--fn-up)}:where(html[data-ds]) .gh.down{color:var(--fn-down)}
+:where(html[data-ds]) .steps .done .num{background:color-mix(in srgb,var(--fn-ok) 16%,var(--card));color:var(--fn-ok)}
+:where(html[data-ds]) .reco.warn{border-color:var(--fn-warn-fill)}:where(html[data-ds]) .reco.bad{border-color:var(--fn-err)}:where(html[data-ds]) .reco.good{border-color:var(--fn-ok)}
+/* anatomie : groupes musculaires (fonctionnel) */
+:where(html[data-ds]) .musc .m.prim{fill:var(--musc-prim)}:where(html[data-ds]) .musc .m.sec{fill:var(--musc-sec)}
+:where(html[data-ds]) .mtag{background:color-mix(in srgb,var(--musc-sec) 22%,var(--card))}:where(html[data-ds]) .mtag.p{background:color-mix(in srgb,var(--musc-prim) 20%,var(--card))}
+:where(html[data-ds]) .exlast .nx{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) .ghostline{background:var(--surface-soft)}
+/* navigation et repères de date */
+:where(html[data-ds]) nav.tabs{background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px);box-shadow:0 -1px 0 var(--line)}
+:where(html[data-ds]) nav.tabs button{color:var(--mut)}
+:where(html[data-ds]) nav.tabs button.on{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) nav.tabs button.scanbtn{color:var(--acc)}
+:where(html[data-ds]) nav.tabs button.scanbtn span{background:var(--grad);box-shadow:0 6px 18px color-mix(in srgb,var(--grad) 35%,transparent);border-color:var(--card)}
+:where(html[data-ds]) nav.tabs button.scanbtn svg path{stroke:var(--on-action)}
+/* identité « contextuelle » : l'onglet actif prend la couleur de son univers */
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=today]{--u-accent:var(--nut-accent);--u-pastel:var(--nut-pastel);--u-accent-dk:var(--nut-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=fridge]{--u-accent:var(--cui-accent);--u-pastel:var(--cui-pastel);--u-accent-dk:var(--cui-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=workout]{--u-accent:var(--mus-accent);--u-pastel:var(--mus-pastel);--u-accent-dk:var(--mus-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=progress]{--u-accent:var(--pro-accent);--u-pastel:var(--pro-pastel);--u-accent-dk:var(--pro-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button.on{background:color-mix(in srgb,var(--u-pastel) 50%,var(--card));color:var(--u-accent)}
+:where(html[data-ds][data-ds-commun=contextuel].dark) nav.tabs button.on{background:color-mix(in srgb,var(--u-accent-dk) 16%,var(--card));color:var(--u-accent-dk)}
+:where(html[data-ds]) .wd{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) .wd.on{background:var(--grad);color:var(--on-action)}:where(html[data-ds]) .wd.on i{color:var(--on-action)}
+:where(html[data-ds]) .wd.today{outline-color:var(--acc)}
+:where(html[data-ds]) .ktab.on{background:var(--grad);color:var(--on-action);border-color:var(--grad)}
+:where(html[data-ds]) .cztabs .czbadge{background:var(--acc);color:var(--card)}:where(html[data-ds]) .cztabs .ktab.on .czbadge{background:var(--on-action);color:var(--grad)}
+:where(html[data-ds]) .avatar{background:var(--grad);color:var(--on-action)}
+:where(html[data-ds]) .fab{box-shadow:0 6px 18px color-mix(in srgb,var(--grad) 35%,transparent)}
+:where(html[data-ds]) .dpill,:where(html[data-ds]) .qa button{background:var(--card);color:var(--txt)}
+:where(html[data-ds]) .dtpill,:where(html[data-ds]) .pstats div{background:var(--surface-soft)}
+/* minuteur de repos : appartient à la musculation, garde sa couleur sur tous les onglets */
+:where(html[data-ds]) .restbar{background:var(--mus-hero);color:#fff;box-shadow:var(--elev-2)}
+:where(html[data-ds]) .restbar .restfill{background:var(--mus-soft);opacity:.45}
+:where(html[data-ds]) .restbar.over .restfill{background:var(--fn-ok);opacity:.6}
+:where(html[data-ds]) .restbar button{background:rgba(255,255,255,.16);color:#fff}
+:where(html[data-ds].dark) .restbar{background:color-mix(in srgb,var(--mus-accent-dk) 22%,var(--d-raise));color:var(--d-txt)}
+/* B — cartes secondaires colorées */
+:where(html[data-ds][data-ds-style=b]) .qa button,:where(html[data-ds][data-ds-style=b]) .dpill,:where(html[data-ds][data-ds-style=b]) .ktab:not(.on){background:var(--surface-sunken)}
+
+/* ---------- Accueil (proposition, aperçu seulement) ---------- */
+:where(html[data-ds]) .dsh-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+:where(html[data-ds]) .dsh-card{border-radius:var(--r-lg);padding:var(--sp-4);background:var(--surface-soft);color:var(--txt);display:flex;flex-direction:column;gap:6px;min-height:132px;box-shadow:var(--shadow);text-align:left;font-weight:var(--fw-reg)}
+:where(html[data-ds][data-ds-style=a]) .dsh-card,:where(html[data-ds]:not([data-ds-style])) .dsh-card{background:var(--card);border-top:4px solid var(--u-mid)}
+:where(html[data-ds][data-ds-style=c]) .dsh-card{background:var(--card)}
+:where(html[data-ds]) .dsh-card .dsh-k{font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:.04em;text-transform:uppercase;color:var(--acc)}
+:where(html[data-ds]) .dsh-card .dsh-v{font-size:var(--fs-xl);font-weight:var(--fw-bold);line-height:1.1}
+:where(html[data-ds]) .dsh-card .bar>i{background:var(--u-mid)}
+:where(html[data-ds].dark) .dsh-card .bar>i{background:var(--u-accent-dk)}
+:where(html[data-ds]) .dsh-hero{grid-column:1/-1}
+:where(html[data-ds]) .dsh-sw{display:inline-flex;gap:3px}.dsh-sw i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+@media (prefers-reduced-motion:reduce){:where(html[data-ds]) *{transition:none!important;animation-duration:.01ms!important}}
 
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script><script src="vendor/chart.umd.min.js"></script>
@@ -1852,7 +2136,7 @@ let pendingRender = false;
 function render() {
   if (isEditing()) { pendingRender = true; return; }
   pendingRender = false;
-  const views = { today: viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
+  const views = { today: typeof viewTodayN === "function" ? viewTodayN : viewToday, fridge: viewKitchen, workout: viewWorkout, progress: viewProgress, coach: viewCoach, profile: viewProfile };
   const sy = window.scrollY;
   $("#app").classList.toggle("wide", (S.tab === "workout" && S.wMode === "3d") || S.tab === "fridge"); $("#app").classList.toggle("full", S.tab === "workout" && S.wMode === "3d");
   $("#app").innerHTML = (views[S.tab] || viewToday)();
@@ -2087,23 +2371,7 @@ function muscleSVG(prim = [], sec = [], focus = [], mini = false, colors = null)
   return `<svg class="musc" viewBox="0 0 210 196" style="width:100%;max-width:420px;display:block;margin:auto">${sil(0)}${shapes(MUSC_FRONT, 0)}${sil(110)}${shapes(MUSC_BACK, 110)}
     ${mini ? "" : `<text x="50" y="195" font-size="6" text-anchor="middle" fill="var(--mut)">Face</text><text x="160" y="195" font-size="6" text-anchor="middle" fill="var(--mut)">Dos</text>`}</svg>`;
 }
-function exMuscleSheet(exId) {
-  return () => {
-    const x = getEx(exId);
-    return `<div class="row between"><h2>${esc(x.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-      <div class="chips" style="margin-bottom:8px"><button class="chip ${S.bodyAnim === false ? "" : "on"}" data-act="bodyMode" data-v="1">🎬 Mouvement</button><button class="chip ${S.bodyAnim === false ? "on" : ""}" data-act="bodyMode" data-v="0">💪 Muscles (statique)</button></div>
-      ${body3DHolderHTML("min(64vh, 620px)", S.bodyAnim !== false)}
-      <div class="row xs" style="gap:12px;justify-content:center;margin:6px 0"><span><b style="color:#d90429">●</b> principal</span><span><b style="color:#ff8a00">●</b> secondaire</span><span>clignote = partie ciblée</span></div>
-      <h3>Muscles principaux</h3><ul class="sm">${x.prim.map(m => `<li>${MUSCLES[m][0]}${x.focus.includes(m) ? " <b>(ciblé)</b>" : ""}</li>`).join("")}</ul>
-      ${x.sec.length ? `<h3>Secondaires</h3><ul class="sm">${x.sec.map(m => `<li>${MUSCLES[m][0]}</li>`).join("")}</ul>` : ""}
-      ${x.note ? `<div class="reco">${esc(x.note)}</div>` : ""}
-      ${EX_VARIANTS[x.id] ? `<h3>Variantes populaires</h3>${EX_VARIANTS[x.id].map(([n, d]) => `<div class="entry" style="align-items:flex-start"><div><div class="sm b">${esc(n)}</div><div class="xs mut">${esc(d)}</div></div></div>`).join("")}` : ""}
-      ${EX_CUES[x.id] ? `<h3>Exécution</h3><ol class="sm">${EX_CUES[x.id].map(c => `<li>${esc(c)}</li>`).join("")}</ol>` : ""}
-      <h3>Rôle des muscles travaillés</h3>${x.prim.concat(x.sec).filter((m, k, a) => a.indexOf(m) === k && MUSCLE_INFO[m]).map(m => `<p class="sm" style="margin:4px 0"><b>${esc(MUSCLES[m][0])}</b> — ${esc(MUSCLE_INFO[m])}</p>`).join("")}
-      ${(() => { const alts = typeof replacementsFor === "function" ? replacementsFor(x.id).slice(0, 3) : []; return alts.length ? `<h3>Alternatives dans ta salle</h3><p class="sm">${alts.map(a => esc(getEx(a).name)).join(" · ")}</p>` : ""; })()}
-      ${(() => { const h = exerciseHistory(x.id)[0]; const ws = h ? (h.sets || []).filter(z => !z.wu) : []; if (!ws.length) return ""; return `<p class="xs mut">🔥 Ta dernière fois (${ws.map(z => z.w + "×" + z.r).join(", ")}) ≈ ${r0(exKcal(x.id, ws))} kcal (<a href="#" data-act="energyInfo" style="color:var(--acc)">calcul</a>)</p>`; })()}`;
-  };
-}
+// fiche exercice (exMuscleSheet) : voir program.js (section Muscu)
 
 // ===================== SÉANCE =====================
 function viewWorkout() {
@@ -2142,34 +2410,7 @@ function liveView(w) {
     <div class="card"><label>Notes de séance</label><textarea id="wNotes" placeholder="sensations, douleurs, machine prise…">${esc(w.notes || "")}</textarea>
     <div class="row" style="margin-top:10px"><button class="danger grow" data-act="cancelW">Abandonner</button><button class="grow" data-act="finishW">Terminer la séance</button></div></div>`;
 }
-function exCard(w, e, i) {
-  if (e.done) { const x0 = getEx(e.id); const ws = (e.sets || []).filter(s => !s.wu);
-    return `<div class="card exdone" data-act="exReopen" data-i="${i}"><div class="row between" style="align-items:center"><div><div class="b">✅ ${esc(x0.name)}</div>
-      <div class="xs mut">${ws.length} série${ws.length > 1 ? "s" : ""} · ${ws.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div></div><button class="ghost small" data-act="exReopen" data-i="${i}">Modifier</button></div></div>`; }
-  const x = getEx(e.id); const sug = suggestion(e.id, w._id); const hist = exerciseHistory(e.id, w._id);
-  const last = hist[0]; const [lo, hi] = repRange(e.id);
-  const lastW = (e.sets || []).filter(s => !s.wu).slice(-1)[0]; const dr = S.draft[i] || (S.draft[i] = { w: lastW?.w ?? sug.w ?? "", r: lastW?.r ?? "", rir: null, wu: false });
-  const alts = ALTERNATIVES[e.id] || [];
-  const prev = (e.sets || []);
-  const dl = isDeload() ? `<div class="reco xs" style="margin:6px 0">🔋 Décharge : fais environ <b>${Math.max(1, Math.round((program()[w.name]?.sets?.[e.id] || 3) / 2))} série(s)</b> à la charge habituelle, en gardant 3-4 reps en réserve.</div>` : "";
-  return `<div class="card">${dl}<div class="exhead"><div style="display:flex;gap:10px;align-items:flex-start"><div style="width:110px;flex:none;cursor:pointer;text-align:center" data-act="showMusc" data-v="${e.id}">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}<div class="xs" style="color:var(--acc,#3b82f6)">🎬 Comment faire</div></div><div><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div></div>
-    <div class="row" style="gap:2px">${alts.length ? `<button class="ghost small" data-act="swapEx" data-i="${i}" title="Variante">⇄</button>` : ""}<button class="ghost small" data-act="refuse" data-i="${i}" title="Je ne veux pas faire cet exercice">🚫</button><button class="ghost small" data-act="exUp" data-i="${i}" title="Monter">↑</button><button class="danger small" data-act="rmEx" data-i="${i}" title="Retirer">✕</button></div></div>
-    <div class="row sm" style="margin:6px 0;gap:6px;flex-wrap:wrap"><span class="mut">Fourchette :</span><select data-act="range" data-v="${e.id}" style="width:auto;padding:4px 6px">${[[6, 8], [6, 10], [8, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) => `<option value="${a}-${b}" ${a === lo && b === hi ? "selected" : ""}>${a}-${b} reps</option>`).join("")}</select></div>
-    ${last ? `<div class="xs mut">Dernière fois (${fmtDay(dateKey(new Date(last.date)))}) : ${last.sets.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div>` : ""}
-    <div class="reco ${sug.up ? "good" : ""} sm">${esc(sug.text)}</div>
-    ${prev.length ? `<div class="set xs mut"><span>#</span><span>kg</span><span>reps</span><span>RIR · repos</span><span></span></div>` : ""}
-    ${prev.map((s, j) => { const rest = j > 0 ? s.t - prev[j - 1].t : null; const n = prev.slice(0, j + 1).filter(z => !z.wu).length; const ghostSet = !s.wu && last ? (last.sets || []).filter(z => !z.wu)[n - 1] : null;
-      return `<div class="set ${s.wu ? "wu" : ""}"><span class="mut">${s.wu ? "É" : n}</span><span class="b">${s.w}</span><span class="b">${s.r} ${s.wu ? "" : ghostBadge(ghostCmp(s, ghostSet))}</span><span class="xs">${s.rir != null && !s.wu ? "RIR " + s.rir : ""}${rest ? ` · ${fmtDur(rest)}` : ""}</span><button class="danger small" data-act="delSet" data-i="${i}" data-j="${j}">✕</button></div>`; }).join("")}
-    ${ghostSummary(e, last)}
-    ${(() => { const done = prev.length ? exKcal(e.id, prev) : 0; const nW = prev.filter(z => !z.wu).length; const gs = last ? (last.sets || []).filter(z => !z.wu)[nW] : null;
-      return `${gs ? `<div class="ghostline xs">👻 Série ${nW + 1} la dernière fois : <b>${gs.w} kg × ${gs.r}</b>${gs.rir != null ? ` @RIR ${gs.rir}` : ""} — à égaler ou battre</div>` : ""}
-      <div class="xs mut" style="margin-top:4px">🔥 ${done ? `≈ <b>${r0(done)} kcal</b> pour ces séries` : `Prévu (${hi} reps à ${dr.w || "?"} kg) : ≈ ${dr.w ? r0(setKcal(e.id, +dr.w, hi)) : "?"} kcal / série`} <a href="#" data-act="energyInfo" style="color:var(--acc)">comment ?</a></div>`; })()}
-    <div style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">
-      <div class="row"><div class="grow"><div class="xs mut">Charge (kg)</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="w" data-v="-${profile().increment}">−</button><input type="number" inputmode="decimal" value="${dr.w}" data-input="draft" data-i="${i}" data-k="w"><button data-act="dStep" data-i="${i}" data-k="w" data-v="${profile().increment}">+</button></div>${BARBELL.has(e.id) && dr.w ? plateHTML(+dr.w) : ""}</div>
-      <div class="grow"><div class="xs mut">Reps</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="r" data-v="-1">−</button><input type="number" inputmode="numeric" value="${dr.r}" data-input="draft" data-i="${i}" data-k="r" placeholder="${hi}"><button data-act="dStep" data-i="${i}" data-k="r" data-v="1">+</button></div></div></div>
-      <div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="xs mut">RIR (reps en réserve)</span>${[0, 1, 2, 3, 4].map(v => `<button class="chip ${dr.rir === v && !dr.wu ? "on" : ""}" data-act="dRir" data-i="${i}" data-v="${v}">${v === 4 ? "4+" : v}</button>`).join("")}<button class="chip ${dr.wu ? "on" : ""}" data-act="dWu" data-i="${i}">Échauff.</button></div>
-      <div class="row" style="margin-top:8px;gap:8px"><button class="grow" data-act="logSet" data-i="${i}">Valider la série</button>${prev.some(z => !z.wu) ? `<button class="sec small" style="flex:none;padding:8px 12px" data-act="exDone" data-i="${i}" title="Replier l'exercice">✓ Exercice fini</button>` : ""}</div></div></div>`;
-}
+// carte d'exercice en séance (exCard) : voir program.js (section Muscu)
 function exPickerSheet(mode, idx) {
   return () => {
     const q = (S.exQ || "").toLowerCase();
@@ -2412,13 +2653,9 @@ function pantryHas(nom) { return !!fridgeFind(nom); }
 function pantryUse(nom, qte) { return fridgeConsume(nom, +qte || 0); }
 Object.assign(window, { pantryList, pantryHas, pantryUse });
 
-const CZ_SUBS = [["frigo", "🧊 Frigo"], ["courses", "🛒 Courses"], ["recettes", "🍲 Avec ce que j'ai"], ["batch", "🍱 Batch"], ["budget", "💶 Budget"]];
 function viewFridge() {
-  const items = fridgeItems(); const sub = S.cz || "frigo";
-  const cnt = { courses: typeof shopItems === "function" ? shopItems().filter(x => !x.done).length : 0, batch: typeof batchItems === "function" ? batchItems().reduce((t, b) => t + (b.left > 0 ? b.left : 0), 0) : 0 };
-  const subs = `<div class="chips czsubs" style="margin-bottom:10px">${CZ_SUBS.map(([k, l]) => `<button class="chip ${sub === k ? "on" : ""}" data-act="czSub" data-v="${k}">${l}${cnt[k] ? ` <b>${cnt[k]}</b>` : ""}</button>`).join("")}</div>`;
-  const head = `${statusBanner()}<div class="row between"><h1>Mon frigo</h1></div>${subs}`;
-  if (sub !== "frigo" && typeof cuisineSubHTML === "function") return head + cuisineSubHTML(sub);
+  const items = fridgeItems();
+  const head = ""; // les onglets Cuisine sont dessinés par viewKitchen (cuisine2.js)
   const soon = items.filter(expSoon).sort((a, b) => expDays(a) - expDays(b));
   const soonCard = soon.length ? `<div class="card czsoon"><h3>⏳ À finir vite <span class="mut sm">${soon.length}</span></h3>${soon.map(fridgeRow).join("")}<button class="sec small" style="margin-top:6px" data-act="czSub" data-v="recettes">Recettes qui les utilisent</button></div>` : "";
   const zones = Object.keys(FRIDGE_ZONES).map(z => {
@@ -2427,10 +2664,8 @@ function viewFridge() {
   }).join("");
   return `${head}${soonCard}
     <div id="scene3d" style="height:60vh;min-height:380px;border-radius:16px;overflow:hidden;margin-bottom:10px;background:var(--chip)"></div>
-    <p class="xs mut c" style="margin-top:-4px">Fais glisser pour tourner, pince pour zoomer, touche un aliment pour le modifier.</p>
-    <div class="row" style="margin-bottom:10px"><button class="grow" data-act="fridgeAddOpen">+ Ajouter</button><button class="sec grow" data-act="fridgeShop">Courses (IA)</button></div>
-    <button class="sec" style="width:100%;margin-bottom:12px" data-act="aiFridge">👨‍🍳 Recette avec ce que j'ai</button>
-    ${zones || `<div class="card"><p class="mut sm">Ton frigo est vide. Ajoute ce que tu as (même partiellement) : quand tu manges un aliment présent dans le frigo, il est retiré automatiquement.</p></div>`}`;
+    <div class="row" style="margin-bottom:12px"><button class="grow" data-act="fridgeAddOpen">+ Ajouter</button><button class="sec grow" data-act="fridgeShop">🧾 Ranger mes courses</button></div>
+    ${zones || `<div class="card"><p class="mut sm">Frigo vide. Ce que tu manges et qui y est en sera retiré tout seul.</p></div>`}`;
 }
 function fridgeItemSheet(id) {
   return () => {
@@ -2640,7 +2875,8 @@ const NUT_ACT = {
   mpGo: () => mealPlanGo(),
   mpEat: el => { const P = Store.get("mealplan"); const m = P.days[+el.dataset.d].meals[+el.dataset.m]; const g = (m.ingredients || []).reduce((t, i) => t + (+i.g || 0), 0) || 100;
     const per100 = { kcal: m.kcal / g * 100, p: m.p / g * 100, c: m.c / g * 100, f: m.f / g * 100, fib: 0, sugar: 0, satfat: 0, salt: 0 };
-    S.day = todayKey(); updDay(d => d.entries.push(makeEntry({ name: m.name, per100, src: "plan" }, g, m.meal || ""))); toast("Ajouté à aujourd'hui ✓"); },
+    S.day = todayKey(); updDay(d => d.entries.push(makeEntry({ name: m.name, per100, src: "plan" }, g, m.meal || "")));
+    const out = (m.ingredients || []).filter(i => typeof fridgeConsume === "function" && fridgeConsume(i.name, +i.g || 0)).length; toast("Ajouté à aujourd'hui ✓" + (out ? ` · ${out} ingrédient(s) retiré(s) du frigo` : "")); },
   ideaGo: el => ideaGo(el.dataset.v),
   ideaSave: () => { const doc = clone(Store.get("notes", { items: [] })); doc.items = doc.items || []; doc.items.unshift({ id: uid(), t: Date.now(), text: S.aiOut.idea }); Store.set("notes", doc); toast("Idées gardées ✓"); },
   ideaDel: el => { const doc = clone(Store.get("notes", { items: [] })); doc.items = (doc.items || []).filter(n => n.id !== el.dataset.v); Store.set("notes", doc); },
@@ -2650,32 +2886,25 @@ const NUT_ACT = {
 // Poids de la semaine = moyenne des pesées du lundi au dimanche (jusqu'à 7), plus fiable qu'une seule pesée.
 function weekWeights(ws0) { const w = []; for (let i = 0; i < 7; i++) { const v = day(addDays(ws0, i)).weight; if (v) w.push(+v); } return { n: w.length, avg: w.length ? r1(w.reduce((a, b) => a + b, 0) / w.length) : null }; }
 function weekIntake(ws0) { const k = []; for (let i = 0; i < 7; i++) { const x = addDays(ws0, i); const t = dayTotals(x); if (t.kcal >= 800 && !day(x).incomplete) k.push(t.kcal); } return { n: k.length, avg: k.length ? r0(k.reduce((a, b) => a + b, 0) / k.length) : null }; }
-function checkinData() {
-  const cur = weekKey(), last = addDays(cur, -7), prev = addDays(cur, -14);
-  const W = weekWeights(last), Wp = weekWeights(prev), I = weekIntake(last);
-  const T = targets(), A = Store.get("adjust", {}) || {}, ad = adaptiveTDEE(), p = profile(), G = GOALS[p.goal];
-  const dW = W.avg != null && Wp.avg != null ? r1(W.avg - Wp.avg) : null;
-  const why = [];
-  if (!ad.ok) why.push(`Pas encore assez de données pour mesurer ta vraie dépense (il faut au moins 10 jours notés et 4 pesées sur 4 semaines ; tu en as ${ad.days} et ${ad.weighs}). Ton objectif vient pour l'instant de la formule.`);
-  else {
-    why.push(`Sur les 4 dernières semaines tu as mangé en moyenne <b>${r0(ad.avgIntake)} kcal/j</b> et ton poids tendance a bougé de <b>${ad.slopeWeek >= 0 ? "+" : ""}${r1(ad.slopeWeek)} kg/semaine</b> → ta dépense réelle est d'environ <b>${r0(ad.tdee)} kcal/j</b>.`);
-    why.push(`Objectif « ${esc(G.label)} » = dépense ${G.factor >= 0 ? "+" : ""}${Math.round(G.factor * 100)} % → <b>${T.kcal} kcal/j</b>.`);
-  }
-  if (A.prev && A.kcal && A.week === cur) { const d = A.kcal - A.prev; why.push(d === 0 ? "Objectif inchangé par rapport à la semaine dernière." : `C'est <b>${d > 0 ? "+" : ""}${d} kcal</b> par rapport à la semaine dernière (${A.prev} kcal).`); }
-  return { week: last, W, Wp, dW, I, T, why };
+// Bilan de la semaine : une carte courte et neutre, 3 lignes (poids tendance, apport moyen, objectif + pourquoi).
+function weekReview() {
+  const cur = weekKey(), last = addDays(cur, -7);
+  const w1 = weightTrendAt(addDays(cur, -1)).trend, w0 = weightTrendAt(addDays(last, -1)).trend, n = weekWeights(last).n;
+  const I = weekIntake(last), T = targets(), A = Store.get("adjust", {}) || {}, ad = adaptiveTDEE(), G = GOALS[profile().goal];
+  const diff = A.prev && A.kcal && A.week === cur ? A.kcal - A.prev : null;
+  const pct = Math.round(G.factor * 100);
+  const why = ad.ok ? `dépense ≈ ${r0(ad.tdee)}${pct ? ` ${pct > 0 ? "+" : "−"} ${Math.abs(pct)} %` : ""}` : "calculé par formule (peu de pesées)";
+  return { week: last, n, I, T, diff, why, w1, dW: w1 != null && w0 != null ? r1(w1 - w0) : null };
 }
 function checkinCardHTML() {
-  const seen = Store.get("checkinSeen", {}) || {}; const cur = weekKey();
-  if (seen.week === cur) return "";
-  const C = checkinData(); if (!C.W.n && !C.I.n) return "";
-  return `<div class="card" style="border:2px solid var(--acc)"><div class="row between"><b>📋 Check-in de la semaine</b><button class="ghost small" data-act="checkinSeen">OK</button></div>
-    <div class="row" style="gap:14px;margin:8px 0;flex-wrap:wrap">
-      <div><div class="xs mut">Poids moyen (${C.W.n}/7 pesées)</div><div class="big" style="font-size:22px">${C.W.avg ?? "—"} kg</div>${C.dW != null ? `<div class="xs">${C.dW > 0 ? "+" : ""}${C.dW} kg vs semaine d'avant</div>` : ""}</div>
-      <div><div class="xs mut">Mangé en moyenne (${C.I.n} j)</div><div class="big" style="font-size:22px">${C.I.avg ?? "—"}</div><div class="xs">kcal / jour</div></div>
-      <div><div class="xs mut">Nouvel objectif</div><div class="big" style="font-size:22px">${C.T.kcal}</div><div class="xs">kcal · P ${C.T.p} g</div></div></div>
-    <p class="sm" style="margin:4px 0">${C.why.join(" ")}</p>
-    ${C.W.n < 4 ? `<p class="xs mut">Astuce : pèse-toi chaque matin au réveil, à jeun, après être passé aux toilettes. Plus tu as de pesées dans la semaine (jusqu'à 7), plus la moyenne est fiable.</p>` : ""}
-    <button class="sec small" data-act="checkinHist">Historique des check-ins</button></div>`;
+  const seen = Store.get("checkinSeen", {}) || {}; if (seen.week === weekKey()) return "";
+  const R = weekReview(); if (!R.n && !R.I.n) return "";
+  const sg = v => (v > 0 ? "+" : v < 0 ? "−" : "±") + Math.abs(v);
+  return `<div class="card wkrev"><div class="row between"><b class="sm">Bilan de la semaine</b><button class="ghost small" data-act="checkinSeen" aria-label="Fermer">✕</button></div>
+    <div class="wkrev-l" data-act="checkinHist">
+      <div>Poids tendance <b>${R.w1 != null ? R.w1 + " kg" : "—"}</b>${R.dW != null ? ` <span class="mut">${sg(R.dW)} kg</span>` : ""}</div>
+      <div>Apport moyen <b>${R.I.avg != null ? R.I.avg + " kcal" : "—"}</b> <span class="mut">sur ${R.I.n} j</span></div>
+      <div>Objectif <b>${R.T.kcal} kcal</b>${R.diff ? ` <span class="mut">(${sg(R.diff)})</span>` : ""} <span class="mut">· ${R.why}</span></div></div></div>`;
 }
 function checkinHistSheet() {
   const cur = weekKey(); const A = Store.get("adjust", {}) || {}; const hist = Object.fromEntries((A.hist || []).concat(A.kcal ? [[A.week, A.kcal]] : []));
@@ -2738,9 +2967,8 @@ window.dayType = dayType; window.dayTargets = dayTargets;
 // ---- pastille du type de jour (journal) ----
 function dayTypePillHTML(k) {
   const D = dayTypeInfo(k); const [ic, l] = DAY_TYPES[D.type];
-  const T = dayTargets(k);
   const edit = S.dtEdit === k ? `<div class="chips" style="margin:6px 0 0">${[["", "Auto"], ...Object.entries(DAY_TYPES).map(([v, [i, n]]) => [v, i + " " + n])].map(([v, n]) => `<button class="chip ${(day(k).dayType || "") === v ? "on" : ""}" data-act="dtSet" data-v="${v}">${n}</button>`).join("")}</div>` : "";
-  return `<div class="dtype"><button class="dtpill" data-act="dtEdit">${ic} Jour ${l.toLowerCase()} <span class="xs mut">· ${D.src}${T.cycle ? ` · ${T.kcal} kcal` : ""}</span></button>${edit}</div>`;
+  return `<div class="dtype"><button class="dtpill" data-act="dtEdit">${ic} Jour ${l.toLowerCase()} <span class="xs mut">· ${D.src}</span></button>${edit}</div>`;
 }
 
 // ---- anneaux « restant » : couleur fixe par macro, jamais de rouge ----
@@ -2803,7 +3031,7 @@ function weightTrendAt(k) {
   for (let i = 180; i >= 0; i--) { const x = addDays(k, -i), w = +(Store.get("d-" + x)?.weight || 0); if (w) { tr = tr == null ? w : tr + WT_ALPHA * (w - tr); raw = w; rawK = x; } }
   return { trend: tr == null ? null : r1(tr), raw, rawK };
 }
-function weightPillVal(d, k) { if (!d.weight) return ""; const W = weightTrendAt(k); return `${W.trend ?? r1(d.weight)} kg <span class="xs mut">tendance · pesée ${r1(d.weight)}</span>`; }
+function weightPillVal(d, k) { if (!d.weight) return ""; const W = weightTrendAt(k); return `${W.trend ?? r1(d.weight)} kg`; } // pesée brute : dans la fiche détail
 function weightLineHTML() { const W = weightTrendAt(); return W.trend == null ? "" : `<div class="row" style="gap:14px;align-items:baseline;margin-bottom:6px"><div><span class="big">${W.trend}</span> <span class="sm">kg</span><div class="xs mut">tendance lissée</div></div><div class="sm mut">dernière pesée : ${r1(W.raw)} kg<div class="xs">${fmtDay(W.rawK)}</div></div></div>`; }
 
 // ---- réglages (profil) ----
@@ -2830,6 +3058,50 @@ Object.assign(NUT_ACT, {
     const name = ($("#qaN")?.value || "").trim() || "Ajout rapide";
     updDay(d => d.entries.push(quickEntry(name, r0(k), p, c, f, S.add.meal || ""))); toast(`${name} ajouté · ${r0(k)} kcal`); closeSheet(); },
 });
+
+// ===================== NUTRITION — LOT 2 : écran Aujourd'hui épuré =====================
+// Un seul but : voir ce qui reste et noter ce qu'on mange. Le reste est replié.
+function nutEntryRow(e) {
+  return `<div class="entry" data-act="editEntry" data-v="${e.id}">${e.src === "plan" || e.src === "recette" ? dishImg(e.name, { size: "mini" }) : ""}<div class="grow"><div>${esc(e.name)}${e.brand ? ` <span class="mut xs">${esc(e.brand)}</span>` : ""}</div><div class="mut xs">${e.src === "estim" ? "estimation" : e.src === "rapide" ? "ajout rapide" : e.g + " g"} · P ${r0(e.n.p)} · G ${r0(e.n.c)} · L ${r0(e.n.f)}${e.meal ? " · " + esc(e.meal) : ""}</div></div><div class="b">${r0(e.n.kcal)}</div></div>`;
+}
+// suivi du jour : pastilles remplies seulement, les vides regroupées en une seule
+function dailyStripN(d, k) {
+  const p = profile(); const sport = (d.acts || []).reduce((t, a) => t + a.min, 0);
+  const items = [["⚖️", weightPillVal(d, k), "poids"], ["👣", d.steps ? d.steps.toLocaleString("fr-FR") + " pas" : "", "pas"], ["😴", d.sleep ? d.sleep + " h" : "", "sommeil"], ["⚽", sport ? sport + " min" : "", "sport"], ...(p.moodTrack ? [["🙂", d.mood ? d.mood + "/5" : "", "humeur"]] : [])];
+  const full = items.filter(i => i[1]), empty = items.filter(i => !i[1]);
+  return `<div class="dstrip">${full.map(([ic, v]) => `<button class="dpill" data-act="openDaily">${ic} ${v}</button>`).join("")}${empty.length ? `<button class="dpill empty" data-act="openDaily">＋ ${empty.map(i => i[2]).join(", ")}</button>` : ""}</div>`;
+}
+// prochain repas seulement (au lieu de tous les repas restants)
+function nextMealLine(k, T) { const M = mealShares(k, T); const m = Object.keys(M).find(x => M[x].kcal); return m ? `<div class="mhint xs mut">Prochain repas · ${esc(m)} ${shareTxt(M[m])}</div>` : ""; }
+function viewTodayN() {
+  const k = S.day, d = day(k), t = dayTotals(k), T = Object.assign(targets(), dayTargets(k)), today = todayKey();
+  const all = (d.entries || []).slice().sort((x, y) => (y.t || 0) - (x.t || 0));
+  const prevN = (day(addDays(k, -1)).entries || []).length;
+  const sugarMax = r0(T.kcal * 0.1 / 4), satMax = r0(T.kcal * 0.1 / 9);
+  const mini = (lab, v, ref, max) => `<span class="tag">${lab} ${r1(v)}/${ref} g</span>`;
+  const micro = Object.keys(t.micro).length ? `<div class="chips" style="margin-top:6px">${Object.entries(MICRO_REFS).map(([m, [l, u, ref]]) => t.micro[m] != null ? `<span class="tag">${l} ${r0(t.micro[m])}/${ref} ${u}</span>` : "").join("")}</div>` : "";
+  const more = all.length ? `<details class="nmore" ${S.nMore ? "open" : ""}><summary class="ghost small" onclick="S.nMore=!this.parentNode.open" aria-label="Plus d'options">⋯</summary><div class="nmore-in" onclick="S.nMore=false">
+      <button class="chip" data-act="copyYesterday">↺ Copier hier</button>
+      <button class="chip" data-act="byMeal" data-v="${S.byMeal ? 0 : 1}">${S.byMeal ? "Liste simple" : "Grouper par repas"}</button>
+      <button class="chip" data-act="favMeal" data-v="__all">★ Enregistrer en favori</button></div></details>` : "";
+  const list = !all.length
+    ? `<p class="mut sm" style="margin:6px 0">${k > today ? "Jour à venir : tu peux déjà prévoir tes repas." : "Rien pour l'instant."}</p>
+       ${prevN ? `<button class="sec" style="width:100%;margin:4px 0" data-act="copyYesterday">↺ Même chose qu'hier (${r0(dayTotals(addDays(k, -1)).kcal)} kcal)</button>` : ""}
+       ${k <= today ? `<button class="ghost small" style="width:100%" data-act="estimOpen">Journée oubliée ? Estimer les kcal</button>` : ""}`
+    : S.byMeal ? mealGroupsHTML(k, all, nutEntryRow, T) : all.map(nutEntryRow).join("") + nextMealLine(k, T);
+  return `${statusBanner()}
+  ${k === today ? `${onboardingHTML()}${checkinCardHTML()}${deloadAdvice() && !isDeload() ? deloadCardHTML() : ""}${bilans().length && bilanDue() ? `<button class="sec" style="width:100%;margin-bottom:8px" data-act="blOpen">📸 Bilan photo de la semaine</button>` : ""}` : ""}
+  ${weekStripHTML(k)}
+  ${k > today ? "" : dailyStripN(d, k)}
+  ${dayTypePillHTML(k)}
+  <div class="card" style="margin-top:4px">${remainHTML(t, T)}
+    <details class="ndet"><summary class="xs mut">Fibres, sucres, sel…</summary><div class="chips" style="margin-top:6px">${mini("Fibres", t.fib, 30)}${mini("Sucres", t.sugar, sugarMax, 1)}${mini("Sel", t.salt, 5, 1)}${mini("Saturés", t.satfat, satMax, 1)}</div>${micro}</details>
+    ${k === today ? `<button class="chip" style="margin-top:8px" data-act="aiFinish">💡 Que manger ensuite ?</button>` : ""}
+    ${S.aiOut.today ? `<div class="ai-out">${aiRich(S.aiOut.today)}</div>` : ""}
+  </div>
+  <div class="card"><div class="row between"><h3 style="margin:0">Mangé <span class="mut sm">${r0(t.kcal)} kcal</span></h3><div class="row" style="gap:6px">${more}<button class="small" data-act="openAdd" data-v="">+ Ajouter</button></div></div>
+    ${list}</div>`;
+}
 
 // ===================== RECETTES PERSO =====================
 const recipes = () => Store.get("recipes", { items: [] }).items || [];
@@ -2877,6 +3149,18 @@ function saveRecipeFromForm() {
   const R = S.rec; R.name = ($("#recName")?.value || R.name || "").trim(); R.portions = Math.max(1, parseFloat($("#recPortions")?.value) || R.portions || 1); R.cookedG = parseFloat($("#recCooked")?.value) || null;
 }
 // ===================== COPIER UN AUTRE JOUR =====================
+// Retire du frigo ce qui y est pour des lignes de journal copiées. Recette perso → ses ingrédients au prorata ;
+// portion de batch → rien (déjà retiré à la préparation). Renvoie le nombre d'aliments retirés.
+function entriesConsume(es) {
+  let out = 0;
+  (es || []).forEach(e => {
+    if (e.src === "batch" || !(+e.g > 0)) return;
+    const r = e.src === "recette" ? recipes().find(x => x.name === e.name) : null;
+    if (r) { const frac = e.g / (r.cookedG || recipeTotals(r).g || e.g); (r.ings || []).forEach(i => { if (fridgeConsume(i.name, i.g * frac)) out++; }); }
+    else if (fridgeConsume(e.name, +e.g)) out++;
+  });
+  return out;
+}
 function copyDaySheet() {
   const k = S.copyFrom || addDays(S.day, -1); const es = day(k).entries || [];
   if (!S.copySel || S.copySelDay !== k) { S.copySel = es.map(() => true); S.copySelDay = k; }
@@ -2929,7 +3213,7 @@ const RECIPE_ACT = {
     toast(`${r.name} ajouté (${p} portion${p > 1 ? "s" : ""})`); closeSheet(); },
   copyOpen: () => { S.copyFrom = addDays(S.day, -1); S.copySel = null; openSheet(copyDaySheet); },
   copyNav: el => { const k = addDays(S.copyFrom || addDays(S.day, -1), +el.dataset.v); if (k > todayKey()) return; S.copyFrom = k; S.copySel = null; renderSheet(); },
-  copyGo: () => { const es = (day(S.copyFrom).entries || []).filter((e, i) => S.copySel[i]); updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); toast(`${es.length} aliment(s) copié(s)`); closeSheet(); }
+  copyGo: () => { const es = (day(S.copyFrom).entries || []).filter((e, i) => S.copySel[i]); updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); const out = entriesConsume(es); toast(`${es.length} aliment(s) copié(s)` + (out ? ` · ${out} retiré(s) du frigo` : "")); closeSheet(); }
 };
 
 // ===================== CUISINE (lot 1) : avec ce que j'ai, courses, budget, batch =====================
@@ -3027,8 +3311,8 @@ function recipesAvailHTML() {
       ${r.A.urgent.length ? `<div class="xs">⏳ utilise : ${r.A.urgent.map(i => `${esc(i.name)} (${expTxt(i)})`).join(", ")}</div>` : ""}
       <div class="xs mut">${r.per.kcal ? `${r0(r.per.kcal)} kcal · P ${r0(r.per.p)} g / portion` : "macros non précisées"}${r.fit >= 0.7 ? ` · <b style="color:var(--acc)">colle à ce qu'il te reste</b>` : ""} · ${costTxt(r.C, r.portions)}${r.portions > 1 ? "/portion" : ""}</div>
       <div class="row" style="gap:6px;margin-top:4px">${r.kind === "perso" ? `<button class="small" data-act="recPick" data-v="${r.id}">Manger</button>` : ""}${r.A.miss.length ? `<button class="small sec" data-act="czRecShop" data-v="${esc(r.id)}">🛒 Ajouter les manquants</button>` : ""}</div></div></div>`;
-  return `<div class="card"><h2>Avec ce que j'ai</h2><p class="xs mut">Il te reste aujourd'hui ${r0(R.kcal)} kcal · P ${r0(R.p)} g · G ${r0(R.c)} g · L ${r0(R.f)} g. Tri : ingrédients déjà au frigo (ceux à finir vite d'abord), puis adéquation à ce qu'il te reste.</p>
-    ${rows.length ? rows.map(card).join("") : `<p class="mut sm">Aucune recette pour l'instant : crée tes recettes (+ Ajouter un aliment → Recettes) ou garde des idées dans « Idées recettes ».</p>`}</div>`;
+  return `<div class="card"><h2>Avec ce que j'ai</h2><p class="xs mut">Reste du jour : ${r0(R.kcal)} kcal · P ${r0(R.p)} g</p>
+    ${rows.length ? rows.map(card).join("") : `<p class="mut sm">Aucune recette pour l'instant. Crée-en une, ou garde des idées ci-dessous.</p>`}</div>`;
 }
 
 // ---- liste de courses ----
@@ -3058,12 +3342,12 @@ function shopListHTML() {
   const groups = CZ_AISLES.map(([k, l]) => { const L = its.filter(s => (s.aisle || "autre") === k); if (!L.length) return "";
     return `<h3>${l}</h3>${L.map(s => { const c = shopCost(s); return `<label class="entry czshop" style="align-items:center;cursor:pointer;margin:0;color:var(--txt);font-size:15px"><span class="row" style="gap:8px"><input type="checkbox" style="width:20px;height:20px" data-act="czShopChk" data-v="${s.id}" ${s.done ? "checked" : ""}><span${s.done ? ' style="text-decoration:line-through;opacity:.55"' : ""}>${esc(s.name)} <span class="xs mut">${shopQtyTxt(s)}</span></span></span><span class="xs mut">${c != null ? eur(c) : ""}</span><button class="ghost small" data-act="czShopDel" data-v="${s.id}">✕</button></label>`; }).join("")}`; }).join("");
   return `<div class="card"><div class="row between"><h2>🛒 Liste de courses</h2><span class="sm b">${tot.k ? "≈ " + eur(tot.c) : ""}</span></div>
-    <p class="xs mut">Cocher un article le range dans le frigo. Depuis le plan de repas ou une recette, seul ce qui manque est ajouté.</p>
+    ${its.length ? `<p class="xs mut">Coché = rangé dans le frigo.</p>` : ""}
     ${its.length ? groups : `<p class="mut sm">Liste vide.</p>`}
     <input id="czShopN" placeholder="Ajouter un article (ex. 6 œufs, 500 g de riz)" style="margin-top:10px"><div class="row" style="margin-top:6px;gap:6px"><select id="czShopA" class="grow">${CZ_AISLES.map(([k, l]) => `<option value="${k}">${l}</option>`).join("")}<option value="" selected>Rayon auto</option></select><button class="small" data-act="czShopAdd">+</button></div>
     <div class="row" style="margin-top:8px;gap:6px">${Store.get("mealplan", null) ? `<button class="sec small grow" data-act="czPlanShop">Depuis mon plan de repas</button>` : ""}${todo.length ? `<button class="sec small grow" data-act="czShare">Partager la liste</button>` : ""}${its.some(s => s.done) ? `<button class="sec small grow" data-act="czShopClear">Retirer les cochés</button>` : ""}</div>
     ${S.czShare ? `<textarea id="czShareTxt" readonly style="margin-top:8px;height:140px">${esc(shopText())}</textarea>` : ""}
-    ${tot.k < todo.length ? `<p class="xs mut">${todo.length - tot.k} article(s) sans prix : renseigne-les dans 💶 Budget pour un total complet.</p>` : ""}</div>`;
+    ${tot.k < todo.length ? `<p class="xs mut">${todo.length - tot.k} article(s) sans prix : prix à renseigner dans 💶 Budget.</p>` : ""}</div>`;
 }
 
 // ---- budget ----
@@ -3093,8 +3377,11 @@ function batchHTML() {
   const row = b => `<div class="entry czbatch" style="align-items:center"><div class="grow"><div class="b sm">${esc(b.name)}</div><div class="xs mut">${b.left}/${b.portions} portion(s) · ${r0(b.per.kcal)} kcal · P ${r0(b.per.p)} · G ${r0(b.per.c)} · L ${r0(b.per.f)} · préparé ${b.date ? fmtDay(b.date) : ""}</div></div>${b.left > 0 ? `<button class="small" data-act="czBatchEat" data-v="${b.id}">Mangé</button>` : `<button class="ghost small" data-act="czBatchDel" data-v="${b.id}">✕</button>`}</div>`;
   const f = (id, l, v, t = "number") => `<div class="grow"><label>${l}</label><input id="${id}" type="${t}" ${t === "number" ? 'inputmode="decimal"' : ""} value="${esc(v ?? "")}"></div>`;
   return `<div class="card"><h2>🍱 Mes préparations</h2>${live.length ? live.map(row).join("") : `<p class="mut sm">Aucune préparation en cours.</p>`}${done.length ? `<details><summary class="xs mut">Terminées (${done.length})</summary>${done.map(row).join("")}</details>` : ""}</div>
-    <div class="card"><h2>Nouvelle préparation</h2>
-      ${recipes().length ? `<label>Partir d'une recette (facultatif)</label><select data-cz="bRec"><option value="">—</option>${recipes().map(r => `<option value="${r.id}" ${B.rec === r.id ? "selected" : ""}>${esc(r.name)}</option>`).join("")}</select>` : ""}
+    ${czFold("batchNew", "+ Nouvelle préparation", () => batchFormHTML(B, f))}`;
+}
+function batchFormHTML(B, f) {
+  return `<div class="card"><h2>Nouvelle préparation</h2>
+      ${recipes().length ? `<label>Partir d'une recette (facultatif)</label><select data-cz="bRec"><option value="">—</option>${recipes().map(r => `<option value="${r.id}" ${B.rec === r.id ? "selected" : ""}>${esc(r.name)}</option>`).join("")}</select>${B.rec ? `<p class="xs mut" style="margin:4px 0 0">Ses ingrédients seront retirés du frigo.</p>` : ""}` : ""}
       ${f("czBN", "Nom", B.name, "text")}
       <div class="row">${f("czBP", "Portions", B.portions || 4)}${f("czBG", "Poids d'une portion (g)", B.portionG || "")}</div>
       <div class="row">${f("czBk", "kcal / portion", B.kcal)}${f("czBp", "P (g)", B.p)}${f("czBc", "G (g)", B.c)}${f("czBf", "L (g)", B.f)}</div>
@@ -3111,11 +3398,39 @@ function planExtrasHTML() {
   return `<div class="card czplan"><h2>💶 Coût estimé du plan</h2>${days.map(d => `<div class="row between sm"><span>${esc(d.day)}</span><span>${costTxt(d.C)}</span></div>`).join("")}
     <div class="row between sm b" style="margin-top:6px"><span>Total</span><span>${costTxt(tot)}</span></div>
     <button class="sec" style="width:100%;margin-top:10px" data-act="czPlanShop">🛒 Ajouter ce qui manque à ma liste</button>
-    <p class="xs mut">Ingrédients du plan moins ce qui est déjà dans ton frigo. Prix : 💶 Budget dans le Frigo.</p></div>`;
+    </div>`;
 }
-if (typeof viewKitchen === "function") { const _czKitchen = viewKitchen; viewKitchen = function () { const h = _czKitchen(); if ((S.kTab || "frigo") !== "plan") return h; const x = planExtrasHTML(); const at = h.indexOf('<div class="card"><h2>🛒 Liste de courses'); return at >= 0 ? h.slice(0, at) + x + h.slice(at) : h + x; }; }
 
-function cuisineSubHTML(sub) { return sub === "courses" ? shopListHTML() : sub === "recettes" ? recipesAvailHTML() : sub === "batch" ? batchHTML() : sub === "budget" ? budgetHTML() : ""; }
+// ---- navigation Cuisine (lot 2) : une seule rangée de 4 onglets ----
+// Frigo · Recettes (avec ce que j'ai + idées IA) · Plan (plan + batch + besoins) · Courses (liste + budget).
+// Remplace la vue de nutrition.js sans modifier ce fichier (cuisine2.js est chargé après).
+const CZ_TABS = [["frigo", "🧊", "Frigo"], ["recettes", "🍲", "Recettes"], ["plan", "📅", "Plan"], ["courses", "🛒", "Courses"]];
+const CZ_OLD = { idees: "recettes", besoins: "plan", batch: "plan", budget: "courses" }; // anciens onglets → nouveaux
+const czTab = () => { const k = CZ_OLD[S.kTab] || S.kTab; return CZ_TABS.some(t => t[0] === k) ? k : "frigo"; };
+const czFold = (key, label, html) => { const on = (S.czFold || {})[key];
+  return `<button class="sec czfold" style="width:100%;margin:2px 0 10px;justify-content:space-between" data-act="czFold" data-v="${key}"><span>${label}</span><span>${on ? "▴" : "▾"}</span></button>${on ? html() : ""}`; };
+function budgetLine() { const B = +priceDoc().week || 0; if (!B) return "💶 Budget et prix"; return `💶 Budget : ${eur(weekSpent())} / ${eur(B)}`; }
+// Plan de repas (nutrition.js) : sa liste de courses fait doublon avec l'onglet Courses → remplacée par le coût + « ajouter ce qui manque »
+function czPlanHTML() {
+  const T = document.createElement("template"); T.innerHTML = mealPlanHTML();
+  const shop = [...T.content.querySelectorAll(".card")].find(c => /Liste de courses/.test(c.querySelector("h2")?.textContent || ""));
+  const x = document.createElement("template"); x.innerHTML = planExtrasHTML();
+  if (shop) shop.replaceWith(x.content); else T.content.appendChild(x.content);
+  // un plan existe déjà : le formulaire « Refaire un plan » est replié
+  const form = Store.get("mealplan", null)?.days?.length ? [...T.content.querySelectorAll(".card")].find(c => (c.querySelector("h2")?.textContent || "").trim() === "Plan de repas") : null;
+  let formH = ""; if (form) { formH = form.outerHTML; form.remove(); }
+  const d = document.createElement("div"); d.appendChild(T.content); return d.innerHTML + (form ? czFold("planNew", "🔄 Refaire un plan", () => formH) : "");
+}
+function viewKitchen() {
+  const k = czTab(); const n = shopItems().filter(x => !x.done).length;
+  const tabs = `<div class="ktabs cztabs">${CZ_TABS.map(([v, ic, l]) => `<button class="ktab ${k === v ? "on" : ""}" data-act="kTab" data-v="${v}"><span>${ic}</span>${l}${v === "courses" && n ? ` <b class="czbadge">${n}</b>` : ""}</button>`).join("")}</div>`;
+  let body;
+  if (k === "frigo") body = viewFridge();
+  else if (k === "recettes") body = recipesAvailHTML() + czFold("idees", "💡 Nouvelles idées (IA)", ideasHTML);
+  else if (k === "plan") body = czPlanHTML() + batchHTML() + czFold("besoins", "📊 Mes besoins du jour", needsHTML);
+  else body = shopListHTML() + czFold("budget", budgetLine(), budgetHTML);
+  return statusBanner() + tabs + body;
+}
 
 // ---- saisie (prix, budget, recette de départ du batch) ----
 document.addEventListener("change", ev => {
@@ -3127,14 +3442,20 @@ document.addEventListener("change", ev => {
 });
 
 const CZ_ACT = {
-  czSub: el => { S.kTab = "frigo"; S.cz = el.dataset.v; S.czShare = false; window.scrollTo(0, 0); render(); },
+  czSub: el => { S.kTab = CZ_OLD[el.dataset.v] || el.dataset.v; S.czShare = false; window.scrollTo(0, 0); render(); },
+  czFold: el => { S.czFold = S.czFold || {}; S.czFold[el.dataset.v] = !S.czFold[el.dataset.v]; render(); },
+  // « Copier hier » (bouton du journal) : remplace la version d'actions.js pour retirer aussi du frigo ce qui y est
+  copyYesterday: () => { const es = day(addDays(S.day, -1)).entries || []; if (!es.length) { toast("Rien de noté la veille"); return; }
+    updDay(d => es.forEach(e => d.entries.push(Object.assign(clone(e), { id: uid(), t: Date.now() })))); const out = entriesConsume(es);
+    toast(`${es.length} aliment(s) copiés d'hier` + (out ? ` · ${out} retiré(s) du frigo` : "")); render(); },
   czRecShop: el => { const r = czRecipes().find(x => x.id === el.dataset.v); if (!r) return; const n = shopAddMissing(r.ings, r.name); toast(n ? `${n} article(s) ajouté(s) à la liste` : "Tout est déjà dans ton frigo"); },
   czPlanShop: () => { const P = Store.get("mealplan", null); let ings = planIngs(P);
     if (!ings.length) ings = (P?.shopping || []).flatMap(s => (s.items || []).map(i => parseIngLine(`${i.qty || ""} ${i.name}`) || { name: i.name }));
     const n = shopAddMissing(ings, "plan"); toast(n ? `${n} article(s) manquant(s) ajouté(s)` : "Rien ne manque"); },
   czShopAdd: () => { const t = ($("#czShopN")?.value || "").trim(); if (!t) return; const p = parseIngLine(t) || { name: t }; const a = $("#czShopA")?.value;
     saveShop(d => d.items.push({ id: uid(), name: p.name, qty: p.g ? r0(p.g) : p.pc || 0, unit: p.g ? "g" : p.pc ? "pc" : "", aisle: a || czAisle(p.name), done: false, src: "main" })); },
-  czShopChk: el => { const s = shopItems().find(x => x.id === el.dataset.v); if (!s) return; const on = el.checked;
+  czShopChk: el => { el.blur(); // sinon la case garde le focus et l'écran (total, budget) ne se met à jour qu'au tap suivant
+    const s = shopItems().find(x => x.id === el.dataset.v); if (!s) return; const on = el.checked;
     const zone = s.aisle === "surgele" ? "congel" : s.aisle === "epicerie" || s.aisle === "boisson" ? "placard" : "frigo";
     if (on) fridgeAdd([{ name: s.name, qty: s.qty || 1, unit: s.unit === "g" ? "g" : "pc", zone }]);
     else fridgeConsume(s.name, s.unit === "g" ? s.qty : (s.qty || 1) * (gPerPcOf(s.name) || 100));
@@ -3149,12 +3470,16 @@ const CZ_ACT = {
   czBatchSave: () => { const v = id => $("#" + id)?.value || ""; const num = id => parseFloat(v(id).replace(",", ".")) || 0; const name = v("czBN").trim(); const portions = Math.max(1, Math.round(num("czBP")));
     if (!name) { toast("Donne un nom à la préparation"); return; }
     const d = clone(Store.get("batch", { items: [] })); d.items = d.items || [];
-    d.items.unshift({ id: uid(), name, portions, left: portions, portionG: num("czBG") || null, per: { kcal: num("czBk"), p: num("czBp"), c: num("czBc"), f: num("czBf") }, date: v("czBD") || todayKey(), recipeId: S.czB?.rec || null });
-    S.czB = {}; Store.set("batch", d); toast("Préparation enregistrée"); },
+    // les ingrédients sont retirés du frigo à la préparation (recette de départ × portions préparées / portions de la recette)
+    const r = recipes().find(x => x.id === S.czB?.rec); let out = 0;
+    if (r) { const k = portions / (r.portions || 1); (r.ings || []).forEach(i => { if (fridgeConsume(i.name, (+i.g || 0) * k)) out++; }); }
+    d.items.unshift({ id: uid(), name, portions, left: portions, portionG: num("czBG") || null, per: { kcal: num("czBk"), p: num("czBp"), c: num("czBc"), f: num("czBf") }, date: v("czBD") || todayKey(), recipeId: r?.id || null, used: !!r });
+    S.czB = {}; S.czFold = Object.assign(S.czFold || {}, { batchNew: false }); Store.set("batch", d); toast("Préparation enregistrée" + (out ? ` · ${out} ingrédient(s) retiré(s) du frigo` : "")); },
+  // « Mangé » : note 1 portion au jour affiché dans le journal (S.day) ; ne retire rien du frigo (déjà fait à la préparation)
   czBatchEat: el => { const d = clone(Store.get("batch", { items: [] })); const b = (d.items || []).find(x => x.id === el.dataset.v); if (!b || !(b.left > 0)) return;
     const g = b.portionG || 100; const per100 = { kcal: b.per.kcal / g * 100, p: b.per.p / g * 100, c: b.per.c / g * 100, f: b.per.f / g * 100, fib: 0, sugar: 0, satfat: 0, salt: 0 };
-    const k = todayKey(); const dd = clone(day(k)); dd.entries = dd.entries || []; dd.acts = dd.acts || []; dd.entries.push(makeEntry({ name: b.name, per100, src: "batch" }, g, "")); saveDay(k, dd);
-    b.left -= 1; Store.set("batch", d); toast(`${b.name} : 1 portion notée (reste ${b.left})`); },
+    const k = S.day || todayKey(); const dd = clone(day(k)); dd.entries = dd.entries || []; dd.acts = dd.acts || []; dd.entries.push(makeEntry({ name: b.name, per100, src: "batch" }, g, "")); saveDay(k, dd);
+    b.left -= 1; Store.set("batch", d); toast(`${b.name} : 1 portion notée ${k === todayKey() ? "aujourd'hui" : "le " + fmtDay(k)} (reste ${b.left})`); },
   czBatchDel: el => { const d = clone(Store.get("batch", { items: [] })); d.items = (d.items || []).filter(x => x.id !== el.dataset.v); Store.set("batch", d); },
 };
 Object.assign(RECIPE_ACT, CZ_ACT);
@@ -3455,6 +3780,235 @@ const PROG_ACT = {
     Store.set("program", doc); S.gen = null; closeSheet(); toast("Programme enregistré 💪"); },
   energyInfo: () => openSheet(energyExplainSheet),
 };
+
+// ===================== BASE D'EXERCICES : matériel, photos, variantes =====================
+// Photos : free-exercise-db (domaine public, github.com/yuhonas/free-exercise-db), 2 images début/fin.
+const FEDB = "https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@f00c92c/exercises/";
+const exImg = (p, k = 0) => p ? `${FEDB}${p}/${k}.jpg` : "";
+const EQ_LABEL = { libre: "Poids libre", machine: "Machine", poulie: "Poulie" };
+// id : [matériel, photo, variantes [matériel, nom, ce que ça change (par rapport à l'exercice), exercice de l'app, photo]]
+const EX_DB = {
+  lat_raise_cable: ["poulie", "Cable_Seated_Lateral_Raise", [
+    ["poulie", "Câble derrière le dos", "Encore plus de tension en bas", "", ""], ["poulie", "Penché vers la poulie (lean-away)", "Plus d'amplitude", "", ""],
+    ["libre", "Haltères debout", "Rien en bas, tout en haut ; faisable partout", "lat_raise_db", "Side_Lateral_Raise"], ["libre", "Allongé sur le côté", "Tension en bas, comme la poulie", "", "Lying_One-Arm_Lateral_Raise"],
+    ["machine", "Machine élévations latérales", "Guidé : facile d'aller à l'échec", "", ""]]],
+  lat_raise_db: ["libre", "Side_Lateral_Raise", [
+    ["libre", "Assis", "Supprime l'élan", "", "Seated_Side_Lateral_Raise"], ["libre", "Allongé sur le côté", "Tension en bas du mouvement", "", "Lying_One-Arm_Lateral_Raise"],
+    ["poulie", "Unilatéral poulie basse", "Tension aussi en bas : souvent plus efficace", "lat_raise_cable", "Cable_Seated_Lateral_Raise"],
+    ["machine", "Machine élévations latérales", "Guidé, aucun élan possible", "", ""]]],
+  shoulder_press: ["machine", "Machine_Shoulder_Military_Press", [
+    ["machine", "Smith assis", "Plus lourd, trajectoire fixe", "", "Smith_Machine_Overhead_Shoulder_Press"],
+    ["libre", "Haltères assis", "Plus d'amplitude, chaque bras seul", "", "Dumbbell_Shoulder_Press"], ["libre", "Barre debout (militaire)", "Plus lourd, demande du gainage", "", "Barbell_Shoulder_Press"],
+    ["poulie", "Poulies basses assis", "Tension constante, trajectoire libre", "", "Seated_Cable_Shoulder_Press"]]],
+  face_pull: ["poulie", "Face_Pull", [
+    ["poulie", "Assis au sol", "Supprime la triche avec le dos", "", ""],
+    ["libre", "Oiseau haltères penché", "Sans poulie ; moins de coiffe", "", "Reverse_Flyes"],
+    ["machine", "Oiseau machine", "Arrière d'épaule isolé, moins de trapèze", "rear_delt_fly", "Reverse_Machine_Flyes"]]],
+  rear_delt_fly: ["machine", "Reverse_Machine_Flyes", [
+    ["machine", "Unilatéral", "Plus d'amplitude", "", ""],
+    ["libre", "Oiseau haltères penché", "Sans machine, plus dur à stabiliser", "", "Reverse_Flyes"],
+    ["poulie", "Oiseau poulies croisées", "Tension constante", "", "Cable_Rear_Delt_Fly"], ["poulie", "Face pull", "Ajoute trapèze moyen et coiffe", "face_pull", "Face_Pull"]]],
+  tri_oh_cable: ["poulie", "Cable_Rope_Overhead_Triceps_Extension", [
+    ["poulie", "Unilatéral", "Plus d'amplitude", "", ""],
+    ["libre", "Haltère à deux mains", "Sans poulie ; moins de tension en haut", "", "Standing_Dumbbell_Triceps_Extension"], ["libre", "Barre EZ couché (skull crusher)", "Plus lourd, chef long un peu moins étiré", "", "EZ-Bar_Skullcrusher"],
+    ["machine", "Machine triceps", "Guidé, facile d'aller à l'échec", "", "Machine_Triceps_Extension"]]],
+  tri_push_uni: ["poulie", "Triceps_Pushdown", [
+    ["poulie", "Corde à deux mains", "Plus rapide, un peu plus lourd", "tri_push_rope", "Triceps_Pushdown_-_Rope_Attachment"], ["poulie", "Prise inversée", "Plus de chef médial", "", "Reverse_Grip_Triceps_Pushdown"],
+    ["libre", "Kickback haltère", "Tension surtout en fin de mouvement", "", "Tricep_Dumbbell_Kickback"],
+    ["machine", "Dips machine", "Bien plus lourd, un peu de pecs", "", "Dip_Machine"]]],
+  tri_push_rope: ["poulie", "Triceps_Pushdown_-_Rope_Attachment", [
+    ["poulie", "Barre en V", "Plus lourd, moins d'écartement en bas", "", "Triceps_Pushdown_-_V-Bar_Attachment"], ["poulie", "Unilatéral", "Chaque bras seul, plus d'amplitude", "tri_push_uni", "Triceps_Pushdown"],
+    ["libre", "Kickback haltère", "Tension surtout en fin de mouvement", "", "Tricep_Dumbbell_Kickback"],
+    ["machine", "Dips machine", "Bien plus lourd, un peu de pecs", "", "Dip_Machine"]]],
+  dips: ["libre", "Dips_-_Triceps_Version", [
+    ["libre", "Buste penché", "Plus de pectoraux", "", "Dips_-_Chest_Version"], ["libre", "Lestés", "Ceinture de lest pour progresser", "", ""],
+    ["machine", "Dips machine", "Charge réglable, plus stable", "", "Dip_Machine"], ["machine", "Dips assistés", "Contrepoids : pour finir une série", "", ""],
+    ["poulie", "Pushdown corde", "Triceps seuls, sans pecs ni épaules", "tri_push_rope", "Triceps_Pushdown_-_Rope_Attachment"]]],
+  hammer_rope: ["poulie", "Cable_Hammer_Curls_-_Rope_Attachment", [
+    ["libre", "Curl marteau haltères", "Peu de tension en bas", "", "Hammer_Curls"], ["libre", "Marteau croisé", "Vers l'épaule opposée : plus de brachial", "", "Cross_Body_Hammer_Curl"],
+    ["libre", "Marteau incliné", "Plus d'étirement", "", "Incline_Hammer_Curls"]]],
+  bayesian_curl: ["poulie", "", [
+    ["poulie", "Assis sur un banc", "Supprime l'élan", "", ""], ["poulie", "Curl face à la poulie", "Bras devant : moins d'étirement, plus de contraction", "", "Standing_Biceps_Cable_Curl"],
+    ["libre", "Curl incliné haltères", "Même étirement, sans poulie", "incline_db_curl", "Incline_Dumbbell_Curl"],
+    ["machine", "Curl machine", "Guidé ; bras devant, moins d'étirement", "", "Machine_Bicep_Curl"]]],
+  incline_db_curl: ["libre", "Incline_Dumbbell_Curl", [
+    ["libre", "Prise marteau inclinée", "Plus de brachial et brachio-radial", "", "Incline_Hammer_Curls"],
+    ["poulie", "Bayesian (coude derrière)", "Même étirement, tension constante", "bayesian_curl", ""],
+    ["machine", "Curl machine", "Guidé ; moins d'étirement", "", "Machine_Bicep_Curl"]]],
+  preacher_curl: ["libre", "Preacher_Curl", [
+    ["libre", "Unilatéral haltère", "Chaque bras seul", "", "One_Arm_Dumbbell_Preacher_Curl"],
+    ["machine", "Machine pupitre", "Tension plus régulière", "", "Machine_Preacher_Curls"],
+    ["poulie", "Pupitre à la poulie", "Tension aussi en haut", "", "Cable_Preacher_Curl"]]],
+  cable_crunch: ["poulie", "Cable_Crunch", [
+    ["poulie", "Avec rotation", "Ajoute les obliques", "", "Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists"],
+    ["machine", "Crunch machine", "Assis, guidé, facile à charger", "", "Ab_Crunch_Machine"],
+    ["libre", "Crunch lesté au sol", "Sans matériel ; amplitude plus courte", "", "Weighted_Crunches"]]],
+  incline_press_machine: ["machine", "Leverage_Incline_Chest_Press", [
+    ["machine", "Smith incliné", "Barre guidée, plus lourd", "", "Smith_Machine_Incline_Bench_Press"],
+    ["libre", "Haltères inclinés", "Plus d'amplitude, plus de stabilisation", "db_incline_press", "Incline_Dumbbell_Press"], ["libre", "Barre inclinée", "Plus lourd, amplitude limitée", "", "Barbell_Incline_Bench_Press_-_Medium_Grip"],
+    ["poulie", "Développé incliné poulie", "Tension constante", "", "Incline_Cable_Chest_Press"]]],
+  bench_press: ["libre", "Barbell_Bench_Press_-_Medium_Grip", [
+    ["libre", "Haltères", "Plus d'amplitude, moins lourd", "", "Dumbbell_Bench_Press"], ["libre", "Prise serrée", "Plus de triceps", "", "Close-Grip_Barbell_Bench_Press"],
+    ["machine", "Chest press", "Guidé : échec sans risque", "chest_press", "Leverage_Chest_Press"], ["machine", "Smith", "Barre guidée, plus stable", "", "Smith_Machine_Bench_Press"],
+    ["poulie", "Développé poulie debout", "Tension constante, plus léger", "", "Standing_Cable_Chest_Press"]]],
+  db_incline_press: ["libre", "Incline_Dumbbell_Press", [
+    ["libre", "Prise neutre", "Plus doux pour les épaules", "", "Hammer_Grip_Incline_DB_Bench_Press"],
+    ["machine", "Incliné machine", "Guidé, facile d'aller à l'échec", "incline_press_machine", "Leverage_Incline_Chest_Press"],
+    ["poulie", "Développé incliné poulie", "Tension constante", "", "Incline_Cable_Chest_Press"]]],
+  chest_press: ["machine", "Leverage_Chest_Press", [
+    ["machine", "Unilatéral", "Un bras à la fois", "", ""],
+    ["libre", "Développé couché barre", "Plus lourd, plus technique", "bench_press", "Barbell_Bench_Press_-_Medium_Grip"], ["libre", "Haltères", "Plus d'amplitude", "", "Dumbbell_Bench_Press"],
+    ["poulie", "Développé poulie debout", "Tension constante", "", "Standing_Cable_Chest_Press"]]],
+  pec_fly_machine: ["machine", "Butterfly", [
+    ["poulie", "Poulies vis-à-vis", "Tension constante, angle réglable", "", "Cable_Crossover"], ["poulie", "Poulies basses vers le haut", "Accent haut des pecs", "", "Low_Cable_Crossover"],
+    ["libre", "Écarté haltères couché", "Étirement max, rien en haut", "", "Dumbbell_Flyes"]]],
+  lat_pulldown_pron: ["poulie", "Wide-Grip_Lat_Pulldown", [
+    ["poulie", "Prise neutre serrée", "Plus d'amplitude, bas des dorsaux", "", "V-Bar_Pulldown"], ["poulie", "Un bras", "Plus d'étirement", "", "One_Arm_Lat_Pulldown"],
+    ["poulie", "Bras tendus (pull-over)", "Grand dorsal isolé, sans biceps", "", "Straight-Arm_Pulldown"],
+    ["libre", "Tractions", "Poids du corps : plus dur, plus de gainage", "pull_up", "Pullups"],
+    ["machine", "Tirage convergent", "Guidé, chaque bras indépendant", "", ""]]],
+  pull_up: ["libre", "Pullups", [
+    ["libre", "Chin-up (supination)", "Plus de biceps", "", "Chin-Up"], ["libre", "Lestées", "Pour progresser au-delà de 12 reps", "", ""],
+    ["machine", "Tractions assistées", "Contrepoids : plus de reps", "", ""],
+    ["poulie", "Tirage vertical", "Charge réglable, plus facile à doser", "lat_pulldown_pron", "Wide-Grip_Lat_Pulldown"]]],
+  row_neutral_close: ["poulie", "Seated_Cable_Rows", [
+    ["poulie", "Unilatéral", "Plus d'amplitude et de rotation", "", "Seated_One-arm_Cable_Pulley_Rows"], ["poulie", "Coudes ouverts, prise large", "Haut du dos, arrière d'épaule", "row_pron_wide", ""],
+    ["libre", "Rowing haltère", "Un bras, appui sur banc", "db_row", "One-Arm_Dumbbell_Row"], ["libre", "Rowing barre penché", "Plus lourd, sollicite les lombaires", "", "Bent_Over_Barbell_Row"],
+    ["machine", "Machine appui poitrine", "Aucune triche du bas du dos", "", "Lying_T-Bar_Row"]]],
+  row_pron_wide: ["poulie", "", [
+    ["poulie", "Prise neutre serrée", "Plus de grand dorsal", "row_neutral_close", "Seated_Cable_Rows"],
+    ["libre", "Rowing barre prise large", "Plus lourd, demande du gainage", "", "Bent_Over_Barbell_Row"],
+    ["machine", "T-bar avec appui", "Stable, épaisseur du dos", "", "Lying_T-Bar_Row"]]],
+  db_row: ["libre", "One-Arm_Dumbbell_Row", [
+    ["libre", "Allongé sur banc incliné", "Aucune triche possible", "", "Dumbbell_Incline_Row"],
+    ["poulie", "Unilatéral poulie", "Tension constante", "", "Seated_One-arm_Cable_Pulley_Rows"],
+    ["machine", "Machine appui poitrine", "Plus lourd, stable", "", "Lying_T-Bar_Row"]]],
+  shrug: ["libre", "Dumbbell_Shrug", [
+    ["libre", "Barre", "Plus lourd", "", "Barbell_Shrug"],
+    ["machine", "Machine / Smith", "Stable, très lourd", "", "Leverage_Shrug"],
+    ["poulie", "Poulies basses", "Tension constante", "", "Cable_Shrugs"]]],
+  squat: ["libre", "Barbell_Squat", [
+    ["libre", "Front squat", "Buste droit, plus de quadriceps", "", "Front_Barbell_Squat"], ["libre", "Goblet squat", "Haltère devant : technique facile", "", "Goblet_Squat"],
+    ["machine", "Hack squat", "Dos calé : quadriceps, moins de lombaires", "hack_squat", "Hack_Squat"], ["machine", "Smith", "Guidé, pieds en avant possibles", "", "Smith_Machine_Squat"]]],
+  leg_press: ["machine", "Leg_Press", [
+    ["machine", "Pieds hauts et larges", "Plus de fessiers et d'ischios", "", ""], ["machine", "Pieds bas et serrés", "Plus de quadriceps", "", "Narrow_Stance_Leg_Press"],
+    ["libre", "Squat barre", "Plus de gainage et de lombaires", "squat", "Barbell_Squat"]]],
+  hack_squat: ["machine", "Hack_Squat", [
+    ["machine", "Pieds serrés", "Encore plus de quadriceps", "", "Narrow_Stance_Hack_Squats"], ["machine", "Presse à cuisses", "Plus facile pour le dos", "leg_press", "Leg_Press"],
+    ["libre", "Squat barre", "Plus de fessiers et de gainage", "squat", "Barbell_Squat"]]],
+  leg_ext: ["machine", "Leg_Extensions", [
+    ["machine", "Unilatéral", "Un côté à la fois", "", "Single-Leg_Leg_Extension"], ["machine", "Buste penché en arrière", "Étire le droit fémoral", "", ""],
+    ["poulie", "Poulie basse à la cheville", "Sans machine dédiée", "", ""]]],
+  bulgarian: ["libre", "Split_Squat_with_Dumbbells", [
+    ["libre", "Fentes", "Pied arrière au sol : plus facile", "lunges", "Dumbbell_Lunges"],
+    ["machine", "Au Smith", "Plus stable, plus lourd", "", "Smith_Single-Leg_Split_Squat"]]],
+  lunges: ["libre", "Dumbbell_Lunges", [
+    ["libre", "Fentes arrière", "Plus doux pour les genoux", "", "Dumbbell_Rear_Lunge"], ["libre", "Fentes marchées", "Plus d'équilibre et de cardio", "", "Barbell_Walking_Lunge"],
+    ["libre", "Fente bulgare", "Pied arrière surélevé : plus dur", "bulgarian", "Split_Squat_with_Dumbbells"],
+    ["machine", "Fente au Smith", "Stable", "", "Smith_Single-Leg_Split_Squat"]]],
+  rdl: ["libre", "Romanian_Deadlift", [
+    ["libre", "Haltères", "Trajectoire plus libre", "", "Stiff-Legged_Dumbbell_Deadlift"],
+    ["machine", "Smith", "Guidé", "", "Smith_Machine_Stiff-Legged_Deadlift"], ["machine", "Leg curl assis", "Ischios seuls, sans lombaires", "seated_leg_curl", "Seated_Leg_Curl"],
+    ["poulie", "Pull-through", "Plus de fessiers, moins de lombaires", "", "Pull_Through"]]],
+  seated_leg_curl: ["machine", "Seated_Leg_Curl", [
+    ["machine", "Buste penché en avant", "Encore plus d'étirement", "", ""], ["machine", "Couché", "Moins d'étirement, un peu de mollets", "lying_leg_curl", "Lying_Leg_Curls"],
+    ["libre", "Leg curl sur ballon", "Sans machine", "", "Ball_Leg_Curl"]]],
+  lying_leg_curl: ["machine", "Lying_Leg_Curls", [
+    ["machine", "Assis", "Plus d'étirement : plus d'hypertrophie", "seated_leg_curl", "Seated_Leg_Curl"], ["machine", "Debout unilatéral", "Un côté à la fois", "", "Standing_Leg_Curl"],
+    ["libre", "Leg curl sur ballon", "Sans machine", "", "Ball_Leg_Curl"]]],
+  hip_thrust: ["libre", "Barbell_Hip_Thrust", [
+    ["libre", "Glute bridge au sol", "Amplitude plus courte, plus simple", "", "Barbell_Glute_Bridge"], ["libre", "Unilatéral", "Corrige les déséquilibres", "", "Single_Leg_Glute_Bridge"],
+    ["machine", "Machine hip thrust", "Rapide à installer", "", ""],
+    ["poulie", "Pull-through", "Fessiers en position étirée", "", "Pull_Through"]]],
+  adductor_machine: ["machine", "Thigh_Adductor", [
+    ["poulie", "Poulie basse à la cheville", "Un côté, plus d'amplitude", "", ""],
+    ["libre", "Copenhagen plank", "Poids du corps + gainage", "", ""]]],
+  abductor_machine: ["machine", "Thigh_Abductor", [
+    ["machine", "Buste penché en avant", "Plus de moyen fessier", "", ""],
+    ["poulie", "Poulie basse debout", "Un côté à la fois", "", ""],
+    ["libre", "Élastique aux genoux", "Sans machine", "", ""]]],
+  calf_standing: ["machine", "Standing_Calf_Raises", [
+    ["machine", "Assis", "Genou plié : surtout soléaire", "calf_seated", "Seated_Calf_Raise"], ["machine", "Presse à cuisses", "Sans machine dédiée", "", "Calf_Press_On_The_Leg_Press_Machine"],
+    ["libre", "Une jambe sur une marche", "Plus d'amplitude", "", "Standing_Dumbbell_Calf_Raise"]]],
+  calf_seated: ["machine", "Seated_Calf_Raise", [
+    ["machine", "Debout", "Jambe tendue : plus de gastrocnémiens", "calf_standing", "Standing_Calf_Raises"],
+    ["libre", "Haltère sur le genou", "Sans machine", "", "Dumbbell_Seated_One-Leg_Calf_Raise"]]],
+  back_ext: ["machine", "Hyperextensions_Back_Extensions", [
+    ["machine", "Reverse hyper", "Bas du dos sans compression", "", "Reverse_Hyperextension"],
+    ["libre", "Good morning", "Plus lourd, plus technique", "", "Stiff_Leg_Barbell_Good_Morning"],
+    ["poulie", "Pull-through", "Plus de fessiers", "", "Pull_Through"]]]
+};
+
+// ---------- fiche exercice : photo (ou 3D), muscles ciblés, variantes par matériel ----------
+// i = position de l'exercice dans la séance en cours (actions « Utiliser », « Pas envie », etc.)
+function exMuscleSheet(exId, i) {
+  S.exEq = null;
+  return () => {
+    const x = getEx(exId), db = EX_DB[exId], live = i != null && liveWorkout()?.ex[i]?.id === exId;
+    const img = db?.[1], media = img && S.exMedia !== "3d" ? "photo" : "3d";
+    const mn = m => esc(MUSCLES[m]?.[0] || m);
+    const also = x.prim.filter(m => !x.focus.includes(m)).concat(x.sec);
+    const groups = db ? Object.keys(EQ_LABEL).filter(k => db[2].some(v => v[0] === k)) : [];
+    const cur = groups.includes(S.exEq) ? S.exEq : groups.includes(db?.[0]) ? db[0] : groups[0];
+    const row = ([, n, d, id, p]) => `<div class="entry exv">${p ? `<div class="exvt"><img src="${exImg(p)}" loading="lazy" alt="" onerror="this.parentNode.remove()"></div>` : ""}
+      <div class="grow"><div class="sm b">${esc(n)}</div><div class="xs mut">${esc(d)}</div></div>${id && live ? `<button class="ghost small" data-act="useVar" data-v="${id}" data-i="${i}">Utiliser</button>` : ""}</div>`;
+    const cues = EX_CUES[x.id] || [], roles = x.prim.concat(x.sec).filter((m, k, a) => a.indexOf(m) === k && MUSCLE_INFO[m]);
+    const [lo, hi] = repRange(exId);
+    return `<div class="row between"><h2 style="margin:0">${esc(x.name)}</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
+      ${img ? `<div class="chips exmedia"><button class="chip ${media === "photo" ? "on" : ""}" data-act="exMedia" data-v="photo">Photo</button><button class="chip ${media === "3d" ? "on" : ""}" data-act="exMedia" data-v="3d">3D</button></div>` : ""}
+      ${media === "photo" ? `<div class="exph"><img src="${exImg(img, 0)}" alt="" onerror="this.parentNode.remove()"><img class="b" src="${exImg(img, 1)}" alt=""></div>` : body3DHolderHTML("min(46vh, 420px)", true)}
+      <div class="exmus"><span class="xs mut">Ciblé</span>${x.focus.map(m => `<span class="mtag p">${mn(m)}</span>`).join("")}${also.length ? `<br><span class="xs mut">Aussi</span>${also.map(m => `<span class="mtag">${mn(m)}</span>`).join("")}` : ""}</div>
+      ${groups.length ? `<h3>Variantes</h3><div class="chips">${groups.map(k => `<button class="chip ${k === cur ? "on" : ""}" data-act="exEq" data-v="${k}">${EQ_LABEL[k]}</button>`).join("")}</div>
+        ${groups.map(k => `<div class="exvar ${k === cur ? "on" : ""}" data-eq="${k}">${db[2].filter(v => v[0] === k).map(row).join("")}</div>`).join("")}` : ""}
+      ${cues.length || x.note || roles.length ? `<details class="exhow"><summary>Bien le faire</summary>${cues.length ? `<ol class="sm">${cues.map(c => `<li>${esc(c)}</li>`).join("")}</ol>` : ""}${x.note ? `<div class="reco sm">${esc(x.note)}</div>` : ""}
+        ${roles.map(m => `<p class="xs" style="margin:4px 0"><b>${mn(m)}</b> — ${esc(MUSCLE_INFO[m])}</p>`).join("")}${img ? `<p class="xs mut">Photos : free-exercise-db (domaine public).</p>` : ""}</details>` : ""}
+      ${live ? `<div class="exacts"><label class="xs mut">Reps visées <select data-act="range" data-v="${exId}">${[[6, 8], [6, 10], [8, 10], [8, 12], [10, 15], [12, 20]].map(([a, b]) => `<option value="${a}-${b}" ${a === lo && b === hi ? "selected" : ""}>${a}-${b}</option>`).join("")}</select></label>
+        <div class="row" style="gap:6px"><button class="ghost small" data-act="refuse" data-i="${i}">🚫 Pas envie</button>${i > 0 ? `<button class="ghost small" data-act="exMove" data-i="${i}">↑ Monter</button>` : ""}<button class="ghost small dangertxt" data-act="exDrop" data-i="${i}">Retirer</button></div></div>` : ""}`;
+  };
+}
+
+// ---------- carte d'exercice pendant la séance : une série = 1 tap (2 si on ajuste) ----------
+function exDraft(w, e, i) {
+  const [lo, hi] = repRange(e.id); const sug = suggestion(e.id, w._id); const last = exerciseHistory(e.id, w._id)[0];
+  const ws = (e.sets || []).filter(s => !s.wu), lastW = ws.slice(-1)[0], gs = last ? last.sets.filter(z => !z.wu)[ws.length] : null;
+  const dr = S.draft[i] || (S.draft[i] = { w: lastW?.w ?? sug.w ?? gs?.w ?? "", r: "", rir: null, wu: false });
+  // reps toujours pré-remplies : la série précédente, sinon l'objectif du conseil (charge montée → bas de fourchette ; sinon +1 rep vs la dernière fois)
+  if (dr.r === "" || dr.r == null) dr.r = lastW?.r ?? (sug.up ? lo : gs ? Math.min(Math.max(gs.r + 1, lo), hi) : hi);
+  return dr;
+}
+const setLbl = dr => dr.w !== "" && dr.r !== "" ? `${dr.w} kg × ${dr.r}` : "";
+function exCard(w, e, i) {
+  if (e.done) { const x0 = getEx(e.id); const ws = (e.sets || []).filter(s => !s.wu);
+    return `<div class="card exdone" data-act="exReopen" data-i="${i}"><div class="row between" style="align-items:center"><div><div class="b">✅ ${esc(x0.name)}</div>
+      <div class="xs mut">${ws.length} série${ws.length > 1 ? "s" : ""} · ${ws.map(s => `${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}`).join(" · ")}</div></div><button class="ghost small" data-act="exReopen" data-i="${i}">Modifier</button></div></div>`; }
+  const x = getEx(e.id); const sug = suggestion(e.id, w._id); const last = exerciseHistory(e.id, w._id)[0];
+  const prev = e.sets || [], nW = prev.filter(s => !s.wu).length, lastSets = last ? last.sets.filter(z => !z.wu) : [];
+  const dr = exDraft(w, e, i);
+  const dl = isDeload() ? `<div class="reco xs" style="margin:6px 0">🔋 Décharge : environ <b>${Math.max(1, Math.round((program()[w.name]?.sets?.[e.id] || 3) / 2))} série(s)</b> à la charge habituelle, 3-4 reps en réserve.</div>` : "";
+  return `<div class="card">${dl}<div class="exhead" data-act="exInfo" data-v="${e.id}" data-i="${i}"><div class="exth">${bodyThumbHTML({ prim: x.prim, sec: x.sec, focus: x.focus })}</div>
+      <div class="grow"><h3 style="margin:0">${esc(x.name)}</h3><div class="xs mut">${x.focus.map(m => MUSCLES[m][0]).join(", ")}</div></div><span class="exmore" title="Détails, variantes">⋯</span></div>
+    ${last ? `<div class="xs mut exlast">Dernière fois (${fmtDay(dateKey(new Date(last.date)))}) : ${lastSets.map((s, k) => `<span class="${k === nW ? "nx" : ""}">${s.w}×${s.r}${s.rir != null ? ` @${s.rir}` : ""}</span>`).join(" · ")}</div>` : ""}
+    <div class="reco ${sug.up ? "good" : ""} sm">${esc(sug.text)}</div>
+    ${prev.map((s, j) => { const rest = j > 0 ? s.t - prev[j - 1].t : null; const n = prev.slice(0, j + 1).filter(z => !z.wu).length; const ghostSet = !s.wu ? lastSets[n - 1] : null;
+      return `<div class="set ${s.wu ? "wu" : ""}"><span class="mut">${s.wu ? "É" : n}</span><span class="b">${s.w} kg</span><span class="b">× ${s.r} ${s.wu ? "" : ghostBadge(ghostCmp(s, ghostSet))}</span><span class="xs">${s.rir != null && !s.wu ? "RIR " + s.rir : ""}${rest ? ` · ${fmtDur(rest)}` : ""}</span><button class="danger small" data-act="delSet" data-i="${i}" data-j="${j}">✕</button></div>`; }).join("")}
+    ${ghostSummary(e, last)}
+    <div class="exin"><div class="row"><div class="grow"><div class="xs mut">kg</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="w" data-v="-${profile().increment}">−</button><input type="number" inputmode="decimal" value="${dr.w}" data-input="draft" data-i="${i}" data-k="w"><button data-act="dStep" data-i="${i}" data-k="w" data-v="${profile().increment}">+</button></div>${BARBELL.has(e.id) && dr.w ? plateHTML(+dr.w) : ""}</div>
+      <div class="grow"><div class="xs mut">Reps</div><div class="stepper"><button data-act="dStep" data-i="${i}" data-k="r" data-v="-1">−</button><input type="number" inputmode="numeric" value="${dr.r}" data-input="draft" data-i="${i}" data-k="r"><button data-act="dStep" data-i="${i}" data-k="r" data-v="1">+</button></div></div></div>
+      <div class="row exrir"><span class="xs mut">RIR</span>${[0, 1, 2, 3, 4].map(v => `<button class="chip ${dr.rir === v && !dr.wu ? "on" : ""}" data-act="dRir" data-i="${i}" data-v="${v}">${v === 4 ? "4+" : v}</button>`).join("")}<button class="chip ${dr.wu ? "on" : ""}" data-act="dWu" data-i="${i}">Échauff.</button></div>
+      <div class="row" style="margin-top:8px;gap:8px"><button class="grow" data-act="logSet" data-i="${i}">✓ <span class="vl">${setLbl(dr) || "Valider la série"}</span></button>${nW ? `<button class="sec small" style="flex:none;padding:8px 12px" data-act="exDone" data-i="${i}" title="Replier l'exercice">Fini</button>` : ""}</div></div></div>`;
+}
+// le bouton Valider suit ce qu'on tape au clavier
+document.addEventListener("input", ev => { const el = ev.target; if (el.dataset?.input !== "draft") return; const i = el.dataset.i;
+  const v = k => $(`input[data-input=draft][data-i="${i}"][data-k="${k}"]`)?.value ?? ""; const b = $(`[data-act=logSet][data-i="${i}"] .vl`);
+  if (b) b.textContent = setLbl({ w: v("w"), r: v("r") }) || "Valider la série"; });
+Object.assign(PROG_ACT, {
+  exInfo: el => { S.bodyEx = el.dataset.v; openSheet(exMuscleSheet(el.dataset.v, +el.dataset.i)); },
+  exMedia: el => { S.exMedia = el.dataset.v; S.bodyAnim = true; renderSheet(); },
+  exEq: el => { S.exEq = el.dataset.v; $$(".sheet [data-act=exEq]").forEach(b => b.classList.toggle("on", b === el)); $$(".sheet .exvar").forEach(d => d.classList.toggle("on", d.dataset.eq === S.exEq)); },
+  useVar: el => { const i = +el.dataset.i, id = el.dataset.v; updW(w => { w.ex[i].id = id; }); delete S.draft[i]; closeSheet(); toast("Variante choisie : " + getEx(id).name); },
+  exMove: el => { closeSheet(); ACT.exUp(el); },
+  exDrop: el => { closeSheet(); ACT.rmEx(el); },
+});
 
 // ===================== PHOTOS DE PHYSIQUE (restent sur l'appareil, jamais envoyées) =====================
 const PH = { db: null, list: [], urls: {} };
@@ -4015,5 +4569,106 @@ ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
 if (typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); }
+
+// ===================== DESIGN SYSTEM 2 — APERÇU (section Design) =====================
+// INACTIF par défaut. Ne s'allume que si l'adresse contient « ?ds=… » (page dev/apercu-design.html).
+// N'écrit RIEN dans le stockage ni dans les réglages : tout passe par l'adresse ou par postMessage
+// de la page d'aperçu (même origine). Ne touche à aucune donnée ni à aucun calcul.
+const DS = { ctrl: false, on: false, o: { muscu: "ruby", style: "a", commun: "neutre", mode: "" } };
+const DS_UNIV = { today: "nutrition", fridge: "cuisine", workout: "muscu", progress: "progression", coach: "commun", profile: "commun", home: "commun" };
+
+function dsSet(o) {
+  Object.assign(DS.o, o || {});
+  if ("on" in (o || {})) DS.on = !!o.on;
+  const h = document.documentElement, x = DS.o;
+  if (DS.on) { h.dataset.ds = "2"; h.dataset.dsMuscu = x.muscu; h.dataset.dsStyle = x.style; h.dataset.dsCommun = x.commun; }
+  else ["ds", "dsMuscu", "dsStyle", "dsCommun", "u"].forEach(k => delete h.dataset[k]);
+  if (x.mode) h.classList.toggle("dark", x.mode === "dark"); // aperçu seulement : pas de localStorage
+}
+
+// Après chaque rendu : univers de l'écran, carte principale, graphiques
+function dsAfter() {
+  const h = document.documentElement, nav = document.getElementById("nav");
+  [...document.querySelectorAll("#app .banner")].forEach(b => { if (/Mode aperçu/.test(b.textContent)) b.remove(); });
+  if (!DS.on) { if (nav) delete nav.dataset.u; return; }
+  h.dataset.u = DS_UNIV[S.tab] || "commun"; if (nav) nav.dataset.u = "commun";
+  document.querySelectorAll(".ds-hero").forEach(e => e.classList.remove("ds-hero"));
+  const app = document.getElementById("app"); let hero = null;
+  if (S.tab === "home") hero = app.querySelector(".dsh-hero");
+  else if (S.tab === "today") hero = app.querySelector(".ring")?.closest(".card");
+  else if (S.tab === "progress") hero = app.querySelector("canvas")?.closest(".card");
+  else if (S.tab === "workout") hero = app.querySelector(".set,.exhead")?.closest(".card") || app.querySelector(".card");
+  else hero = app.querySelector(".card");
+  if (hero) hero.classList.add("ds-hero");
+  dsCharts();
+}
+// Les graphiques (Chart.js) ont des couleurs écrites dans ui.js : en aperçu on les remplace par les jetons.
+function dsCharts() {
+  if (typeof Chart === "undefined" || !Chart.instances) return;
+  const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
+  const dark = document.documentElement.classList.contains("dark");
+  const map = { "#94a3b8": v("--chart-2") || v("--pro-soft"), "#2563eb": dark ? v("--pro-accent-dk") : v("--pro-deep"), "#60a5fa": dark ? "#4A5A78" : v("--pro-pastel"),
+    "#f59e0b": v("--fn-warn-fill"), "#e5484d": dark ? v("--mus-accent-dk") : v("--mus-accent") };
+  Object.values(Chart.instances).forEach(c => {
+    let ch = false;
+    c.data.datasets.forEach(d => ["borderColor", "backgroundColor"].forEach(k => { const o = String(d["_ds_" + k] || d[k] || "").toLowerCase(); if (map[o]) { d["_ds_" + k] = o; d[k] = map[o]; ch = true; } }));
+    c.options.scales && Object.values(c.options.scales).forEach(s => { s.grid = Object.assign(s.grid || {}, { color: v("--line") }); s.ticks = Object.assign(s.ticks || {}, { color: v("--mut") }); });
+    if (ch) c.update("none");
+  });
+}
+
+// ---- Accueil général (PROPOSITION, aperçu seulement) : les 4 univers en cartes ----
+function dsHomeHTML() {
+  const k = todayKey(); let kc = { left: 0, pct: 0 }, soon = 0, fr = 0, w = null, dw = null, next = "—", nb = 0;
+  try { const t = dayTotals(k), T = tDay(k); kc = { left: Math.round(T.kcal - t.kcal), pct: Math.min(100, Math.round(100 * t.kcal / T.kcal)), p: Math.round(t.p), P: T.p }; } catch (e) {}
+  try { const it = fridgeItems(); fr = it.length; soon = it.filter(expSoon).length; } catch (e) {}
+  try { const ws = weightSeries(30); if (ws.length) { w = ws[ws.length - 1].t; dw = w - ws[0].t; } } catch (e) {}
+  try { const lw = liveWorkout(); const ks = Object.keys(program()); next = lw ? lw.name + " (en cours)" : ks[0] || "—"; nb = workouts().filter(x => !x.live && Date.now() - x.start < 7 * 864e5).length; } catch (e) {}
+  const sw = u => `<span class="dsh-sw">${["deep", "mid", "pastel"].map(r => `<i style="background:var(--${u}-${r})"></i>`).join("")}</span>`;
+  const f1 = n => (n == null ? "—" : (Math.round(n * 10) / 10).toString().replace(".", ","));
+  return `<div class="row between"><h1>Bonjour</h1><span class="tag">Données de démo</span></div>
+  <div class="card dsh-hero" data-u="nutrition"><div class="dsh-k">Aujourd'hui · Nutrition</div>
+    <div class="row between" style="margin-top:6px"><div><div class="big">${kc.left}</div><div class="xs mut">kcal restantes</div></div>
+    <div class="c"><div class="b">${kc.p ?? "—"} / ${kc.P ?? "—"} g</div><div class="xs mut">protéines</div></div></div>
+    <div class="bar" style="margin-top:12px"><i style="width:${kc.pct}%;background:var(--kc)"></i></div>
+    <div class="row" style="margin-top:12px;gap:8px"><button data-act="tab" data-v="today">Ajouter un repas</button><button class="sec" data-act="tab" data-v="today">Journal</button></div></div>
+  <div class="dsh-grid">
+    <button class="dsh-card" data-u="muscu" data-act="tab" data-v="workout"><span class="dsh-k">Séance ${sw("mus")}</span><span class="dsh-v">${esc(next)}</span><span class="xs mut">${nb} séance(s) cette semaine</span></button>
+    <button class="dsh-card" data-u="cuisine" data-act="tab" data-v="fridge"><span class="dsh-k">Cuisine ${sw("cui")}</span><span class="dsh-v">${soon} à finir vite</span><span class="xs mut">${fr} aliments au frigo</span></button>
+    <button class="dsh-card" data-u="progression" data-act="tab" data-v="progress"><span class="dsh-k">Progression ${sw("pro")}</span><span class="dsh-v">${f1(w)} kg</span><span class="xs mut">${dw == null ? "" : (dw <= 0 ? "▼ " : "▲ ") + f1(Math.abs(dw)) + " kg en 30 j (tendance)"}</span></button>
+    <button class="dsh-card" data-u="commun" data-act="tab" data-v="profile"><span class="dsh-k">Profil</span><span class="dsh-v">Réglages</span><span class="xs mut">Objectifs, apparence</span></button>
+  </div>`;
+}
+
+// ---- Branchements (seulement en mode aperçu) ----
+(function dsInit() {
+  const q = new URLSearchParams(location.search); if (!q.has("ds")) return; // app normale : rien ne change
+  DS.ctrl = true;
+  const _render = render;
+  render = function () {
+    if (DS.on && S.tab === "home") { if (isEditing()) return; document.getElementById("app").innerHTML = dsHomeHTML(); document.getElementById("nav").innerHTML = navHTML(); renderSheet(); }
+    else _render.apply(this, arguments);
+    dsAfter();
+  };
+  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || "ruby", style: q.get("s") || "a", commun: q.get("c") || "neutre", mode: q.get("mode") || "" });
+  window.addEventListener("message", e => {
+    if (e.origin !== location.origin || !e.data || !e.data.ds) return;
+    const d = e.data.ds; dsSet(d);
+    if (d.screen) dsScreen(d.screen); else render();
+  });
+  if (q.get("screen")) setTimeout(() => dsScreen(q.get("screen")), 0);
+})();
+function dsScreen(s) {
+  S.sheet = null;
+  if (s === "live" || s === "rest") {
+    S.tab = "workout"; S.wMode = "list";
+    if (!liveWorkout()) { const n = Object.keys(program())[0]; if (n && ACT.startW) ACT.startW({ dataset: { v: n } }); }
+    render();
+    if (s === "rest" && ACT.logSet && !document.getElementById("restBar")) { const b = document.querySelector("button[data-act=logSet]"); if (b) ACT.logSet(b); }
+    return;
+  }
+  if (s === "sheet") { S.tab = "today"; render(); if (ACT.openAdd) ACT.openAdd({ dataset: {} }); dsAfter(); return; }
+  S.tab = s; render(); window.scrollTo(0, 0);
+}
 
 </script></body></html>

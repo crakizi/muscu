@@ -1,0 +1,258 @@
+/* =====================================================================
+   DESIGN SYSTEM 2 (section Design) — APERÇU, NON PUBLIÉ
+   Actif SEULEMENT quand <html data-ds> est présent (page dev/apercu-design.html).
+   Sans cet attribut, l'app reste exactement comme aujourd'hui.
+   Documentation : docs/design-system.md
+   Couches : 1 primitives → 2 rôles par univers → 3 jetons sémantiques
+             → 4 modes / styles → 5 composants.
+   Couches 1-2 et 5 : sélecteurs :where() (priorité nulle, l'ordre suffit).
+   Couches 3-4 : sélecteurs html[data-ds] (doivent battre :root et html.dark de style.css).
+   ===================================================================== */
+
+/* ---------- 1. PRIMITIVES (palettes d'origine, ne pas modifier) ---------- */
+:where(html[data-ds]){
+  /* Nutrition — Deep Ocean (validée) */
+  --ocean-900:#103B49;--ocean-600:#208A91;--ocean-200:#BBD9DD;--ocean-50:#EDF4F5;--ocean-ink:#172B36;
+  /* Cuisine — Warm Earth (validée) */
+  --earth-900:#81543D;--earth-600:#B77C55;--earth-400:#D4AB86;--earth-200:#EBD6C1;--earth-50:#F6EFE6;
+  /* Progression — Slate Blue (validée) */
+  --slate-900:#303E5C;--slate-600:#526889;--slate-400:#8296B5;--slate-200:#C6D2E4;--slate-50:#EDF0F6;
+  /* Musculation — 5 finalistes (en attente du choix de Vuthy) */
+  --cherry-900:#361923;--cherry-600:#702D44;--cherry-400:#A65C75;--cherry-200:#DFC0CE;--cherry-50:#F6EAF0;
+  --ruby-900:#50182D;--ruby-600:#A12C53;--ruby-400:#D36D90;--ruby-200:#F1C9D8;--ruby-50:#FCEFF4;
+  --pome-900:#58232D;--pome-600:#B34559;--pome-400:#DD8998;--pome-200:#F1CED5;--pome-50:#FBEFF1;
+  --graph-900:#181818;--graph-600:#383838;--graph-400:#737373;--graph-200:#C7C7C7;--graph-50:#F0F0F0;
+  --carbon-900:#20211D;--carbon-600:#494B39;--carbon-400:#C7BA49;--carbon-200:#E9DB76;--carbon-50:#F7F5E5;
+  /* Neutres (communs à tous les univers) */
+  --n-0:#FFFFFF;--n-50:#F6F6F7;--n-100:#EEEFF1;--n-200:#E2E4E8;--n-500:#5F6670;--n-800:#2A2F37;--n-900:#16181D;
+  --d-bg:#0F1114;--d-card:#181B20;--d-raise:#20242A;--d-chip:#262A31;--d-line:#2C313A;--d-txt:#ECEEF1;--d-mut:#9AA1AC;
+
+  /* ---------- Couleurs fonctionnelles (indépendantes des univers) ---------- */
+  --fn-ok:#2E7D4F;--fn-err:#C8372D;--fn-warn:#9A5B00;--fn-warn-fill:#E9A23B;--fn-info:#2F5FB3;
+  --fn-record:#A0710A;              /* toujours avec 🏆 ou « record » */
+  --fn-up:var(--fn-ok);--fn-down:var(--n-500); /* baisse = gris neutre, jamais rouge (règle 3) */
+  --mac-p:#4F6BED;--mac-c:#B87512;--mac-f:#9B6BDF;--mac-fib:#3F8A5D;
+  --musc-prim:#C8553D;--musc-sec:#E3A15A;
+  --rec-ok:#3F9C6B;--rec-mid:#E3A15A;--rec-low:#C8553D;
+
+  /* ---------- Typographie, espaces, arrondis, mouvement ---------- */
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
+  --fs-xs:12px;--fs-sm:13px;--fs-md:16px;--fs-lg:17px;--fs-xl:22px;--fs-2xl:28px;
+  --fw-reg:400;--fw-med:500;--fw-semi:600;--fw-bold:700;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;
+  --r-sm:10px;--r-md:14px;--r-lg:20px;--r-pill:999px;
+  --dur-fast:120ms;--dur:200ms;--ease:cubic-bezier(.2,.8,.2,1);
+  --elev-1:0 1px 2px rgba(16,24,40,.04),0 2px 10px rgba(16,24,40,.05);
+  --elev-2:0 6px 24px rgba(16,24,40,.10);
+}
+:where(html[data-ds].dark){
+  --fn-ok:#6CC495;--fn-err:#F2867C;--fn-warn:#F0B44C;--fn-warn-fill:#F0B44C;--fn-info:#8DB2F0;--fn-record:#E8C15A;--fn-down:var(--d-mut);
+  --mac-p:#8EA2F5;--mac-c:#E9A23B;--mac-f:#B99AEE;--mac-fib:#6CC495;
+  --musc-prim:#EE8A70;--musc-sec:#F2BE7E;--rec-ok:#6CC495;--rec-mid:#F2BE7E;--rec-low:#EE8A70;
+  --elev-1:none;--elev-2:0 8px 28px rgba(0,0,0,.5);
+}
+
+/* ---------- 2. RÔLES PAR UNIVERS (valeurs fixes, définies une fois) ----------
+   deep = actions importantes · accent = texte/icônes accentués (≥ 4,5:1)
+   mid = graphiques · soft/pastel = surfaces douces · wash = fond teinté
+   *-dk = adaptations au mode sombre (nuances dérivées, documentées) */
+:where(html[data-ds]){
+  --nut-deep:var(--ocean-900);--nut-accent:#1A6F75;--nut-mid:var(--ocean-600);--nut-soft:#6EB2B7;--nut-pastel:var(--ocean-200);--nut-wash:var(--ocean-50);--nut-on:#fff;
+  --nut-accent-dk:#6EB2B7;--nut-action-dk:var(--ocean-200);--nut-on-dk:var(--ocean-900);--nut-tint-dk:var(--ocean-ink);
+  --cui-deep:var(--earth-900);--cui-accent:var(--earth-900);--cui-mid:var(--earth-600);--cui-soft:var(--earth-400);--cui-pastel:var(--earth-200);--cui-wash:var(--earth-50);--cui-on:#fff;
+  --cui-accent-dk:var(--earth-400);--cui-action-dk:var(--earth-400);--cui-on-dk:#2B1A10;--cui-tint-dk:#2A1E17;
+  --pro-deep:var(--slate-900);--pro-accent:var(--slate-600);--pro-mid:var(--slate-600);--pro-soft:var(--slate-400);--pro-pastel:var(--slate-200);--pro-wash:var(--slate-50);--pro-on:#fff;
+  --pro-accent-dk:var(--slate-400);--pro-action-dk:var(--slate-200);--pro-on-dk:var(--slate-900);--pro-tint-dk:#1B2233;
+  /* Commun : 3 propositions (attribut data-ds-commun) — « neutre » par défaut */
+  --com-deep:#1F2329;--com-accent:#1F2329;--com-mid:#4A515C;--com-soft:#8A919C;--com-pastel:#DADDE2;--com-wash:#F3F4F6;--com-on:#fff;
+  --com-accent-dk:#E6E8EB;--com-action-dk:#E6E8EB;--com-on-dk:#15181C;--com-tint-dk:#16191E;
+}
+:where(html[data-ds][data-ds-commun=petrole]){
+  --com-deep:var(--ocean-900);--com-accent:var(--ocean-900);--com-mid:var(--ocean-600);--com-soft:#6EB2B7;--com-pastel:var(--ocean-200);--com-wash:#F1F5F6;--com-on:#fff;
+  --com-accent-dk:#6EB2B7;--com-action-dk:var(--ocean-200);--com-on-dk:var(--ocean-900);--com-tint-dk:var(--ocean-ink);
+}
+/* Musculation : la palette choisie remplit les rôles --mus-* (data-ds-muscu) */
+:where(html[data-ds]),:where(html[data-ds][data-ds-muscu=ruby]){
+  --mus-deep:var(--ruby-600);--mus-accent:var(--ruby-600);--mus-mid:var(--ruby-600);--mus-soft:var(--ruby-400);--mus-pastel:var(--ruby-200);--mus-wash:var(--ruby-50);--mus-on:#fff;--mus-hero:var(--ruby-900);
+  --mus-accent-dk:#DE88A6;--mus-action-dk:var(--ruby-200);--mus-on-dk:var(--ruby-900);--mus-tint-dk:#24121A;
+}
+:where(html[data-ds][data-ds-muscu=cherry]){
+  --mus-deep:var(--cherry-600);--mus-accent:var(--cherry-600);--mus-mid:var(--cherry-600);--mus-soft:var(--cherry-400);--mus-pastel:var(--cherry-200);--mus-wash:var(--cherry-50);--mus-on:#fff;--mus-hero:var(--cherry-900);
+  --mus-accent-dk:var(--cherry-200);--mus-action-dk:var(--cherry-200);--mus-on-dk:var(--cherry-900);--mus-tint-dk:#1F1216;
+}
+:where(html[data-ds][data-ds-muscu=pome]){
+  --mus-deep:var(--pome-600);--mus-accent:var(--pome-600);--mus-mid:var(--pome-600);--mus-soft:var(--pome-400);--mus-pastel:var(--pome-200);--mus-wash:var(--pome-50);--mus-on:#fff;--mus-hero:var(--pome-900);
+  --mus-accent-dk:var(--pome-400);--mus-action-dk:var(--pome-200);--mus-on-dk:var(--pome-900);--mus-tint-dk:#251417;
+}
+:where(html[data-ds][data-ds-muscu=graphite]){
+  --mus-deep:var(--graph-900);--mus-accent:var(--graph-600);--mus-mid:var(--graph-600);--mus-soft:var(--graph-400);--mus-pastel:var(--graph-200);--mus-wash:var(--graph-50);--mus-on:#fff;--mus-hero:var(--graph-900);
+  --mus-accent-dk:var(--graph-200);--mus-action-dk:var(--graph-50);--mus-on-dk:var(--graph-900);--mus-tint-dk:#141414;
+}
+:where(html[data-ds][data-ds-muscu=carbon]){
+  --mus-deep:var(--carbon-900);--mus-accent:var(--carbon-600);--mus-mid:var(--carbon-400);--mus-soft:var(--carbon-400);--mus-pastel:var(--carbon-200);--mus-wash:var(--carbon-50);--mus-on:var(--carbon-200);--mus-hero:var(--carbon-900);
+  --mus-accent-dk:var(--carbon-400);--mus-action-dk:var(--carbon-200);--mus-on-dk:var(--carbon-900);--mus-tint-dk:#191A16;
+}
+
+/* L'univers d'un élément (data-u) recopie ses rôles dans --u-* (commun d'abord = valeur par défaut) */
+:where(html[data-ds]),:where(html[data-ds][data-u=commun]),:where(html[data-ds]) :where([data-u=commun]){--u-deep:var(--com-deep);--u-accent:var(--com-accent);--u-mid:var(--com-mid);--u-soft:var(--com-soft);--u-pastel:var(--com-pastel);--u-wash:var(--com-wash);--u-on:var(--com-on);--u-hero:var(--com-deep);--u-accent-dk:var(--com-accent-dk);--u-action-dk:var(--com-action-dk);--u-on-dk:var(--com-on-dk);--u-tint-dk:var(--com-tint-dk)}
+:where(html[data-ds][data-u=nutrition]),:where(html[data-ds]) :where([data-u=nutrition]){--u-deep:var(--nut-deep);--u-accent:var(--nut-accent);--u-mid:var(--nut-mid);--u-soft:var(--nut-soft);--u-pastel:var(--nut-pastel);--u-wash:var(--nut-wash);--u-on:var(--nut-on);--u-hero:var(--nut-deep);--u-accent-dk:var(--nut-accent-dk);--u-action-dk:var(--nut-action-dk);--u-on-dk:var(--nut-on-dk);--u-tint-dk:var(--nut-tint-dk)}
+:where(html[data-ds][data-u=cuisine]),:where(html[data-ds]) :where([data-u=cuisine]){--u-deep:var(--cui-deep);--u-accent:var(--cui-accent);--u-mid:var(--cui-mid);--u-soft:var(--cui-soft);--u-pastel:var(--cui-pastel);--u-wash:var(--cui-wash);--u-on:var(--cui-on);--u-hero:#5E3A28;--u-accent-dk:var(--cui-accent-dk);--u-action-dk:var(--cui-action-dk);--u-on-dk:var(--cui-on-dk);--u-tint-dk:var(--cui-tint-dk)}
+:where(html[data-ds][data-u=muscu]),:where(html[data-ds]) :where([data-u=muscu]){--u-deep:var(--mus-deep);--u-accent:var(--mus-accent);--u-mid:var(--mus-mid);--u-soft:var(--mus-soft);--u-pastel:var(--mus-pastel);--u-wash:var(--mus-wash);--u-on:var(--mus-on);--u-hero:var(--mus-hero);--u-accent-dk:var(--mus-accent-dk);--u-action-dk:var(--mus-action-dk);--u-on-dk:var(--mus-on-dk);--u-tint-dk:var(--mus-tint-dk)}
+:where(html[data-ds][data-u=progression]),:where(html[data-ds]) :where([data-u=progression]){--u-deep:var(--pro-deep);--u-accent:var(--pro-accent);--u-mid:var(--pro-mid);--u-soft:var(--pro-soft);--u-pastel:var(--pro-pastel);--u-wash:var(--pro-wash);--u-on:var(--pro-on);--u-hero:var(--pro-deep);--u-accent-dk:var(--pro-accent-dk);--u-action-dk:var(--pro-action-dk);--u-on-dk:var(--pro-on-dk);--u-tint-dk:var(--pro-tint-dk)}
+
+/* ---------- 3. JETONS SÉMANTIQUES (re-calculés là où l'univers change) ----------
+   Les anciens noms (--bg, --card, --acc…) sont conservés : tous les composants
+   existants suivent automatiquement, sans toucher au code des domaines. */
+html[data-ds],html[data-ds] [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-wash) 60%,var(--n-50));
+  --surface-card:var(--n-0);
+  --surface-soft:color-mix(in srgb,var(--u-pastel) 30%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 28%,var(--n-100));
+  --text-1:var(--n-900);--text-2:var(--n-500);
+  --border:color-mix(in srgb,var(--u-pastel) 35%,var(--n-200));
+  --separator:color-mix(in srgb,var(--u-pastel) 25%,var(--n-100));
+  --action:var(--u-deep);--on-action:var(--u-on);
+  --action-soft:color-mix(in srgb,var(--u-pastel) 40%,var(--n-0));--on-action-soft:var(--u-accent);
+  --title:color-mix(in srgb,var(--u-accent) 80%,var(--n-900));
+  --accent:var(--u-accent);--chart-1:var(--u-mid);--chart-2:var(--u-soft);--chart-3:var(--u-pastel);
+  --focus:var(--u-accent);
+  /* alias des anciens noms */
+  --bg:var(--surface-page);--card:var(--surface-card);--txt:var(--text-1);--mut:var(--text-2);--line:var(--border);
+  --chip:var(--surface-sunken);--acc:var(--accent);--acc2:var(--action-soft);--grad:var(--action);--kc:var(--u-mid);
+  --red:var(--fn-err);--org:var(--fn-warn-fill);--grn:var(--fn-ok);--p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  --shadow:var(--elev-1);
+}
+/* Mode sombre : un fond commun, des surfaces légèrement différenciées, accents éclaircis */
+html[data-ds].dark,html[data-ds].dark [data-u]{
+  --surface-page:var(--d-bg);--surface-card:var(--d-card);
+  --surface-soft:color-mix(in srgb,var(--u-tint-dk) 60%,var(--d-card));
+  --surface-sunken:var(--d-chip);
+  --text-1:var(--d-txt);--text-2:var(--d-mut);
+  --border:var(--d-line);--separator:var(--d-line);
+  --action:var(--u-action-dk);--on-action:var(--u-on-dk);
+  --action-soft:color-mix(in srgb,var(--u-accent-dk) 16%,var(--d-card));--on-action-soft:var(--u-accent-dk);
+  --title:var(--u-accent-dk);--accent:var(--u-accent-dk);--chart-1:var(--u-accent-dk);--chart-2:color-mix(in srgb,var(--u-accent-dk) 60%,var(--d-card));--chart-3:color-mix(in srgb,var(--u-accent-dk) 30%,var(--d-card));
+  --kc:var(--u-accent-dk);
+}
+
+/* ---------- 4. TROIS NIVEAUX D'INTENSITÉ (data-ds-style = a | b | c) ---------- */
+/* B — Immersif : fonds plus teintés, cartes secondaires colorées */
+html[data-ds][data-ds-style=b],html[data-ds][data-ds-style=b] [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-pastel) 30%,var(--u-wash));
+  --surface-card:color-mix(in srgb,var(--u-pastel) 14%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 55%,var(--n-0));
+  --border:color-mix(in srgb,var(--u-pastel) 60%,var(--n-0));
+}
+html[data-ds][data-ds-style=b].dark,html[data-ds][data-ds-style=b].dark [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-tint-dk) 70%,var(--d-bg));
+  --surface-card:color-mix(in srgb,var(--u-tint-dk) 55%,var(--d-card));
+  --surface-sunken:color-mix(in srgb,var(--u-tint-dk) 40%,var(--d-chip));
+  --border:color-mix(in srgb,var(--u-tint-dk) 40%,var(--d-line));
+}
+/* C — Premium contrasté : fond doux, carte principale profonde */
+html[data-ds][data-ds-style=c],html[data-ds][data-ds-style=c] [data-u]{
+  --surface-page:var(--u-wash);
+}
+html[data-ds][data-ds-style=c].dark,html[data-ds][data-ds-style=c].dark [data-u]{
+  --surface-page:var(--d-bg);
+}
+/* La carte principale (.ds-hero, posée par theme.js) devient profonde en style C */
+html[data-ds][data-ds-style=c] .ds-hero{
+  --surface-card:var(--u-hero);--card:var(--u-hero);
+  --txt:#fff;--mut:color-mix(in srgb,#fff 74%,var(--u-hero));
+  --chip:color-mix(in srgb,#fff 14%,var(--u-hero));--line:color-mix(in srgb,#fff 16%,var(--u-hero));
+  --acc:var(--u-pastel);--acc2:color-mix(in srgb,#fff 14%,var(--u-hero));--on-action-soft:#fff;--grad:var(--u-pastel);--on-action:var(--u-hero);
+  --surface-soft:color-mix(in srgb,#fff 12%,var(--u-hero));--kc:var(--u-pastel);--p:#AFC0FF;--c:#F4C77A;--f:#D4BDF7;
+  background:var(--u-hero)!important;color:#fff;box-shadow:var(--elev-2);
+}
+html[data-ds][data-ds-style=c].dark .ds-hero{
+  --u-hero-dk:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));
+  --card:var(--u-hero-dk);--txt:var(--d-txt);--mut:#B9BFC8;--chip:color-mix(in srgb,#fff 10%,var(--u-hero-dk));--line:color-mix(in srgb,#fff 12%,var(--u-hero-dk));
+  --surface-soft:color-mix(in srgb,#fff 8%,var(--u-hero-dk));--acc:var(--u-accent-dk);--acc2:color-mix(in srgb,#fff 10%,var(--u-hero-dk));--on-action-soft:var(--d-txt);--grad:var(--u-action-dk);--on-action:var(--u-on-dk);--kc:var(--u-accent-dk);
+  --p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  background:var(--u-hero-dk)!important;color:var(--d-txt);
+}
+
+/* ---------- 5. COMPOSANTS (mêmes classes que l'app ; aucune couleur en dur) ---------- */
+:where(html[data-ds]) body{font-family:var(--font);background:var(--bg);color:var(--txt);transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+:where(html[data-ds]) h1{font-size:var(--fs-2xl);font-weight:var(--fw-bold);letter-spacing:-.02em}
+:where(html[data-ds][data-ds-style=b]) h1,:where(html[data-ds][data-ds-style=c]) h1{color:var(--title)}
+:where(html[data-ds]) .card{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--shadow);transition:background-color var(--dur) var(--ease)}
+:where(html[data-ds].dark) .card{border:1px solid var(--line)}
+/* boutons : principal = action profonde, texte lisible garanti */
+:where(html[data-ds]) button,:where(html[data-ds]) .btn{background:var(--grad);color:var(--on-action);border-radius:var(--r-md);transition:transform var(--dur-fast) var(--ease),filter var(--dur-fast),background-color var(--dur) var(--ease)}
+:where(html[data-ds]) button.sec{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) button.ghost{background:transparent;color:var(--acc)}
+:where(html[data-ds]) button.danger{background:transparent;color:var(--red)}
+:where(html[data-ds]) button:disabled{opacity:.45;cursor:not-allowed;filter:saturate(.4)}
+:where(html[data-ds]) :is(button,a,input,select,textarea,summary,.chip):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (hover:hover){:where(html[data-ds]) button:not(:disabled):hover{filter:brightness(1.07)}:where(html[data-ds].dark) button:not(:disabled):hover{filter:brightness(1.12)}}
+:where(html[data-ds]) .chip{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) .chip.on,:where(html[data-ds]) .scale button.on{background:var(--grad);color:var(--on-action)}
+:where(html[data-ds]) .stepper button{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) input,:where(html[data-ds]) select,:where(html[data-ds]) textarea{background:var(--card);border-color:var(--line);color:var(--txt);border-radius:var(--r-md)}
+:where(html[data-ds]) .ds-hero :is(input,select,textarea){background:var(--chip)}
+:where(html[data-ds]) .banner{background:var(--surface-soft);color:var(--txt)}
+:where(html[data-ds]) .reco{background:var(--surface-soft)}
+:where(html[data-ds]) .toast{background:var(--n-900);color:#fff;box-shadow:var(--elev-2)}
+:where(html[data-ds].dark) .toast{background:var(--d-txt);color:var(--d-bg)}
+:where(html[data-ds]) .sheet{background:var(--card)}
+:where(html[data-ds]) .sheet-bg{background:rgba(10,12,16,.45);backdrop-filter:blur(2px)}
+/* étiquettes fonctionnelles : couleur + texte, jamais la couleur seule */
+:where(html[data-ds]) .tag.red{background:color-mix(in srgb,var(--fn-err) 13%,var(--card));color:var(--fn-err)}
+:where(html[data-ds]) .tag.grn,:where(html[data-ds]) .pill{background:color-mix(in srgb,var(--fn-ok) 14%,var(--card));color:var(--fn-ok)}
+:where(html[data-ds]) .tag.org{background:color-mix(in srgb,var(--fn-warn-fill) 20%,var(--card));color:var(--fn-warn)}
+:where(html[data-ds]) .tag.soon{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) .gh.up{color:var(--fn-up)}:where(html[data-ds]) .gh.down{color:var(--fn-down)}
+:where(html[data-ds]) .steps .done .num{background:color-mix(in srgb,var(--fn-ok) 16%,var(--card));color:var(--fn-ok)}
+:where(html[data-ds]) .reco.warn{border-color:var(--fn-warn-fill)}:where(html[data-ds]) .reco.bad{border-color:var(--fn-err)}:where(html[data-ds]) .reco.good{border-color:var(--fn-ok)}
+/* anatomie : groupes musculaires (fonctionnel) */
+:where(html[data-ds]) .musc .m.prim{fill:var(--musc-prim)}:where(html[data-ds]) .musc .m.sec{fill:var(--musc-sec)}
+:where(html[data-ds]) .mtag{background:color-mix(in srgb,var(--musc-sec) 22%,var(--card))}:where(html[data-ds]) .mtag.p{background:color-mix(in srgb,var(--musc-prim) 20%,var(--card))}
+:where(html[data-ds]) .exlast .nx{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) .ghostline{background:var(--surface-soft)}
+/* navigation et repères de date */
+:where(html[data-ds]) nav.tabs{background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px);box-shadow:0 -1px 0 var(--line)}
+:where(html[data-ds]) nav.tabs button{color:var(--mut)}
+:where(html[data-ds]) nav.tabs button.on{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) nav.tabs button.scanbtn{color:var(--acc)}
+:where(html[data-ds]) nav.tabs button.scanbtn span{background:var(--grad);box-shadow:0 6px 18px color-mix(in srgb,var(--grad) 35%,transparent);border-color:var(--card)}
+:where(html[data-ds]) nav.tabs button.scanbtn svg path{stroke:var(--on-action)}
+/* identité « contextuelle » : l'onglet actif prend la couleur de son univers */
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=today]{--u-accent:var(--nut-accent);--u-pastel:var(--nut-pastel);--u-accent-dk:var(--nut-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=fridge]{--u-accent:var(--cui-accent);--u-pastel:var(--cui-pastel);--u-accent-dk:var(--cui-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=workout]{--u-accent:var(--mus-accent);--u-pastel:var(--mus-pastel);--u-accent-dk:var(--mus-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=progress]{--u-accent:var(--pro-accent);--u-pastel:var(--pro-pastel);--u-accent-dk:var(--pro-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button.on{background:color-mix(in srgb,var(--u-pastel) 50%,var(--card));color:var(--u-accent)}
+:where(html[data-ds][data-ds-commun=contextuel].dark) nav.tabs button.on{background:color-mix(in srgb,var(--u-accent-dk) 16%,var(--card));color:var(--u-accent-dk)}
+:where(html[data-ds]) .wd{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) .wd.on{background:var(--grad);color:var(--on-action)}:where(html[data-ds]) .wd.on i{color:var(--on-action)}
+:where(html[data-ds]) .wd.today{outline-color:var(--acc)}
+:where(html[data-ds]) .ktab.on{background:var(--grad);color:var(--on-action);border-color:var(--grad)}
+:where(html[data-ds]) .cztabs .czbadge{background:var(--acc);color:var(--card)}:where(html[data-ds]) .cztabs .ktab.on .czbadge{background:var(--on-action);color:var(--grad)}
+:where(html[data-ds]) .avatar{background:var(--grad);color:var(--on-action)}
+:where(html[data-ds]) .fab{box-shadow:0 6px 18px color-mix(in srgb,var(--grad) 35%,transparent)}
+:where(html[data-ds]) .dpill,:where(html[data-ds]) .qa button{background:var(--card);color:var(--txt)}
+:where(html[data-ds]) .dtpill,:where(html[data-ds]) .pstats div{background:var(--surface-soft)}
+/* minuteur de repos : appartient à la musculation, garde sa couleur sur tous les onglets */
+:where(html[data-ds]) .restbar{background:var(--mus-hero);color:#fff;box-shadow:var(--elev-2)}
+:where(html[data-ds]) .restbar .restfill{background:var(--mus-soft);opacity:.45}
+:where(html[data-ds]) .restbar.over .restfill{background:var(--fn-ok);opacity:.6}
+:where(html[data-ds]) .restbar button{background:rgba(255,255,255,.16);color:#fff}
+:where(html[data-ds].dark) .restbar{background:color-mix(in srgb,var(--mus-accent-dk) 22%,var(--d-raise));color:var(--d-txt)}
+/* B — cartes secondaires colorées */
+:where(html[data-ds][data-ds-style=b]) .qa button,:where(html[data-ds][data-ds-style=b]) .dpill,:where(html[data-ds][data-ds-style=b]) .ktab:not(.on){background:var(--surface-sunken)}
+
+/* ---------- Accueil (proposition, aperçu seulement) ---------- */
+:where(html[data-ds]) .dsh-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+:where(html[data-ds]) .dsh-card{border-radius:var(--r-lg);padding:var(--sp-4);background:var(--surface-soft);color:var(--txt);display:flex;flex-direction:column;gap:6px;min-height:132px;box-shadow:var(--shadow);text-align:left;font-weight:var(--fw-reg)}
+:where(html[data-ds][data-ds-style=a]) .dsh-card,:where(html[data-ds]:not([data-ds-style])) .dsh-card{background:var(--card);border-top:4px solid var(--u-mid)}
+:where(html[data-ds][data-ds-style=c]) .dsh-card{background:var(--card)}
+:where(html[data-ds]) .dsh-card .dsh-k{font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:.04em;text-transform:uppercase;color:var(--acc)}
+:where(html[data-ds]) .dsh-card .dsh-v{font-size:var(--fs-xl);font-weight:var(--fw-bold);line-height:1.1}
+:where(html[data-ds]) .dsh-card .bar>i{background:var(--u-mid)}
+:where(html[data-ds].dark) .dsh-card .bar>i{background:var(--u-accent-dk)}
+:where(html[data-ds]) .dsh-hero{grid-column:1/-1}
+:where(html[data-ds]) .dsh-sw{display:inline-flex;gap:3px}.dsh-sw i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+@media (prefers-reduced-motion:reduce){:where(html[data-ds]) *{transition:none!important;animation-duration:.01ms!important}}

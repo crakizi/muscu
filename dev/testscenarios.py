@@ -3,6 +3,7 @@
 import asyncio, json, subprocess, os, time
 from playwright.async_api import async_playwright
 D = os.path.dirname(os.path.abspath(__file__)); PORT = int(os.environ.get("PORT", "8773")); SH = f"{D}/shots/scenarios/"; os.makedirs(SH, exist_ok=True)
+CHROME = os.environ.get("CHROME") or next((c for c in ["/usr/bin/google-chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"] if os.path.exists(c)), None)
 RES = {"ok": [], "bad": []}; SECTION = [""]
 def check(name, cond, info=""):
   (RES["ok"] if cond else RES["bad"]).append(f"[{SECTION[0]}] {name}")
@@ -11,7 +12,7 @@ async def main():
   srv = subprocess.Popen(["python3", "-m", "http.server", str(PORT)], cwd=D, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(0.8)
   try:
     async with async_playwright() as p:
-      b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox", "--use-gl=swiftshader", "--ignore-gpu-blocklist"])
+      b = await p.chromium.launch(executable_path=CHROME, args=["--no-sandbox", "--use-gl=swiftshader", "--ignore-gpu-blocklist"])
       pg = await b.new_page(viewport={"width": 390, "height": 844}); errs = []; cons = []
       pg.on("pageerror", lambda e: errs.append("PAGEERR " + str(e)))
       pg.on("console", lambda m: cons.append(m.text) if m.type == "error" and "Failed to load resource" not in m.text else None)

@@ -24,7 +24,8 @@ _Ne contient que ce que Vuthy a réellement validé (sa réponse entre guillemet
 | 22/11 | Publication des lots 1-2 | « publie » |
 | 22/11 | Amis : profil en 2 parties (🍽️ Alimentation, 🏋️ Sport), partage « sur mon profil », profil privé (code + acceptation) ou public (pseudo, sans validation), copie de diète recalculée selon ses objectifs | conversation Amis |
 | 26/11 | Design inspiré de **Liftin'** | « j'aime bcp le design de lifting » |
-| 26/11 | Accent du design : **bleu** `#1f6bff` (sombre `#3d86ff`), l'orange est écarté | « Bleu » |
+| 26/11 | Accent du design : **bleu** `#1f6bff` (sombre `#3d86ff`), l'orange est écarté — **remplacé le soir même** par les couleurs par univers (ligne suivante) | « Bleu » |
+| 26/11 | Design system par univers : palettes **validées** Nutrition = Deep Ocean (`#103B49 #208A91 #BBD9DD #EDF4F5 #172B36`), Cuisine = Warm Earth (`#81543D #B77C55 #D4AB86 #EBD6C1 #F6EFE6`), Progression = Slate Blue (`#303E5C #526889 #8296B5 #C6D2E4 #EDF0F6`) ; muscu : 5 finalistes (19, 21, 22, 25, 28) non tranchées ; identité commune non tranchée ; app premium, ni toute blanche ni toute noire, adaptée hommes et femmes, couleurs fonctionnelles indépendantes, WCAG AA | cahier « Direction artistique » du 26/11 (« palettes officiellement validées ») |
 | 26/11 | Migrer tout le développement vers Claude Code, spécialisation par domaine et coordination centrale | demande du 26/11 |
 
 ## Idées abandonnées ou refusées

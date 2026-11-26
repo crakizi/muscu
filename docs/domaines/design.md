@@ -1,3 +1,5 @@
+> **Mise à jour 26/11/2026 (soir)** : design system 2 par univers sur `sec/design-systeme` (aperçu non publié) — tout est dans `docs/design-system.md` (à lire en premier). Le reste de cette fiche est l'historique.
+>
 > **État au 26/11/2026** : la direction verte décrite ci-dessous (`sec/design`) **n'a pas été retenue** par Vuthy. Direction actuelle : **façon Liftin'**, branche `sec/design-liftin` (`11888e8`), voir `docs/design-system.md`. Cette fiche reste utile pour l'audit, les règles proposées et les dépendances. Fiche à tenir à jour par le domaine à chaque livraison (sections Fonctionnalités, Bugs, État, Prochaines étapes). Source : historique de la conversation claude.ai d'origine, lue en entier le 26/11.
 
 # Contexte — section Design (titre de la conversation : « Disign »)

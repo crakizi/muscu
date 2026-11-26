@@ -2,6 +2,13 @@
 
 _Les entrées les plus récentes en haut. Chaque publication (Coordination) et chaque changement important d'organisation ajoute une entrée. Les sessions lisent les 3 premières au démarrage. L'historique détaillé V1 → V1.8 (17-21/11) est dans le contexte privé `.private/projet/journal-developpement.md`._
 
+## 26/11/2026 (soir) — Design system 2 : aperçu par univers (non publié)
+- Branche `sec/design-systeme` : `dev/src/theme.css` (jetons primitifs → rôles par univers → sémantiques → modes et intensités → composants), `dev/src/theme.js` (actif seulement avec `?ds=` dans l'adresse), 2 lignes dans `build.py`. Sans `?ds`, l'app est identique (vérifié).
+- Page de comparaison `dev/apercu-design.html` (vraie app + données de démo, localhost seulement) : 5 palettes muscu, 3 intensités, clair/sombre, 3 identités communes, accueil proposé, mobile/ordinateur, avant/après.
+- Accessibilité : `dev/testdesign2.py`, 2 343 contrastes mesurés, 0 sous le seuil WCAG AA (`docs/rapport-accessibilite-design.md`). Tests de l'app : 74/76 comme avant (2 échecs déjà connus).
+- `testscenarios.py` trouve maintenant Chrome sur Mac.
+- Docs : `docs/design-system.md` réécrit (audit, jetons, règles, palettes validées / en attente).
+
 ## 26/11/2026 — Migration vers Claude Code
 - Organisation : `CLAUDE.md` réécrit ; source de vérité dans `docs/` (ETAT, architecture, règles, design system, décisions, feuille de route, journal, fiches par domaine) ; sous-agents `.claude/agents/` (nutrition, cuisine, muscu, programmes, amis, design, testeur) ; skills `.claude/skills/livrer` et `publier`.
 - Anciennes règles des conversations claude.ai déplacées dans `docs/archive/`.

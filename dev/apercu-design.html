@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aperçu design</title>
+<!-- Page de comparaison du design system 2 (section Design). Outil de développement local :
+     elle affiche la VRAIE app (index.local.html) dans des cadres, avec des données de démonstration.
+     Elle refuse de tourner ailleurs que sur ce Mac (localhost) pour ne jamais toucher aux vraies données. -->
+<style>
+:root{--bg:#F4F5F7;--panel:#FFFFFF;--txt:#16181D;--mut:#5F6670;--line:#E2E4E8;--acc:#16181D;--on:#fff;--chip:#EEEFF1}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1114;--panel:#181B20;--txt:#ECEEF1;--mut:#9AA1AC;--line:#2C313A;--acc:#ECEEF1;--on:#0F1114;--chip:#262A31}}
+:root[data-theme="dark"]{--bg:#0F1114;--panel:#181B20;--txt:#ECEEF1;--mut:#9AA1AC;--line:#2C313A;--acc:#ECEEF1;--on:#0F1114;--chip:#262A31}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:17px;margin:0;font-weight:700}
+.demo{font-size:12px;background:#FFF4D6;color:#6B4A00;border-radius:999px;padding:3px 10px}
+.ctl{display:flex;flex-wrap:wrap;gap:14px 18px;margin-top:10px}
+.grp{display:flex;flex-direction:column;gap:4px}
+.grp>span{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--chip);color:var(--txt);border-radius:999px;padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.seg button.on{background:var(--acc);color:var(--on);border-color:var(--acc)}
+.seg button:focus-visible{outline:2px solid #2F5FB3;outline-offset:2px}
+.sw{display:inline-flex;gap:2px}.sw i{width:9px;height:14px;border-radius:2px;display:inline-block}
+select{font:inherit;font-size:13px;padding:6px 8px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--txt)}
+main{padding:16px}
+.note{color:var(--mut);font-size:13px;margin:0 0 12px;max-width:900px}
+.grid{display:grid;gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:6px;min-width:0}
+.col h2{font-size:13px;margin:0;font-weight:600;display:flex;gap:6px;align-items:center}
+.col h2 small{color:var(--mut);font-weight:400}
+.frame{position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--line);background:#000;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.frame iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0;background:#fff}
+.err{max-width:640px;margin:40px auto;background:var(--panel);border-radius:16px;padding:20px;border:1px solid var(--line)}
+footer{color:var(--mut);font-size:12px;padding:0 16px 24px}
+button.link{font:inherit;font-size:12px;background:none;border:0;color:var(--mut);text-decoration:underline;cursor:pointer;padding:0}
+@media (max-width:700px){.ctl{gap:10px}}
+</style></head>
+<body>
+<header>
+  <div class="top"><h1>Aperçu du design</h1><span class="demo">Données de démonstration : tes vraies données ne sont pas touchées</span>
+    <span style="margin-left:auto"></span><button class="link" id="reseed">Remettre les données de démo à zéro</button></div>
+  <div class="ctl" id="ctl"></div>
+</header>
+<main><p class="note" id="note"></p><div class="grid" id="grid"></div></main>
+<footer>Rien n'est publié. Ces choix ne sont enregistrés nulle part : l'app en ligne reste inchangée.</footer>
+<script>
+const LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname) || location.hostname.endsWith(".localhost");
+const PAL = {
+  cherry: ["Black Cherry", "19", ["#361923", "#702D44", "#A65C75", "#DFC0CE", "#F6EAF0"]],
+  ruby: ["Ruby", "21", ["#50182D", "#A12C53", "#D36D90", "#F1C9D8", "#FCEFF4"]],
+  pome: ["Pomegranate", "22", ["#58232D", "#B34559", "#DD8998", "#F1CED5", "#FBEFF1"]],
+  graphite: ["Graphite", "25", ["#181818", "#383838", "#737373", "#C7C7C7", "#F0F0F0"]],
+  carbon: ["Carbon Yellow", "28", ["#20211D", "#494B39", "#C7BA49", "#E9DB76", "#F7F5E5"]]
+};
+const STYLES = { a: "A · Minimaliste", b: "B · Immersif", c: "C · Premium contrasté" };
+const COMMUN = { neutre: "Neutre premium", petrole: "Bleu pétrole", contextuel: "Neutre + accents par univers" };
+const SCREENS = { home: "Accueil (proposition)", today: "Nutrition · Aujourd'hui", fridge: "Cuisine", workout: "Séance · accueil", live: "Séance en cours", rest: "Séance · minuteur de repos", progress: "Progression", profile: "Profil (formulaires)", sheet: "Fenêtre d'ajout d'aliment" };
+const VIEWS = {
+  one: ["Un écran", "L'écran choisi, en grand."],
+  muscu: ["5 palettes muscu", "Le même écran avec les 5 palettes de musculation finalistes, côte à côte. Rien n'est choisi."],
+  styles: ["3 intensités", "Le même écran en style A (minimaliste), B (immersif) et C (premium contrasté)."],
+  univers: ["4 univers", "Accueil, Nutrition, Cuisine, Musculation et Progression ensemble, avec les réglages du haut."],
+  commun: ["Écrans communs", "Les 3 propositions d'identité pour les écrans communs (accueil, barre d'onglets, profil). Aucune n'est validée."],
+  device: ["Mobile / ordinateur", "Le même écran sur iPhone et sur un écran d'ordinateur."],
+  avant: ["Avant / après", "À gauche le design actuel (en ligne), à droite la proposition."]
+};
+const st = Object.assign({ view: "muscu", mode: "light", muscu: "ruby", style: "a", commun: "neutre", screen: "live", on: true }, (() => { try { return JSON.parse(localStorage.getItem("ds_apercu_ui") || "{}"); } catch (e) { return {}; } })());
+const save = () => { try { localStorage.setItem("ds_apercu_ui", JSON.stringify(st)); } catch (e) {} };
+
+function seg(label, key, opts, fmt) {
+  return `<div class="grp"><span>${label}</span><div class="seg">${Object.entries(opts).map(([k, v]) => `<button class="${st[key] === k ? "on" : ""}" data-k="${key}" data-v="${k}" aria-pressed="${st[key] === k}">${fmt ? fmt(k, v) : v}</button>`).join("")}</div></div>`;
+}
+const swatch = c => `<span class="sw">${c.slice(0, 4).map(x => `<i style="background:${x}"></i>`).join("")}</span>`;
+function controls() {
+  document.getElementById("ctl").innerHTML =
+    seg("Comparer", "view", Object.fromEntries(Object.entries(VIEWS).map(([k, v]) => [k, v[0]]))) +
+    `<div class="grp"><span>Écran</span><select id="scr">${Object.entries(SCREENS).map(([k, v]) => `<option value="${k}" ${st.screen === k ? "selected" : ""}>${v}</option>`).join("")}</select></div>` +
+    seg("Mode", "mode", { light: "☀︎ Clair", dark: "☾ Sombre" }) +
+    seg("Palette musculation", "muscu", PAL, (k, v) => `${swatch(v[2])}${v[0]} <small>${v[1]}</small>`) +
+    seg("Intensité", "style", STYLES) +
+    seg("Identité commune", "commun", COMMUN) +
+    seg("Design", "on", { true: "Nouveau", false: "Actuel (en ligne)" });
+  document.getElementById("note").textContent = VIEWS[st.view][1];
+}
+// Colonnes à afficher selon la comparaison choisie : chaque colonne = réglages communs + ses différences
+function columns() {
+  const b = { on: st.on, muscu: st.muscu, style: st.style, commun: st.commun, mode: st.mode, screen: st.screen, w: 390, h: 844 };
+  switch (st.view) {
+    case "muscu": return Object.entries(PAL).map(([k, v]) => [`${v[0]} <small>option ${v[1]}</small>`, Object.assign({}, b, { muscu: k, on: true })]);
+    case "styles": return Object.entries(STYLES).map(([k, v]) => [v, Object.assign({}, b, { style: k, on: true })]);
+    case "univers": return [["Accueil", "home"], ["Nutrition", "today"], ["Cuisine", "fridge"], ["Musculation", "live"], ["Progression", "progress"]].map(([l, s]) => [l, Object.assign({}, b, { screen: s })]);
+    case "commun": return Object.entries(COMMUN).map(([k, v]) => [v, Object.assign({}, b, { commun: k, on: true, screen: ["home", "profile"].includes(st.screen) ? st.screen : "home" })]);
+    case "device": return [["iPhone <small>390 × 844</small>", b], ["Ordinateur <small>1280 × 800</small>", Object.assign({}, b, { w: 1280, h: 800 })]];
+    case "avant": return [["Actuel (en ligne)", Object.assign({}, b, { on: false })], ["Proposition", Object.assign({}, b, { on: true })]];
+    default: return [["", b]];
+  }
+}
+const url = c => `index.local.html?ds=${c.on ? 1 : 0}&m=${c.muscu}&s=${c.style}&c=${c.commun}&mode=${c.mode}&screen=${c.screen}`;
+let frames = [];
+function layout() {
+  const cols = columns(), g = document.getElementById("grid");
+  const avail = g.clientWidth || innerWidth - 32;
+  const totalW = cols.reduce((s, [, c]) => s + c.w, 0);
+  const n = cols.length, gap = 16;
+  const sc = Math.min(1, (avail - gap * (n - 1)) / totalW);
+  const wide = innerWidth < 700 && n > 2; // téléphone : une colonne, défilement vertical
+  g.style.gridTemplateColumns = wide ? "1fr" : cols.map(([, c]) => `${Math.floor(c.w * sc)}px`).join(" ");
+  const key = JSON.stringify(cols.map(([, c]) => [c.w, c.h, c.on, c.screen]));
+  if (g.dataset.key !== key) { // structure changée : recréer les cadres
+    g.dataset.key = key;
+    g.innerHTML = cols.map(([l], i) => `<div class="col">${l ? `<h2>${l}</h2>` : ""}<div class="frame" id="f${i}"><iframe title="Aperçu ${i + 1}" src="${url(cols[i][1])}"></iframe></div></div>`).join("");
+    frames = [...g.querySelectorAll("iframe")];
+  } else { // simple changement de réglage : message instantané, sans recharger
+    frames.forEach((f, i) => f.contentWindow && f.contentWindow.postMessage({ ds: cols[i][1] }, location.origin));
+  }
+  g.querySelectorAll(".col").forEach((col, i) => {
+    const c = cols[i][1], s = wide ? Math.min(1, (avail) / c.w) : sc;
+    col.querySelector("h2") && (col.querySelector("h2").innerHTML = cols[i][0]);
+    const fr = col.querySelector(".frame"); fr.style.width = Math.floor(c.w * s) + "px"; fr.style.height = Math.floor(c.h * s) + "px";
+    const ifr = fr.querySelector("iframe"); ifr.style.width = c.w + "px"; ifr.style.height = c.h + "px"; ifr.style.transform = `scale(${s})`;
+  });
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest(".seg button"); if (!b) return;
+  let v = b.dataset.v; if (b.dataset.k === "on") v = v === "true";
+  st[b.dataset.k] = v; save(); controls(); layout();
+});
+document.addEventListener("change", e => { if (e.target.id === "scr") { st.screen = e.target.value; save(); layout(); } });
+addEventListener("resize", () => layout());
+
+// Données de démonstration : injectées une fois (sur ce Mac seulement), via un cadre caché
+function seed(force) {
+  return new Promise(res => {
+    try { if (!force && localStorage.getItem("ds_demo_seed") === "1") return res(); } catch (e) {}
+    try { localStorage.removeItem("muscu_v1"); } catch (e) {} // données de l'app sur localhost = démo seulement
+    const f = document.createElement("iframe"); f.style.display = "none"; f.src = "index.local.html";
+    f.onload = () => {
+      const d = f.contentDocument, s = d.createElement("script"); s.src = "demo_seed.js";
+      s.onload = () => { try { f.contentWindow.demoSeed(); localStorage.setItem("ds_demo_seed", "1"); } catch (e) { console.error(e); } setTimeout(() => { f.remove(); res(); }, 300); };
+      d.head.appendChild(s);
+    };
+    document.body.appendChild(f);
+  });
+}
+document.getElementById("reseed").onclick = async () => { await seed(true); document.getElementById("grid").dataset.key = ""; layout(); };
+
+if (!LOCAL) {
+  document.querySelector("main").innerHTML = `<div class="err"><h2>Aperçu réservé au Mac</h2><p>Cette page charge des données de démonstration : elle ne s'ouvre que sur l'ordinateur de développement (adresse « localhost »), jamais sur le site en ligne, pour ne pas toucher aux vraies données.</p></div>`;
+  document.getElementById("ctl").remove();
+} else { controls(); seed().then(layout); }
+</script>
+</body></html>

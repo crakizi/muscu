@@ -10,3 +10,6 @@ dev/vendor
 dev/icons
 # Projet natif Xcode (local seulement)
 natif/
+
+# Captures brutes du test design system 2 (régénérées par testdesign2.py) — seules les planches sont gardées
+dev/shots/design2/*_*_*_*.png
