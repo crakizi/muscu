@@ -254,7 +254,7 @@ function muscleSVG(prim = [], sec = [], focus = [], mini = false, colors = null)
 function viewWorkout() {
   const w = liveWorkout(); const mode = S.wMode || "list";
   const spb = typeof spBarHTML === "function" ? spBarHTML() : "";
-  const toggle = spb + `<div class="chips" style="margin-bottom:10px"><button class="chip ${mode === "list" ? "on" : ""}" data-act="wMode" data-v="list">Liste</button><button class="chip ${mode === "3d" ? "on" : ""}" data-act="wMode" data-v="3d">Salle 3D</button></div>`;
+  const toggle = spb + `<div class="chips seg"><button class="chip ${mode === "list" ? "on" : ""}" data-act="wMode" data-v="list">Liste</button><button class="chip ${mode === "3d" ? "on" : ""}" data-act="wMode" data-v="3d">Salle 3D</button></div>`;
   if (mode === "3d") return `${statusBanner()}<div class="row between"><h1>${w ? esc(w.name) : "Salle 3D"}</h1>${w ? `<span class="mut" id="wTimer">${fmtDur(Date.now() - w.start)}</span>` : ""}</div>${toggle}
     <div class="${S.gymFull ? "gymfs" : "gymbox"}"><div id="scene3d" style="height:100%;width:100%;overflow:hidden;background:var(--chip)"></div>
       <button class="gymfsbtn" data-act="gymFull" title="${S.gymFull ? "Quitter le plein écran" : "Plein écran"}">${S.gymFull ? "✕ Fermer" : "⛶ Plein écran"}</button>
@@ -266,7 +266,7 @@ function viewWorkout() {
   if (w) return toggle + liveView(w);
   const P = program(); const hist = workouts().filter(x => !x.live).slice(0, 30);
   return `${statusBanner()}<h1>Séance</h1>${toggle}${deloadCardHTML()}${recoveryCardHTML()}
-    <div class="card"><h2>Démarrer</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${Object.keys(P).map(n => `<button data-act="startW" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+    <div class="card"><h2>Démarrer</h2><div class="wstart">${Object.keys(P).map(n => `<button data-act="startW" data-v="${esc(n)}">${esc(n)}</button>`).join("")}</div>
     <p class="xs mut">Ton programme est préchargé. Pendant la séance, 🚫 remplace un exercice que tu ne veux pas faire.</p>
     <button class="sec" style="width:100%;margin-top:6px" data-act="genOpen">✨ Créer un programme pour ma salle</button></div>
     <div class="card"><h2>Historique</h2>${hist.map(h => {
@@ -280,8 +280,8 @@ function liveView(w) {
   const warm = P.warmup ? `<div class="card"><label class="row" style="gap:10px;color:var(--txt);font-size:15px;margin:0"><input type="checkbox" style="width:22px;height:22px" data-act="warmAll" ${w.warmDone ? "checked" : ""}> <b>Échauffement fait</b></label>
     <details style="margin-top:6px"><summary class="xs mut">Voir le détail (poulie, unilatéral, ~8 reps léger)</summary><ul class="sm" style="margin:6px 0 0">${WARMUP_UPPER.map(([n]) => `<li>${esc(n)}</li>`).join("")}</ul></details></div>` : "";
   return `${statusBanner()}<div class="row between"><h1>${esc(w.name)}</h1><span class="mut" id="wTimer">${fmtDur(Date.now() - w.start)}</span></div>
-    <div class="xs mut" style="margin:-6px 0 8px">🔥 Séance : ≈ <b>${r0(workoutKcal(w))} kcal</b> dépensées par les séries (≈ ${r0(workoutKcalGross(w))} kcal avec ton métabolisme de repos) · <a href="#" data-act="energyInfo" style="color:var(--acc)">calcul</a></div>
-    <div class="row sm" style="margin:-4px 0 10px"><span class="mut">Date :</span><input type="date" id="wDate" value="${dateKey(new Date(w.start))}" style="width:auto;padding:5px 8px" max="${todayKey()}"><span class="xs mut">(change-la pour noter une séance passée)</span></div>
+    <details class="wmeta"><summary>≈ ${r0(workoutKcal(w))} kcal · ${fmtDay(dateKey(new Date(w.start)))} ›</summary><div><div class="xs mut" style="margin-bottom:6px">🔥 Séance : ≈ <b>${r0(workoutKcal(w))} kcal</b> dépensées par les séries (≈ ${r0(workoutKcalGross(w))} kcal avec ton métabolisme de repos) · <a href="#" data-act="energyInfo" style="color:var(--acc)">calcul</a></div>
+    <div class="row sm" style="margin:-4px 0 10px"><span class="mut">Date :</span><input type="date" id="wDate" value="${dateKey(new Date(w.start))}" style="width:auto;padding:5px 8px" max="${todayKey()}"><span class="xs mut">(pour noter une séance passée)</span></div></div></details>
     ${warm}${(w.ex || []).map((e, i) => exCard(w, e, i)).join("")}
     <button class="sec" style="width:100%;margin-bottom:10px" data-act="addEx">+ Ajouter un exercice</button>
     <div class="card"><label>Notes de séance</label><textarea id="wNotes" placeholder="sensations, douleurs, machine prise…">${esc(w.notes || "")}</textarea>
@@ -451,7 +451,7 @@ function weekStripHTML(k) {
   }).join("");
   const st = streakDays();
   const title = k === today ? "Aujourd'hui" : k === addDays(today, -1) ? "Hier" : k === addDays(today, 1) ? "Demain" : fmtDay(k);
-  return `<div class="row between" style="margin-top:4px"><h2 style="margin:0;position:relative">${title}${k > today ? ' <span class="tag">prévu</span>' : ""}
+  return `<div class="row between" style="margin-top:4px"><h2 class="ltitle" style="margin:0;position:relative">${title}${k > today ? ' <span class="tag">prévu</span>' : ""}
       <input type="date" class="datepick" value="${k}" max="${maxPlanDay()}" data-act="dayPick" aria-label="Choisir un jour"></h2>
     <div class="row" style="gap:8px">${k !== today ? `<button class="chip" data-act="dayGo" data-v="${today}">Aujourd'hui</button>` : ""}<span class="b" title="Jours notés d'affilée">🔥 ${st}</span><button class="ghost small" data-act="weekSheet" title="Ma semaine">📊</button></div></div>
   <div class="week"><button class="ghost" data-act="dayNav" data-v="-7" aria-label="Semaine précédente">‹</button>${cells}<button class="ghost" data-act="dayNav" data-v="7" ${addDays(ws, 7) > maxPlanDay() ? "disabled" : ""} aria-label="Semaine suivante">›</button></div>`;
