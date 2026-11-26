@@ -191,12 +191,296 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 .exhow{margin-top:12px}.exhow summary{font-weight:600;cursor:pointer;padding:6px 0}
 .exacts{border-top:1px solid var(--line);margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:8px}.exacts select{width:auto;padding:4px 6px;margin-left:6px}.exacts .ghost.dangertxt{color:var(--red)}
 
+/* =====================================================================
+   DESIGN SYSTEM 2 (section Design) — APERÇU, NON PUBLIÉ
+   Actif SEULEMENT quand <html data-ds> est présent (page dev/apercu-design.html).
+   Sans cet attribut, l'app reste exactement comme aujourd'hui.
+   Documentation : docs/design-system.md
+   Couches : 1 primitives → 2 rôles par univers → 3 jetons sémantiques
+             → 4 modes / styles → 5 composants.
+   Couches 1-2 et 5 : sélecteurs :where() (priorité nulle, l'ordre suffit).
+   Couches 3-4 : sélecteurs html[data-ds] (doivent battre :root et html.dark de style.css).
+   ===================================================================== */
+
+/* ---------- 1. PRIMITIVES (palettes d'origine, ne pas modifier) ---------- */
+:where(html[data-ds]){
+  /* Nutrition — Deep Ocean (validée) */
+  --ocean-900:#103B49;--ocean-600:#208A91;--ocean-200:#BBD9DD;--ocean-50:#EDF4F5;--ocean-ink:#172B36;
+  /* Cuisine — Warm Earth (validée) */
+  --earth-900:#81543D;--earth-600:#B77C55;--earth-400:#D4AB86;--earth-200:#EBD6C1;--earth-50:#F6EFE6;
+  /* Progression — Slate Blue (validée) */
+  --slate-900:#303E5C;--slate-600:#526889;--slate-400:#8296B5;--slate-200:#C6D2E4;--slate-50:#EDF0F6;
+  /* Musculation — 5 finalistes (en attente du choix de Vuthy) */
+  --cherry-900:#361923;--cherry-600:#702D44;--cherry-400:#A65C75;--cherry-200:#DFC0CE;--cherry-50:#F6EAF0;
+  --ruby-900:#50182D;--ruby-600:#A12C53;--ruby-400:#D36D90;--ruby-200:#F1C9D8;--ruby-50:#FCEFF4;
+  --pome-900:#58232D;--pome-600:#B34559;--pome-400:#DD8998;--pome-200:#F1CED5;--pome-50:#FBEFF1;
+  --graph-900:#181818;--graph-600:#383838;--graph-400:#737373;--graph-200:#C7C7C7;--graph-50:#F0F0F0;
+  --carbon-900:#20211D;--carbon-600:#494B39;--carbon-400:#C7BA49;--carbon-200:#E9DB76;--carbon-50:#F7F5E5;
+  /* Neutres (communs à tous les univers) */
+  --n-0:#FFFFFF;--n-50:#F6F6F7;--n-100:#EEEFF1;--n-200:#E2E4E8;--n-500:#5F6670;--n-800:#2A2F37;--n-900:#16181D;
+  --d-bg:#0F1114;--d-card:#181B20;--d-raise:#20242A;--d-chip:#262A31;--d-line:#2C313A;--d-txt:#ECEEF1;--d-mut:#9AA1AC;
+
+  /* ---------- Couleurs fonctionnelles (indépendantes des univers) ---------- */
+  --fn-ok:#2E7D4F;--fn-err:#C8372D;--fn-warn:#9A5B00;--fn-warn-fill:#E9A23B;--fn-info:#2F5FB3;
+  --fn-record:#A0710A;              /* toujours avec 🏆 ou « record » */
+  --fn-up:var(--fn-ok);--fn-down:var(--n-500); /* baisse = gris neutre, jamais rouge (règle 3) */
+  --mac-p:#4F6BED;--mac-c:#B87512;--mac-f:#9B6BDF;--mac-fib:#3F8A5D;
+  --musc-prim:#C8553D;--musc-sec:#E3A15A;
+  --rec-ok:#3F9C6B;--rec-near:#C9A227;--rec-mid:#E08A3C;--rec-low:#C8553D;
+
+  /* ---------- Typographie, espaces, arrondis, mouvement ---------- */
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
+  --fs-xs:12px;--fs-sm:13px;--fs-md:16px;--fs-lg:17px;--fs-xl:22px;--fs-2xl:28px;
+  --fw-reg:400;--fw-med:500;--fw-semi:600;--fw-bold:700;
+  --sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px;--sp-6:32px;
+  --r-sm:10px;--r-md:14px;--r-lg:20px;--r-pill:999px;
+  --dur-fast:120ms;--dur:200ms;--ease:cubic-bezier(.2,.8,.2,1);
+  --elev-1:0 1px 2px rgba(16,24,40,.04),0 2px 10px rgba(16,24,40,.05);
+  --elev-2:0 6px 24px rgba(16,24,40,.10);
+}
+:where(html[data-ds].dark){
+  --fn-ok:#6CC495;--fn-err:#F2867C;--fn-warn:#F0B44C;--fn-warn-fill:#F0B44C;--fn-info:#8DB2F0;--fn-record:#E8C15A;--fn-down:var(--d-mut);
+  --mac-p:#8EA2F5;--mac-c:#E9A23B;--mac-f:#B99AEE;--mac-fib:#6CC495;
+  --musc-prim:#EE8A70;--musc-sec:#F2BE7E;--rec-ok:#6CC495;--rec-near:#E2C45A;--rec-mid:#F2A86B;--rec-low:#EE8A70;
+  --elev-1:none;--elev-2:0 8px 28px rgba(0,0,0,.5);
+}
+
+/* ---------- 2. RÔLES PAR UNIVERS (valeurs fixes, définies une fois) ----------
+   deep = actions importantes · accent = texte/icônes accentués (≥ 4,5:1)
+   mid = graphiques · soft/pastel = surfaces douces · wash = fond teinté
+   *-dk = adaptations au mode sombre (nuances dérivées, documentées) */
+:where(html[data-ds]){
+  --nut-deep:var(--ocean-900);--nut-accent:#1A6F75;--nut-mid:var(--ocean-600);--nut-soft:#6EB2B7;--nut-pastel:var(--ocean-200);--nut-wash:var(--ocean-50);--nut-on:#fff;
+  --nut-accent-dk:#6EB2B7;--nut-action-dk:var(--ocean-200);--nut-on-dk:var(--ocean-900);--nut-tint-dk:var(--ocean-ink);
+  --cui-deep:var(--earth-900);--cui-accent:var(--earth-900);--cui-mid:var(--earth-600);--cui-soft:var(--earth-400);--cui-pastel:var(--earth-200);--cui-wash:var(--earth-50);--cui-on:#fff;
+  --cui-accent-dk:var(--earth-400);--cui-action-dk:var(--earth-400);--cui-on-dk:#2B1A10;--cui-tint-dk:#2A1E17;
+  --pro-deep:var(--slate-900);--pro-accent:var(--slate-600);--pro-mid:var(--slate-600);--pro-soft:var(--slate-400);--pro-pastel:var(--slate-200);--pro-wash:var(--slate-50);--pro-on:#fff;
+  --pro-accent-dk:var(--slate-400);--pro-action-dk:var(--slate-200);--pro-on-dk:var(--slate-900);--pro-tint-dk:#1B2233;
+  /* Commun : 3 propositions (attribut data-ds-commun) — « neutre » par défaut */
+  --com-deep:#1F2329;--com-accent:#1F2329;--com-mid:#4A515C;--com-soft:#8A919C;--com-pastel:#DADDE2;--com-wash:#F3F4F6;--com-on:#fff;
+  --com-accent-dk:#E6E8EB;--com-action-dk:#E6E8EB;--com-on-dk:#15181C;--com-tint-dk:#16191E;
+}
+:where(html[data-ds][data-ds-commun=petrole]){
+  --com-deep:var(--ocean-900);--com-accent:var(--ocean-900);--com-mid:var(--ocean-600);--com-soft:#6EB2B7;--com-pastel:var(--ocean-200);--com-wash:#F1F5F6;--com-on:#fff;
+  --com-accent-dk:#6EB2B7;--com-action-dk:var(--ocean-200);--com-on-dk:var(--ocean-900);--com-tint-dk:var(--ocean-ink);
+}
+/* Musculation : la palette choisie remplit les rôles --mus-* (data-ds-muscu) */
+:where(html[data-ds]),:where(html[data-ds][data-ds-muscu=cherry]){ /* Black Cherry = choix de Vuthy (26/11) */
+  --mus-deep:var(--cherry-600);--mus-accent:var(--cherry-600);--mus-mid:var(--cherry-600);--mus-soft:var(--cherry-400);--mus-pastel:var(--cherry-200);--mus-wash:var(--cherry-50);--mus-on:#fff;--mus-hero:var(--cherry-900);
+  --mus-accent-dk:var(--cherry-200);--mus-action-dk:var(--cherry-200);--mus-on-dk:var(--cherry-900);--mus-tint-dk:#1F1216;
+}
+:where(html[data-ds][data-ds-muscu=ruby]){
+  --mus-deep:var(--ruby-600);--mus-accent:var(--ruby-600);--mus-mid:var(--ruby-600);--mus-soft:var(--ruby-400);--mus-pastel:var(--ruby-200);--mus-wash:var(--ruby-50);--mus-on:#fff;--mus-hero:var(--ruby-900);
+  --mus-accent-dk:#DE88A6;--mus-action-dk:var(--ruby-200);--mus-on-dk:var(--ruby-900);--mus-tint-dk:#24121A;
+}
+
+:where(html[data-ds][data-ds-muscu=pome]){
+  --mus-deep:var(--pome-600);--mus-accent:var(--pome-600);--mus-mid:var(--pome-600);--mus-soft:var(--pome-400);--mus-pastel:var(--pome-200);--mus-wash:var(--pome-50);--mus-on:#fff;--mus-hero:var(--pome-900);
+  --mus-accent-dk:var(--pome-400);--mus-action-dk:var(--pome-200);--mus-on-dk:var(--pome-900);--mus-tint-dk:#251417;
+}
+:where(html[data-ds][data-ds-muscu=graphite]){
+  --mus-deep:var(--graph-900);--mus-accent:var(--graph-600);--mus-mid:var(--graph-600);--mus-soft:var(--graph-400);--mus-pastel:var(--graph-200);--mus-wash:var(--graph-50);--mus-on:#fff;--mus-hero:var(--graph-900);
+  --mus-accent-dk:var(--graph-200);--mus-action-dk:var(--graph-50);--mus-on-dk:var(--graph-900);--mus-tint-dk:#141414;
+}
+:where(html[data-ds][data-ds-muscu=carbon]){
+  --mus-deep:var(--carbon-900);--mus-accent:var(--carbon-600);--mus-mid:var(--carbon-400);--mus-soft:var(--carbon-400);--mus-pastel:var(--carbon-200);--mus-wash:var(--carbon-50);--mus-on:var(--carbon-200);--mus-hero:var(--carbon-900);
+  --mus-accent-dk:var(--carbon-400);--mus-action-dk:var(--carbon-200);--mus-on-dk:var(--carbon-900);--mus-tint-dk:#191A16;
+}
+
+/* L'univers d'un élément (data-u) recopie ses rôles dans --u-* (commun d'abord = valeur par défaut) */
+:where(html[data-ds]),:where(html[data-ds][data-u=commun]),:where(html[data-ds]) :where([data-u=commun]){--u-deep:var(--com-deep);--u-accent:var(--com-accent);--u-mid:var(--com-mid);--u-soft:var(--com-soft);--u-pastel:var(--com-pastel);--u-wash:var(--com-wash);--u-on:var(--com-on);--u-hero:var(--com-deep);--u-accent-dk:var(--com-accent-dk);--u-action-dk:var(--com-action-dk);--u-on-dk:var(--com-on-dk);--u-tint-dk:var(--com-tint-dk)}
+:where(html[data-ds][data-u=nutrition]),:where(html[data-ds]) :where([data-u=nutrition]){--u-deep:var(--nut-deep);--u-accent:var(--nut-accent);--u-mid:var(--nut-mid);--u-soft:var(--nut-soft);--u-pastel:var(--nut-pastel);--u-wash:var(--nut-wash);--u-on:var(--nut-on);--u-hero:var(--nut-deep);--u-accent-dk:var(--nut-accent-dk);--u-action-dk:var(--nut-action-dk);--u-on-dk:var(--nut-on-dk);--u-tint-dk:var(--nut-tint-dk)}
+:where(html[data-ds][data-u=cuisine]),:where(html[data-ds]) :where([data-u=cuisine]){--u-deep:var(--cui-deep);--u-accent:var(--cui-accent);--u-mid:var(--cui-mid);--u-soft:var(--cui-soft);--u-pastel:var(--cui-pastel);--u-wash:var(--cui-wash);--u-on:var(--cui-on);--u-hero:var(--earth-900);--u-accent-dk:var(--cui-accent-dk);--u-action-dk:var(--cui-action-dk);--u-on-dk:var(--cui-on-dk);--u-tint-dk:var(--cui-tint-dk)}
+:where(html[data-ds][data-u=muscu]),:where(html[data-ds]) :where([data-u=muscu]){--u-deep:var(--mus-deep);--u-accent:var(--mus-accent);--u-mid:var(--mus-mid);--u-soft:var(--mus-soft);--u-pastel:var(--mus-pastel);--u-wash:var(--mus-wash);--u-on:var(--mus-on);--u-hero:var(--mus-hero);--u-accent-dk:var(--mus-accent-dk);--u-action-dk:var(--mus-action-dk);--u-on-dk:var(--mus-on-dk);--u-tint-dk:var(--mus-tint-dk)}
+:where(html[data-ds][data-u=progression]),:where(html[data-ds]) :where([data-u=progression]){--u-deep:var(--pro-deep);--u-accent:var(--pro-accent);--u-mid:var(--pro-mid);--u-soft:var(--pro-soft);--u-pastel:var(--pro-pastel);--u-wash:var(--pro-wash);--u-on:var(--pro-on);--u-hero:var(--pro-deep);--u-accent-dk:var(--pro-accent-dk);--u-action-dk:var(--pro-action-dk);--u-on-dk:var(--pro-on-dk);--u-tint-dk:var(--pro-tint-dk)}
+
+/* ---------- 3. JETONS SÉMANTIQUES (re-calculés là où l'univers change) ----------
+   Les anciens noms (--bg, --card, --acc…) sont conservés : tous les composants
+   existants suivent automatiquement, sans toucher au code des domaines. */
+html[data-ds],html[data-ds] [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-wash) 60%,var(--n-50));
+  --surface-card:var(--n-0);
+  --surface-soft:color-mix(in srgb,var(--u-pastel) 30%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 28%,var(--n-100));
+  --text-1:var(--n-900);--text-2:var(--n-500);
+  --border:color-mix(in srgb,var(--u-pastel) 35%,var(--n-200));
+  --separator:color-mix(in srgb,var(--u-pastel) 25%,var(--n-100));
+  --action:var(--u-deep);--on-action:var(--u-on);
+  --action-soft:color-mix(in srgb,var(--u-pastel) 40%,var(--n-0));--on-action-soft:var(--u-accent);
+  --title:color-mix(in srgb,var(--u-accent) 80%,var(--n-900));
+  --accent:var(--u-accent);--chart-1:var(--u-mid);--chart-2:var(--u-soft);--chart-3:var(--u-pastel);
+  --focus:var(--u-accent);
+  /* alias des anciens noms */
+  --bg:var(--surface-page);--card:var(--surface-card);--txt:var(--text-1);--mut:var(--text-2);--line:var(--border);
+  --chip:var(--surface-sunken);--acc:var(--accent);--acc2:var(--action-soft);--grad:var(--action);--kc:var(--u-mid);
+  --red:var(--fn-err);--org:var(--fn-warn-fill);--grn:var(--fn-ok);--ok:var(--fn-ok);--p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  --shadow:var(--elev-1);
+}
+/* Mode sombre : un fond commun, des surfaces légèrement différenciées, accents éclaircis */
+html[data-ds].dark,html[data-ds].dark [data-u]{
+  --surface-page:var(--d-bg);--surface-card:var(--d-card);
+  --surface-soft:color-mix(in srgb,var(--u-tint-dk) 60%,var(--d-card));
+  --surface-sunken:var(--d-chip);
+  --text-1:var(--d-txt);--text-2:var(--d-mut);
+  --border:var(--d-line);--separator:var(--d-line);
+  --action:var(--u-action-dk);--on-action:var(--u-on-dk);
+  --action-soft:color-mix(in srgb,var(--u-accent-dk) 16%,var(--d-card));--on-action-soft:var(--u-accent-dk);
+  --title:var(--u-accent-dk);--accent:var(--u-accent-dk);--chart-1:var(--u-accent-dk);--chart-2:color-mix(in srgb,var(--u-accent-dk) 60%,var(--d-card));--chart-3:color-mix(in srgb,var(--u-accent-dk) 30%,var(--d-card));
+  --kc:var(--u-accent-dk);
+}
+
+/* ---------- 4. TROIS NIVEAUX D'INTENSITÉ (data-ds-style = a | b | c) ---------- */
+/* B — Immersif : fonds plus teintés, cartes secondaires colorées */
+html[data-ds][data-ds-style=b],html[data-ds][data-ds-style=b] [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-pastel) 30%,var(--u-wash));
+  --surface-card:color-mix(in srgb,var(--u-pastel) 14%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 55%,var(--n-0));
+  --border:color-mix(in srgb,var(--u-pastel) 60%,var(--n-0));
+}
+html[data-ds][data-ds-style=b].dark,html[data-ds][data-ds-style=b].dark [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-tint-dk) 70%,var(--d-bg));
+  --surface-card:color-mix(in srgb,var(--u-tint-dk) 55%,var(--d-card));
+  --surface-sunken:color-mix(in srgb,var(--u-tint-dk) 40%,var(--d-chip));
+  --border:color-mix(in srgb,var(--u-tint-dk) 40%,var(--d-line));
+}
+/* C — Premium contrasté : fond doux, carte principale profonde */
+html[data-ds][data-ds-style=c],html[data-ds][data-ds-style=c] [data-u]{
+  /* couleurs affirmées (maquette de Vuthy, 26/11) : fond bien teinté, cartes teintées,
+     carte principale profonde, boutons secondaires pastel pleins à texte profond */
+  --surface-page:color-mix(in srgb,var(--u-pastel) 30%,var(--u-wash));
+  --surface-card:color-mix(in srgb,var(--u-wash) 70%,var(--n-0));
+  --surface-soft:color-mix(in srgb,var(--u-pastel) 45%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 60%,var(--n-0));
+  --border:color-mix(in srgb,var(--u-pastel) 70%,var(--n-0));
+  --action-soft:var(--u-pastel);--on-action-soft:var(--u-hero);
+  --title:var(--u-hero);
+}
+html[data-ds][data-ds-style=c].dark,html[data-ds][data-ds-style=c].dark [data-u]{
+  --surface-page:color-mix(in srgb,var(--u-tint-dk) 45%,var(--d-bg));
+  --surface-card:color-mix(in srgb,var(--u-tint-dk) 35%,var(--d-card));
+  --surface-soft:color-mix(in srgb,var(--u-accent-dk) 14%,var(--d-card));
+  --surface-sunken:color-mix(in srgb,var(--u-tint-dk) 50%,var(--d-chip));
+  --border:color-mix(in srgb,var(--u-tint-dk) 50%,var(--d-line));
+  --action-soft:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));--on-action-soft:var(--u-accent-dk);
+  --title:var(--u-accent-dk);
+}
+/* La carte principale (.ds-hero, posée par theme.js) devient profonde en style C */
+html[data-ds][data-ds-style=c] .ds-hero{
+  --surface-card:var(--u-hero);--card:var(--u-hero);
+  --txt:#fff;--mut:color-mix(in srgb,#fff 84%,var(--u-hero));
+  --chip:color-mix(in srgb,#fff 14%,var(--u-hero));--line:color-mix(in srgb,#fff 16%,var(--u-hero));
+  --acc:var(--u-pastel);--acc2:color-mix(in srgb,#fff 14%,var(--u-hero));--on-action-soft:#fff;--grad:var(--u-pastel);--on-action:var(--u-hero);
+  --surface-soft:color-mix(in srgb,#fff 12%,var(--u-hero));--kc:var(--u-pastel);--p:#AFC0FF;--c:#F4C77A;--f:#D4BDF7;
+  background:var(--u-hero)!important;color:#fff;box-shadow:0 6px 20px color-mix(in srgb,var(--u-hero) 28%,transparent);
+}
+html[data-ds][data-ds-style=c].dark .ds-hero{
+  --u-hero-dk:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));
+  --card:var(--u-hero-dk);--txt:var(--d-txt);--mut:#B9BFC8;--chip:color-mix(in srgb,#fff 10%,var(--u-hero-dk));--line:color-mix(in srgb,#fff 12%,var(--u-hero-dk));
+  --surface-soft:color-mix(in srgb,#fff 8%,var(--u-hero-dk));--acc:var(--u-accent-dk);--acc2:color-mix(in srgb,#fff 10%,var(--u-hero-dk));--on-action-soft:var(--d-txt);--grad:var(--u-action-dk);--on-action:var(--u-on-dk);--kc:var(--u-accent-dk);
+  --p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  background:var(--u-hero-dk)!important;color:var(--d-txt);
+}
+
+/* ---------- 5. COMPOSANTS (mêmes classes que l'app ; aucune couleur en dur) ---------- */
+:where(html[data-ds]) body{font-family:var(--font);background:var(--bg);color:var(--txt);transition:background-color var(--dur) var(--ease),color var(--dur) var(--ease)}
+:where(html[data-ds]) h1{font-size:var(--fs-2xl);font-weight:var(--fw-bold);letter-spacing:-.02em}
+:where(html[data-ds][data-ds-style=b]) h1,:where(html[data-ds][data-ds-style=c]) h1{color:var(--title)}
+:where(html[data-ds]) .card{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--shadow);transition:background-color var(--dur) var(--ease)}
+:where(html[data-ds].dark) .card{border:1px solid var(--line)}
+/* boutons : principal = action profonde, texte lisible garanti */
+:where(html[data-ds]) button,:where(html[data-ds]) .btn{background:var(--grad);color:var(--on-action);border-radius:var(--r-md);transition:transform var(--dur-fast) var(--ease),filter var(--dur-fast),background-color var(--dur) var(--ease)}
+:where(html[data-ds]) button.sec{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) button.ghost{background:transparent;color:var(--acc)}
+:where(html[data-ds]) button.danger{background:transparent;color:var(--red)}
+:where(html[data-ds]) button:disabled{opacity:.45;cursor:not-allowed;filter:saturate(.4)}
+:where(html[data-ds]) :is(button,a,input,select,textarea,summary,.chip):focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (hover:hover){:where(html[data-ds]) button:not(:disabled):hover{filter:brightness(1.07)}:where(html[data-ds].dark) button:not(:disabled):hover{filter:brightness(1.12)}}
+:where(html[data-ds]) .chip{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) .chip.on,:where(html[data-ds]) .scale button.on{background:var(--grad);color:var(--on-action)}
+:where(html[data-ds]) .stepper button{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) input,:where(html[data-ds]) select,:where(html[data-ds]) textarea{background:var(--card);border-color:var(--line);color:var(--txt);border-radius:var(--r-md)}
+:where(html[data-ds]) .ds-hero :is(input,select,textarea){background:var(--chip)}
+:where(html[data-ds]) .banner{background:var(--surface-soft);color:var(--txt)}
+:where(html[data-ds]) .banner.err{background:color-mix(in srgb,var(--fn-err) 12%,var(--card));color:var(--fn-err)}
+:where(html[data-ds]) .banner.health{background:color-mix(in srgb,var(--fn-info) 12%,var(--card));color:var(--txt)}
+:where(html[data-ds]) .reco{background:var(--surface-soft)}
+:where(html[data-ds]) .toast{background:var(--n-900);color:#fff;box-shadow:var(--elev-2)}
+:where(html[data-ds].dark) .toast{background:var(--d-txt);color:var(--d-bg)}
+:where(html[data-ds]) .sheet{background:var(--card)}
+:where(html[data-ds]) .sheet-bg{background:rgba(10,12,16,.45);backdrop-filter:blur(2px)}
+/* étiquettes fonctionnelles : couleur + texte, jamais la couleur seule */
+:where(html[data-ds]) .tag.red{background:color-mix(in srgb,var(--fn-err) 13%,var(--card));color:var(--fn-err)}
+:where(html[data-ds]) .tag.grn,:where(html[data-ds]) .pill{background:color-mix(in srgb,var(--fn-ok) 14%,var(--card));color:var(--fn-ok)}
+:where(html[data-ds]) .tag.org{background:color-mix(in srgb,var(--fn-warn-fill) 20%,var(--card));color:var(--fn-warn)}
+:where(html[data-ds]) .tag.soon{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) .gh.up{color:var(--fn-up)}:where(html[data-ds]) .gh.down{color:var(--fn-down)}
+:where(html[data-ds]) .steps .done .num{background:color-mix(in srgb,var(--fn-ok) 16%,var(--card));color:var(--fn-ok)}
+:where(html[data-ds]) .reco.warn{border-color:var(--fn-warn-fill)}:where(html[data-ds]) .reco.bad{border-color:var(--fn-err)}:where(html[data-ds]) .reco.good{border-color:var(--fn-ok)}
+/* anatomie : groupes musculaires (fonctionnel) */
+:where(html[data-ds]) .musc .m.prim{fill:var(--musc-prim)}:where(html[data-ds]) .musc .m.sec{fill:var(--musc-sec)}
+:where(html[data-ds]) .mtag{background:color-mix(in srgb,var(--musc-sec) 22%,var(--card))}:where(html[data-ds]) .mtag.p{background:color-mix(in srgb,var(--musc-prim) 20%,var(--card))}
+:where(html[data-ds]) .exlast .nx{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) .ghostline{background:var(--surface-soft)}
+/* navigation et repères de date */
+:where(html[data-ds]) nav.tabs{background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px);box-shadow:0 -1px 0 var(--line)}
+:where(html[data-ds]) nav.tabs button{color:var(--mut)}
+:where(html[data-ds]) nav.tabs button.on{background:var(--acc2);color:var(--on-action-soft)}
+:where(html[data-ds]) nav.tabs button.scanbtn{color:var(--acc)}
+:where(html[data-ds]) nav.tabs button.scanbtn span{background:var(--grad);box-shadow:0 6px 18px color-mix(in srgb,var(--grad) 35%,transparent);border-color:var(--card)}
+:where(html[data-ds]) nav.tabs button.scanbtn svg path{stroke:var(--on-action)}
+/* identité « contextuelle » : l'onglet actif prend la couleur de son univers */
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=home]{--u-accent:var(--com-accent);--u-pastel:var(--com-pastel);--u-accent-dk:var(--com-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=today]{--u-accent:var(--nut-accent);--u-pastel:var(--nut-pastel);--u-accent-dk:var(--nut-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=fridge]{--u-accent:var(--cui-accent);--u-pastel:var(--cui-pastel);--u-accent-dk:var(--cui-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=workout]{--u-accent:var(--mus-accent);--u-pastel:var(--mus-pastel);--u-accent-dk:var(--mus-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=progress]{--u-accent:var(--pro-accent);--u-pastel:var(--pro-pastel);--u-accent-dk:var(--pro-accent-dk)}
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button.on{background:color-mix(in srgb,var(--u-pastel) 50%,var(--card));color:var(--u-accent)}
+:where(html[data-ds][data-ds-commun=contextuel].dark) nav.tabs button.on{background:color-mix(in srgb,var(--u-accent-dk) 16%,var(--card));color:var(--u-accent-dk)}
+:where(html[data-ds]) .wd{background:var(--chip);color:var(--txt)}
+:where(html[data-ds]) .wd.on{background:var(--grad);color:var(--on-action)}:where(html[data-ds]) .wd.on i{color:var(--on-action)}
+:where(html[data-ds]) .wd.today{outline-color:var(--acc)}
+:where(html[data-ds]) .ktab.on{background:var(--grad);color:var(--on-action);border-color:var(--grad)}
+:where(html[data-ds]) .cztabs .czbadge{background:var(--acc);color:var(--card)}:where(html[data-ds]) .cztabs .ktab.on .czbadge{background:var(--on-action);color:var(--grad)}
+:where(html[data-ds]) .avatar{background:var(--grad);color:var(--on-action)}
+:where(html[data-ds]) .fab{box-shadow:0 6px 18px color-mix(in srgb,var(--grad) 35%,transparent)}
+:where(html[data-ds]) .dpill,:where(html[data-ds]) .qa button{background:var(--card);color:var(--txt)}
+:where(html[data-ds]) .dtpill,:where(html[data-ds]) .pstats div{background:var(--surface-soft)}
+/* minuteur de repos : appartient à la musculation, garde sa couleur sur tous les onglets */
+:where(html[data-ds]) .restbar{background:var(--mus-hero);color:#fff;box-shadow:var(--elev-2)}
+:where(html[data-ds]) .restbar .restfill{background:var(--mus-soft);opacity:.45}
+:where(html[data-ds]) .restbar.over .restfill{background:var(--fn-ok);opacity:.6}
+:where(html[data-ds]) .restbar button{background:rgba(255,255,255,.16);color:#fff}
+:where(html[data-ds].dark) .restbar{background:color-mix(in srgb,var(--mus-accent-dk) 22%,var(--d-raise));color:var(--d-txt)}
+/* B — cartes secondaires colorées */
+:where(html[data-ds][data-ds-style=b]) .qa button,:where(html[data-ds][data-ds-style=b]) .dpill,:where(html[data-ds][data-ds-style=b]) .ktab:not(.on){background:var(--surface-sunken)}
+
+/* ---------- Accueil (proposition, aperçu seulement) — tuiles par univers, d'après la maquette de Vuthy ---------- */
+:where(html[data-ds]) .dsh-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
+@media (max-width:360px){:where(html[data-ds]) .dsh-grid{grid-template-columns:1fr}}
+:where(html[data-ds]) .dsh-tile{border-radius:var(--r-lg);padding:var(--sp-3);background:color-mix(in srgb,var(--u-pastel) 30%,var(--u-wash));display:flex;flex-direction:column;gap:var(--sp-2)}
+:where(html[data-ds].dark) .dsh-tile{background:color-mix(in srgb,var(--u-tint-dk) 80%,var(--d-card))}
+:where(html[data-ds]) .dsh-t{margin:2px 2px 0;font-size:var(--fs-lg);font-weight:var(--fw-semi);color:var(--u-hero)}
+:where(html[data-ds].dark) .dsh-t{color:var(--u-accent-dk)}
+:where(html[data-ds]) .dsh-deep{background:var(--u-hero);color:#fff;border-radius:var(--r-md);padding:var(--sp-3);display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;font-weight:var(--fw-reg);box-shadow:0 6px 18px color-mix(in srgb,var(--u-hero) 25%,transparent)}
+:where(html[data-ds].dark) .dsh-deep{background:color-mix(in srgb,var(--u-accent-dk) 24%,var(--d-card));color:var(--d-txt);box-shadow:none}
+:where(html[data-ds]) .dsh-deep svg{width:26px;height:26px;margin-bottom:6px;opacity:.95}
+:where(html[data-ds]) .dsh-v{font-size:var(--fs-xl);font-weight:var(--fw-bold);line-height:1.15}
+:where(html[data-ds]) .dsh-s{font-size:var(--fs-xs);opacity:.8}
+:where(html[data-ds]) .dsh-bar{width:100%;height:5px;border-radius:3px;background:color-mix(in srgb,#fff 18%,transparent);margin-top:8px;overflow:hidden}
+:where(html[data-ds]) .dsh-bar>i{display:block;height:100%;border-radius:3px;background:var(--u-pastel)}
+:where(html[data-ds].dark) .dsh-bar>i{background:var(--u-accent-dk)}
+:where(html[data-ds]) .dsh-ib{padding:6px;color:var(--txt)}:where(html[data-ds]) .dsh-ib svg{width:24px;height:24px;display:block}
+:where(html[data-ds]) .dsh-go{background:var(--u-pastel);color:var(--u-hero);width:100%}
+:where(html[data-ds].dark) .dsh-go{background:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));color:var(--u-accent-dk)}
+
+@media (prefers-reduced-motion:reduce){:where(html[data-ds]) *{transition:none!important;animation-duration:.01ms!important}}
+
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
 <script src="vendor/chart.umd.min.js"></script><script src="vendor/three.min.js"></script><script src="vendor/OrbitControls.js"></script>
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795373087";
+const BUILD_VERSION = "1795735328";
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1157,7 +1441,7 @@ function makeScene(key, opts) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  const scene = new THREE.Scene(); scene.background = new THREE.Color(isDark() ? (opts.bg || 0x1b1e24) : (opts.bgLight || 0xe4e8ef));
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(dsHex("--surface-sunken", isDark() ? (opts.bg || 0x1b1e24) : (opts.bgLight || 0xe4e8ef))); // fond = jeton du design system (ancien fond si ?ds=0)
   const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100); cam.position.set(...opts.cam);
   // Salle : contrôles « carte » (glisser = se déplacer, clic droit / 2 doigts = tourner, molette / pincer = zoom)
   const controls = opts.map && THREE.MapControls ? new THREE.MapControls(cam, renderer.domElement) : new THREE.OrbitControls(cam, renderer.domElement);
@@ -1208,7 +1492,7 @@ function makeScene(key, opts) {
     if (e.pointerType === "touch" || (down && e.buttons)) return;
     const o = hit(e); if (o === S3.hover) return;
     if (S3.hover && S3.hover !== S3.selected) tint(S3.hover, null);
-    S3.hover = o; if (o && o !== S3.selected) tint(o, 0x1d4ed8, 0.35);
+    S3.hover = o; if (o && o !== S3.selected) tint(o, dsHex("--accent", 0x1d4ed8), 0.35);
     renderer.domElement.style.cursor = o ? "pointer" : "grab";
     if (S3.tip) { S3.tip.style.display = o ? "block" : "none"; if (o) { S3.tip.textContent = o.userData.label || ""; S3.tip.style.left = (e.offsetX + 14) + "px"; S3.tip.style.top = (e.offsetY + 10) + "px"; } }
   });
@@ -1236,7 +1520,7 @@ function tint(o, hex, k = 0.6) { Object.values(V3.scenes).forEach(s3 => s3.dirty
   // chaque objet reçoit ses propres copies de matériaux : sinon le survol colorait toutes les machines qui partagent le même matériau
   if (!o.userData.matsOwned) { const map = new Map(); o.traverse(m => { if (m.isMesh && m.material && !Array.isArray(m.material)) { if (!map.has(m.material)) map.set(m.material, m.material.clone()); m.material = map.get(m.material); } }); o.userData.matsOwned = true; }
   o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
-function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, 0x2563eb, 0.75); }
+function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, dsHex("--accent", 0x2563eb), 0.75); }
 V3.clearSel = () => Object.values(V3.scenes).forEach(S3 => { if (S3.selected) { tint(S3.selected, null); S3.selected = null; } if (S3.hover) { tint(S3.hover, null); S3.hover = null; } });
 function mount3D(key, holder, build) {
   if (!has3D()) { holder.innerHTML = `<p class="mut sm c" style="padding:30px">La 3D n'a pas pu se charger (connexion ?).</p>`; return null; }
@@ -1722,8 +2006,8 @@ function bodyPaint(grp, o = {}) {
     const g = m.userData.part.g; const mt = m.material; if (g === "_skin" || g === "_b") return;
     let c = dark ? BODY_COL.restDark : BODY_COL.rest, e = 0x000000;
     if (colors && colors[g]) c = new THREE.Color(colors[g]);
-    else if (prim.includes(g)) { c = BODY_COL.prim; e = 0x5a0010; }
-    else if (sec.includes(g)) { c = BODY_COL.sec; e = 0x3a2200; }
+    else if (prim.includes(g)) { c = dsHex("--musc-prim", BODY_COL.prim); e = 0x5a0010; } // jetons lus au moment du coloriage (thème clair/foncé à jour)
+    else if (sec.includes(g)) { c = dsHex("--musc-sec", BODY_COL.sec); e = 0x3a2200; }
     (typeof c === "number" ? mt.color.setHex(c) : mt.color.copy(c)).convertSRGBToLinear(); mt.emissive.setHex(e); mt.emissiveIntensity = 1; mt.userData.e0 = e;
     if (!colors && focus.includes(g)) grp.userData.focus.push(m);
   });
@@ -1744,7 +2028,7 @@ function bodyThumbRender(o) {
     BODY.tr = { r, scene, grp, cam };
   }
   const { r, scene, grp, cam } = BODY.tr; bodyPaint(grp, o);
-  grp.userData.focus.forEach(m => { m.material.emissive.setHex(0xff2a55); m.material.emissiveIntensity = 0.55; });
+  grp.userData.focus.forEach(m => { m.material.emissive.setHex(dsHex("--musc-prim", 0xff2a55)); m.material.emissiveIntensity = 0.55; });
   r.setScissorTest(true); r.setClearColor(0x000000, 0);
   [[0, 0], [220, Math.PI]].forEach(([x, rot]) => {
     r.setViewport(x, 0, 220, 470); r.setScissor(x, 0, 220, 470); r.clear();
@@ -1789,7 +2073,7 @@ BODY.preloaded = thumbPreload();
 // ---------- vue 3D interactive (fiche exercice, carte de récupération, atlas) ----------
 function body3DHolderHTML(h = 460, anim = false) {
   const H = typeof h === "number" ? h + "px" : h;
-  return `<div id="body3d" style="height:${H};border-radius:16px;overflow:hidden;background:var(--bg2,#e9edf3);position:relative">
+  return `<div id="body3d" style="height:${H};border-radius:16px;overflow:hidden;background:var(--surface-sunken,var(--bg2,#e9edf3));position:relative">
     <div class="mut sm c" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center" id="body3dWait"><span class="spin"></span>&nbsp;Chargement du corps 3D…</div>
     ${anim ? `<div id="animPhase" class="xs" style="position:absolute;left:10px;bottom:10px;z-index:4;background:rgba(17,24,39,.72);color:#fff;border-radius:10px;padding:5px 9px;pointer-events:none"></div>` : ""}</div>
     ${anim ? `<div class="chips" style="justify-content:center;margin-top:8px"><button class="chip on" data-act="animPlay">${ANIM.playing ? "⏸ Pause" : "▶ Lecture"}</button>${[[0.5, "Lent"], [1, "Normal"]].map(([v, l]) => `<button class="chip ${ANIM.speed === v ? "on" : ""}" data-act="animSpeed" data-v="${v}">${l}</button>`).join("")}</div>` : ""}
@@ -1818,9 +2102,9 @@ function bodyMount(holder, o) {
       el.addEventListener("pointerleave", () => { bodyHover(S3, null); if (S3.tip) S3.tip.style.display = "none"; });
       el.addEventListener("pointerup", e => { if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8) return; down = null; const m = pick(e); bodyHover(S3, m); bodyInfo(m && m.userData.part); });
       S3.renderer.shadowMap.enabled = true;
-      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(0xff1744); m.material.emissiveIntensity = k * 0.8; } }); if (S3.animOn) animTick(S3, t * 1000); };
+      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(S3.focusHex ?? 0xff1744); m.material.emissiveIntensity = k * 0.8; } }); if (S3.animOn) animTick(S3, t * 1000); };
     }
-    S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3);
+    S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3); S3.focusHex = dsHex("--musc-prim", 0xff1744); // couleur du clignotement, lue une fois par affichage
     const w = holder.querySelector("#body3dWait"); if (w) w.remove();
     V3.prevActive = V3.active && V3.active !== S3 ? V3.active : V3.prevActive;
     mount3D("body", holder, () => S3);
@@ -1839,7 +2123,7 @@ function bodyMount(holder, o) {
 function bodyHover(S3, m) {
   if (S3.hov === m) return;
   if (S3.hov) { const mt = S3.hov.material; mt.emissive.setHex(mt.userData.e0 || 0); mt.emissiveIntensity = 1; }
-  S3.hov = m; if (m) { m.material.emissive.setHex(0x2563eb); m.material.emissiveIntensity = 0.45; }
+  S3.hov = m; if (m) { m.material.emissive.setHex(dsHex("--mus-accent", 0x2563eb)); m.material.emissiveIntensity = 0.45; }
 }
 function bodyInfo(p) {
   const el = $("#bodyInfo"); if (!el) return;
@@ -1892,7 +2176,7 @@ function bodyAtlasSheet() {
 }
 function bodyRecoverySheet() {
   return `<div class="row between"><h2>Récupération en 3D</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>${body3DHolderHTML(500)}
-    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>`;
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:var(--rec-ok,#22c55e)">●</b> récupéré</span><span><b style="color:var(--rec-near,#eab308)">●</b> presque</span><span><b style="color:var(--rec-mid,#f97316)">●</b> fatigué</span><span><b style="color:var(--rec-low,#ef4444)">●</b> à reposer</span></div>`;
 }
 // appelé après chaque affichage de feuille : monte la vue 3D si la feuille en contient une
 function bodyAfterSheet() {
@@ -2079,8 +2363,8 @@ const Scanner = {
     el.innerHTML = `<div style="color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 10px;display:flex;justify-content:space-between;align-items:center;font:600 16px -apple-system,system-ui">
         <span>${esc(title || "Scanne le code-barres")}</span><button class="sec small" id="scanClose">Fermer</button></div>
       <div style="position:relative;flex:1;overflow:hidden"><video id="scanVid" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
-        <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
-        <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:#22c55e;opacity:.8;animation:blink 1.2s infinite"></div></div>
+        <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid var(--fn-ok,#22c55e);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
+        <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:var(--fn-ok,#22c55e);opacity:.8;animation:blink 1.2s infinite"></div></div>
       <div style="color:#cbd5e1;text-align:center;padding:12px 16px calc(16px + env(safe-area-inset-bottom));font:14px -apple-system,system-ui">Place le code-barres dans le cadre vert, il se lit tout seul.
         ${this.hub ? `<div class="scanmodes"><label>📸 Photo du plat<input type="file" accept="image/*" capture="environment" data-file="hubphoto" style="display:none"></label><label>🏷️ Étiquette / produit<input type="file" accept="image/*" multiple data-file="hubprod" style="display:none"></label><button id="scanSearch">🔎 Chercher</button></div>` : ""}
         <div class="row" style="margin-top:10px;justify-content:center"><input id="scanManual" inputmode="numeric" placeholder="ou tape le code" style="max-width:200px;background:#111;color:#fff;border-color:#333"><button class="small" id="scanManualOk">OK</button></div></div>`;
@@ -2226,7 +2510,7 @@ function dailySheet() {
   const d = day(S.day); const p = profile();
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   return `<div class="row between"><h2>Suivi du jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-    ${d.health ? `<div class="banner" style="background:#fde8ef;color:#9d174d">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
+    ${d.health ? `<div class="banner health">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
     <div class="row"><div class="grow"><label>Poids (au réveil, à jeun, après les toilettes)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="80.2"></div>
     <div class="grow"><label>Pas</label><input id="inSteps" type="number" inputmode="numeric" value="${d.steps || ""}" placeholder="8500"></div>
     <div class="grow"><label>Sommeil (h)</label><input id="inSleep" type="number" step="0.25" inputmode="decimal" value="${d.sleep || ""}" placeholder="7.5"></div></div>
@@ -2297,7 +2581,7 @@ function addSheet() {
   return `<div class="row between"><h2>Ajouter un aliment</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     <div class="chips" style="margin:6px 0 10px"><span class="xs mut" style="align-self:center">Repas (facultatif) :</span>${["", ...MEALS].map(m => `<button class="chip ${A.meal === m ? "on" : ""}" data-act="addMeal" data-v="${m}">${mealLabel(m)}</button>`).join("")}</div>
     ${A.items || A.sel ? "" : `<div class="chips" style="margin-bottom:10px">${tabs.map(([k, l]) => `<button class="chip ${A.tab === k ? "on" : ""}" data-act="addTab" data-v="${k}">${l}</button>`).join("")}</div>`}
-    ${A.err ? `<div class="banner" style="background:#fde2e3;color:#7f1d1d">${esc(A.err)}</div>` : ""}${body}`;
+    ${A.err ? `<div class="banner err">${esc(A.err)}</div>` : ""}${body}`;
 }
 function foodList(res) {
   return res.map((f, i) => `<div class="entry" data-act="selFood" data-i="${i}"><div><div>${esc(f.name)}${f.brand ? ` <span class="mut xs">${esc(f.brand)}</span>` : ""}</div><div class="mut xs">${r0(f.per100.kcal)} kcal · P ${r1(f.per100.p)} · G ${r1(f.per100.c)} · L ${r1(f.per100.f)} /100 g${f.src === "perso" ? " · mes aliments" : f.src === "récent" ? " · récent" : ""}</div></div><div class="mut">›</div></div>`).join("") || `<p class="mut sm">Aucun résultat.</p>`;
@@ -2441,18 +2725,20 @@ function drawCharts() {
   if (typeof Chart === "undefined") { $$("canvas").forEach(c => c.outerHTML = `<p class="mut sm">Graphique indisponible (bibliothèque non chargée).</p>`); return; }
   const css = getComputedStyle(document.documentElement); const mut = css.getPropertyValue("--mut").trim(), line = css.getPropertyValue("--line").trim();
   Chart.defaults.color = mut; Chart.defaults.borderColor = line; Chart.defaults.font.family = "-apple-system,system-ui,sans-serif";
+  // couleurs : jetons du design system (theme.js) ; _ds = rôle du jeu de données, relu si la carte devient foncée
+  const CC = cv => typeof dsChartColors === "function" ? dsChartColors(cv) : { point: "#94a3b8", trend: "#2563eb", bars: "#60a5fa", target: "#f59e0b", rm: "#e5484d" };
   const ws = weightSeries(90);
   if ($("#chW")) charts.push(new Chart($("#chW"), { type: "line", data: { labels: ws.map(x => fmtDay(x.k)), datasets: [
-    { label: "Pesée", data: ws.map(x => x.w), showLine: false, pointRadius: 3, borderColor: "#94a3b8", backgroundColor: "#94a3b8" },
-    { label: "Tendance", data: ws.map(x => r1(x.t)), pointRadius: 0, borderColor: "#2563eb", tension: .3 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6 } } } } }));
+    { label: "Pesée", data: ws.map(x => x.w), showLine: false, pointRadius: 3, borderColor: CC($("#chW")).point, backgroundColor: CC($("#chW")).point, _ds: { borderColor: "point", backgroundColor: "point" } },
+    { label: "Tendance", data: ws.map(x => r1(x.t)), pointRadius: 0, borderColor: CC($("#chW")).trend, tension: .3, _ds: { borderColor: "trend" } }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6 } } } } }));
   const ks = [...Array(14)].map((_, i) => addDays(todayKey(), i - 13)); const T = targets();
   if ($("#chK")) charts.push(new Chart($("#chK"), { type: "bar", data: { labels: ks.map(k => fmtDay(k).split(" ").slice(0, 2).join(" ")), datasets: [
-    { label: "Apports", data: ks.map(k => r0(dayTotals(k).kcal)), backgroundColor: "#60a5fa", borderRadius: 4 },
-    { type: "line", label: "Cible", data: ks.map(() => T.kcal), borderColor: "#f59e0b", pointRadius: 0, borderDash: [5, 4] }] }, options: { plugins: { legend: { display: false } } } }));
+    { label: "Apports", data: ks.map(k => r0(dayTotals(k).kcal)), backgroundColor: CC($("#chK")).bars, borderRadius: 4, _ds: { backgroundColor: "bars" } },
+    { type: "line", label: "Cible", data: ks.map(() => T.kcal), borderColor: CC($("#chK")).target, pointRadius: 0, borderDash: [5, 4], _ds: { borderColor: "target" } }] }, options: { plugins: { legend: { display: false } } } }));
   if ($("#chE") && S.progEx) { const h = exerciseHistory(S.progEx).slice().reverse();
     charts.push(new Chart($("#chE"), { type: "line", data: { labels: h.map(x => fmtDay(dateKey(new Date(x.date)))), datasets: [
-      { label: "1RM estimé", data: h.map(x => r1(Math.max(...x.sets.map(e1rm)))), borderColor: "#e5484d", tension: .25 },
-      { label: "Charge max", data: h.map(x => Math.max(...x.sets.map(s => s.w))), borderColor: "#94a3b8", borderDash: [4, 4], tension: .25 }] }, options: { plugins: { legend: { position: "bottom" } } } })); }
+      { label: "1RM estimé", data: h.map(x => r1(Math.max(...x.sets.map(e1rm)))), borderColor: CC($("#chE")).rm, tension: .25, _ds: { borderColor: "rm" } },
+      { label: "Charge max", data: h.map(x => Math.max(...x.sets.map(s => s.w))), borderColor: CC($("#chE")).point, borderDash: [4, 4], tension: .25, _ds: { borderColor: "point" } }] }, options: { plugins: { legend: { position: "bottom" } } } })); }
 }
 
 // ===================== COACH =====================
@@ -3164,7 +3450,8 @@ function muscleFatigue() {
       x.prim.forEach(m => f[m] = (f[m] || 0) + n * decay); x.sec.forEach(m => f[m] = (f[m] || 0) + n * 0.5 * decay); }); });
   const rec = {}; Object.keys(f).forEach(m => rec[m] = Math.max(0, Math.min(1, 1 - f[m] / 6))); return rec; // 1 = récupéré
 }
-const recColor = r => r >= 0.85 ? "#22c55e" : r >= 0.6 ? "#eab308" : r >= 0.35 ? "#f97316" : "#ef4444";
+// couleurs de récupération = jetons --rec-* du design system (anciennes couleurs si ?ds=0) ; format « rgb(...) » accepté par le SVG et par Three.js
+const recColor = r => r >= 0.85 ? dsColor("--rec-ok", "#22c55e") : r >= 0.6 ? dsColor("--rec-near", "#eab308") : r >= 0.35 ? dsColor("--rec-mid", "#f97316") : dsColor("--rec-low", "#ef4444");
 function recoveryCardHTML() {
   const rec = muscleFatigue(); const colors = {}; Object.entries(rec).forEach(([m, r]) => colors[m] = recColor(r));
   const groupRec = {}; Object.entries(rec).forEach(([m, r]) => { const g = MUSCLES[m][1]; groupRec[g] = Math.min(groupRec[g] ?? 1, r); });
@@ -3174,7 +3461,7 @@ function recoveryCardHTML() {
   return `<div class="card"><h2>Récupération des muscles</h2>
     <div style="max-width:300px;margin:auto;cursor:pointer" data-act="bodyRecovery">${bodyThumbHTML({ colors })}</div>
     <div class="row" style="justify-content:center;gap:8px;margin-top:6px"><button class="sec small" data-act="bodyRecovery">Voir en 3D</button><button class="sec small" data-act="bodyAtlas">Anatomie 3D</button></div>
-    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:var(--rec-ok,#22c55e)">●</b> récupéré</span><span><b style="color:var(--rec-near,#eab308)">●</b> presque</span><span><b style="color:var(--rec-mid,#f97316)">●</b> fatigué</span><span><b style="color:var(--rec-low,#ef4444)">●</b> à reposer</span></div>
     ${tired.length ? `<p class="sm">À laisser reposer : <b>${tired.map(([g, r]) => `${g} (${Math.round(r * 100)} %)`).join(", ")}</b></p>` : `<p class="sm">Tous tes muscles sont récupérés 💪</p>`}
     ${best ? `<div class="reco good sm">Séance conseillée aujourd'hui : <b>${esc(best[0])}</b> (muscles récupérés à ${Math.round(best[1] * 100)} %)</div>` : ""}
     <p class="xs mut">Estimation à partir de tes séries des 5 derniers jours (muscle principal = 1 série, secondaire = ½) ; récupération d'environ 48 à 72 h selon le volume.</p></div>`;
@@ -4217,10 +4504,10 @@ function deloadAdvice() {
 const daysBetweenK = (a, b) => Math.round((parseKey(b) - parseKey(a)) / 864e5);
 function deloadCardHTML() {
   const A = deloadAdvice(); if (!A) return "";
-  if (A.active) return `<div class="card" style="border:2px solid #22c55e"><b>🔋 Semaine de décharge en cours</b> (jusqu'au ${fmtDay(A.until)})
+  if (A.active) return `<div class="card" style="border:2px solid var(--fn-ok,#22c55e)"><b>🔋 Semaine de décharge en cours</b> (jusqu'au ${fmtDay(A.until)})
     <p class="sm" style="margin:6px 0">Mêmes exercices et mêmes charges, mais <b>environ moitié moins de séries</b> et 3-4 répétitions en réserve (pas d'échec). Ton corps récupère et tu repars plus fort.</p>
     <button class="ghost small" data-act="deloadStop">Arrêter la décharge</button></div>`;
-  return `<div class="card" style="border:2px solid #f97316"><b>🔋 Une semaine de décharge serait utile</b>
+  return `<div class="card" style="border:2px solid var(--fn-warn-fill,#f97316)"><b>🔋 Une semaine de décharge serait utile</b>
     <p class="sm" style="margin:6px 0">Ta fatigue s'accumule depuis ${A.weeks >= 2 ? A.weeks + " semaines" : "plusieurs semaines"} : ${A.why.map(esc).join(" · ")}.</p>
     <p class="xs mut">Décharge = 1 semaine avec ~50 % des séries, mêmes charges, sans aller à l'échec.</p>
     <div class="row" style="gap:8px"><button class="grow" data-act="deloadStart">Faire ma décharge cette semaine</button><button class="sec" data-act="deloadSnooze">Pas maintenant</button></div></div>`;
@@ -4554,5 +4841,142 @@ ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
 if (typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); }
+
+// ===================== DESIGN SYSTEM 2 (section Design) =====================
+// ACTIF par défaut (choix de Vuthy du 26-27/11 : Black Cherry, style C, neutre + accents, accueil).
+// « ?ds=0 » dans l'adresse = ancien design (comparaison). Les autres paramètres (?ds=1&m=…&s=…&c=…&mode=…&screen=…)
+// et postMessage servent seulement à la page dev/apercu-design.html. Rien n'est écrit dans le stockage
+// ni dans les réglages ; aucune donnée ni aucun calcul n'est touché.
+const DS = { ctrl: false, on: true, o: { muscu: "cherry", style: "c", commun: "contextuel", mode: "" } };
+
+// Couleur d'un jeton, résolue en « rgb(...) » (Chart.js, canvas) ou en nombre 0xRRGGBB (Three.js).
+// Fonctionne aussi pour les jetons calculés (color-mix). el = élément dont on prend le contexte (carte foncée…).
+function dsColor(name, fallback, el) {
+  if (!DS.on) return fallback;
+  const p = document.createElement("i"); p.style.cssText = `display:none;color:var(${name})`; (el || document.body).appendChild(p);
+  const c = getComputedStyle(p).color; p.remove();
+  const m = c.match(/^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/);
+  return m ? `rgb(${Math.round(m[1] * 255)}, ${Math.round(m[2] * 255)}, ${Math.round(m[3] * 255)})` : (c || fallback);
+}
+function dsHex(name, fallback) {
+  if (!DS.on) return fallback;
+  const m = (dsColor(name, "") || "").match(/(\d+),\s*(\d+),\s*(\d+)/);
+  return m ? (+m[1] << 16) | (+m[2] << 8) | +m[3] : fallback;
+}
+const DS_UNIV = { today: "nutrition", fridge: "cuisine", workout: "muscu", progress: "progression", coach: "commun", profile: "commun", home: "commun" };
+
+function dsSet(o) {
+  Object.assign(DS.o, o || {});
+  if ("on" in (o || {})) DS.on = !!o.on;
+  const h = document.documentElement, x = DS.o;
+  if (DS.on) { h.dataset.ds = "2"; h.dataset.dsMuscu = x.muscu; h.dataset.dsStyle = x.style; h.dataset.dsCommun = x.commun; }
+  else ["ds", "dsMuscu", "dsStyle", "dsCommun", "u"].forEach(k => delete h.dataset[k]);
+  if (x.mode) h.classList.toggle("dark", x.mode === "dark"); // aperçu seulement : pas de localStorage
+}
+
+// Après chaque rendu : univers de l'écran, carte principale, graphiques
+function dsAfter() {
+  const h = document.documentElement, nav = document.getElementById("nav");
+  if (DS.ctrl) [...document.querySelectorAll("#app .banner")].forEach(b => { if (/Mode aperçu/.test(b.textContent)) b.remove(); });
+  if (!DS.on) { if (nav) delete nav.dataset.u; return; }
+  h.dataset.u = DS_UNIV[S.tab] || "commun"; if (nav) nav.dataset.u = "commun";
+  document.querySelectorAll(".ds-hero").forEach(e => e.classList.remove("ds-hero"));
+  const app = document.getElementById("app"); let hero = null;
+  if (S.tab === "home") hero = null; // l'accueil a ses propres cartes profondes
+  else if (S.tab === "today") hero = app.querySelector(".ring")?.closest(".card");
+  else if (S.tab === "progress") hero = app.querySelector("canvas")?.closest(".card");
+  else if (S.tab === "workout") hero = app.querySelector(".set,.exhead")?.closest(".card") || app.querySelector(".card");
+  else hero = app.querySelector(".card");
+  if (hero) hero.classList.add("ds-hero");
+  dsCharts();
+}
+// Couleurs des graphiques (lues par drawCharts dans ui.js) : jetons Progression, lisibles sur la carte foncée.
+function dsChartColors(canvas) {
+  const el = canvas && canvas.closest(".card");
+  return { point: dsColor("--chart-2", "#94a3b8", el), trend: dsColor("--chart-1", "#2563eb", el), bars: dsColor("--chart-3", "#60a5fa", el),
+    target: dsColor("--fn-warn-fill", "#f59e0b", el), rm: dsColor("--mus-accent", "#e5484d", el), grid: dsColor("--line", "", el), tick: dsColor("--mut", "", el) };
+}
+// Axes : après le rendu, la carte principale a pu devenir foncée → on relit ses couleurs.
+function dsCharts() {
+  if (!DS.on || typeof Chart === "undefined" || !Chart.instances) return;
+  Object.values(Chart.instances).forEach(c => {
+    const C = dsChartColors(c.canvas);
+    c.options.scales && Object.values(c.options.scales).forEach(s => { s.grid = Object.assign(s.grid || {}, { color: C.grid }); s.ticks = Object.assign(s.ticks || {}, { color: C.tick }); });
+    c.data.datasets.forEach(d => { if (d._ds) ["borderColor", "backgroundColor"].forEach(k => { if (d._ds[k]) d[k] = C[d._ds[k]]; }); });
+    c.update("none");
+  });
+}
+
+// ---- Accueil : une tuile par univers, d'après la maquette de Vuthy (validé le 26/11) ----
+const DS_ICON = {
+  nutrition: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 0-3 2.5-3 5.5S15 13 17 13v8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  cuisine: '<path d="M4 10h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6zM2 10h20M9 6.5c0-1 .8-2 2-2h2c1.2 0 2 1 2 2V10H9z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>'
+};
+function dsHomeHTML() {
+  const k = todayKey(); let kc = { left: "—", pct: 0 }, soon = 0, fr = 0, w = null, dw = null, next = "—", nex = 0, pctW = 0, nb = 0;
+  try { const t = dayTotals(k), T = tDay(k); kc = { left: Math.round(T.kcal - t.kcal), pct: Math.min(100, Math.round(100 * t.kcal / T.kcal)) }; } catch (e) {}
+  try { const it = fridgeItems(); fr = it.length; soon = it.filter(expSoon).length; } catch (e) {}
+  try { const ws = weightSeries(30); if (ws.length) { w = ws[ws.length - 1].t; dw = w - ws[0].t; } } catch (e) {}
+  try { const lw = liveWorkout(), P = program(); const n = lw ? lw.name : Object.keys(P)[0];
+    next = n || "—"; const ex = lw ? lw.ex : (P[n] && P[n].ex) || []; nex = ex.length;
+    pctW = lw && nex ? Math.round(100 * ex.filter(e => (e.sets || []).length).length / nex) : 0;
+    nb = workouts().filter(x => !x.live && Date.now() - x.start < 7 * 864e5).length; } catch (e) {}
+  const f1 = n => (n == null ? "—" : (Math.round(n * 10) / 10).toString().replace(".", ","));
+  const tile = (u, title, tab, icon, v, sub, pct) => `<div class="dsh-tile" data-u="${u}"><div class="dsh-t">${title}</div>
+    <button class="dsh-deep" data-act="tab" data-v="${tab}"><svg viewBox="0 0 24 24">${icon}</svg><span class="dsh-v">${v}</span><span class="dsh-s">${sub}</span><span class="dsh-bar"><i style="width:${pct}%"></i></span></button>
+    <button class="dsh-go" data-act="tab" data-v="${tab}">Consulter</button></div>`;
+  const ib = (tab, lab) => `<button class="ghost dsh-ib" data-act="tab" data-v="${tab}" aria-label="${lab}" title="${lab}"><svg viewBox="0 0 24 24">${ICONS[tab]}</svg></button>`;
+  return `<div class="row between"><h1>Bonjour</h1><div class="row" style="gap:2px">${DS.ctrl ? '<span class="tag" style="margin-right:6px">Démo</span>' : ""}${ib("coach", "Coach")}${ib("profile", "Profil")}</div></div>
+  <div class="dsh-grid">
+    ${tile("nutrition", "Nutrition", "today", DS_ICON.nutrition, `${kc.left} kcal`, "Calories restantes", 100 - kc.pct)}
+    ${tile("cuisine", "Cuisine", "fridge", DS_ICON.cuisine, `${soon} à finir vite`, `${fr} aliments au frigo`, fr ? Math.round(100 * soon / fr) : 0)}
+    ${tile("muscu", "Musculation", "workout", ICONS.workout, esc(next), `${nex} exercices · ${nb} cette sem.`, pctW)}
+    ${tile("progression", "Progression", "progress", ICONS.progress, `${f1(w)} kg`, dw == null ? "Poids tendance" : `${dw <= 0 ? "▼" : "▲"} ${f1(Math.abs(dw))} kg en 30 jours`, 60)}
+  </div>`;
+}
+
+// ---- Barre d'onglets avec Accueil (validée le 27/11) : 5 onglets + Scanner au centre ; Coach et Profil passent en haut de l'accueil ----
+ICONS.home = '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>';
+function dsNavHTML() {
+  const L = { home: "Accueil", today: "Nutrition", fridge: "Cuisine", workout: "Séance", progress: "Progrès" };
+  const btn = k => `<button class="${S.tab === k || (k === "home" && (S.tab === "coach" || S.tab === "profile")) ? "on" : ""}" data-act="tab" data-v="${k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${L[k]}${k === "workout" && liveWorkout() ? " •" : ""}</button>`;
+  const ks = Object.keys(L);
+  const scan = `<button class="scanbtn" data-act="scanHub" aria-label="Scanner un aliment"><span><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 9v6M10 9v6M13 9v6M17 9v6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Scanner</button>`;
+  return ks.slice(0, 3).map(btn).join("") + scan + ks.slice(3).map(btn).join("");
+}
+
+// ---- Branchements (seulement en mode aperçu) ----
+(function dsInit() {
+  const q = new URLSearchParams(location.search);
+  DS.ctrl = q.has("ds") && q.get("ds") !== "0"; // page d'aperçu (contrôles, données de démo)
+  const _render = render, _nav = navHTML;
+  navHTML = function () { return DS.on ? dsNavHTML() : _nav.apply(this, arguments); };
+  render = function () {
+    if (DS.on && S.tab === "home") { if (isEditing()) return; document.getElementById("app").innerHTML = dsHomeHTML(); document.getElementById("nav").innerHTML = navHTML(); renderSheet(); }
+    else _render.apply(this, arguments);
+    dsAfter();
+  };
+  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || DS.o.muscu, style: q.get("s") || DS.o.style, commun: q.get("c") || DS.o.commun, mode: q.get("mode") || "" });
+  if (DS.on && !q.get("screen")) S.tab = "home"; // l'app s'ouvre sur l'accueil
+  if (!q.has("ds")) return;
+  window.addEventListener("message", e => {
+    if (e.origin !== location.origin || !e.data || !e.data.ds) return;
+    const d = e.data.ds; dsSet(d);
+    if (d.screen) dsScreen(d.screen); else render();
+  });
+  if (q.get("screen")) setTimeout(() => dsScreen(q.get("screen")), 0);
+})();
+function dsScreen(s) {
+  S.sheet = null;
+  if (s === "live" || s === "rest") {
+    S.tab = "workout"; S.wMode = "list";
+    if (!liveWorkout()) { const n = Object.keys(program())[0]; if (n && ACT.startW) ACT.startW({ dataset: { v: n } }); }
+    render();
+    if (s === "rest" && ACT.logSet && !document.getElementById("restBar")) { const b = document.querySelector("button[data-act=logSet]"); if (b) ACT.logSet(b); }
+    return;
+  }
+  if (s === "sheet") { S.tab = "today"; render(); if (ACT.openAdd) ACT.openAdd({ dataset: {} }); dsAfter(); return; }
+  S.tab = s; render(); window.scrollTo(0, 0);
+}
 
 </script></body></html>

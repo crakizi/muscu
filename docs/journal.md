@@ -2,6 +2,11 @@
 
 _Les entrées les plus récentes en haut. Chaque publication (Coordination) et chaque changement important d'organisation ajoute une entrée. Les sessions lisent les 3 premières au démarrage. L'historique détaillé V1 → V1.8 (17-21/11) est dans le contexte privé `.private/projet/journal-developpement.md`._
 
+## 27/11/2026 — Publication : design system 2
+- En ligne : nouveau design par univers (Nutrition Deep Ocean, Cuisine Warm Earth, Musculation Black Cherry, Progression Slate Blue ; écrans communs neutres + accents), couleurs affirmées (style C), mode sombre retravaillé, **Accueil** en 4 tuiles, barre Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès (Coach et Profil en haut de l'Accueil).
+- Avant publication : `main` était `45069f8`. Branche publiée : `sec/design-systeme` via `integ-2026-11-27`.
+- Tests : scénarios 77/77, Cuisine 28/28, Muscu 14/14, Nutrition OK, contrastes 0 sous le seuil ; version compilée vérifiée (onglets, aucune erreur JS).
+
 ## 27/11/2026 — Design system 2 intégré (branche `sec/design-systeme`, non publié)
 - Nouveau design actif par défaut : Black Cherry, style C, neutre + accents, l'app s'ouvre sur l'Accueil, barre 5 onglets + Scanner (Coach et Profil en haut de l'Accueil). `?ds=0` = ancien design pour comparer.
 - Couleurs en dur branchées sur les jetons : graphiques (`dsChartColors`), bandeaux, scanner (Coordination) ; corps 3D, salle 3D, récupération 4 niveaux, décharge (sous-agent Muscu).
