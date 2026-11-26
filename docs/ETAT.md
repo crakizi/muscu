@@ -14,7 +14,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Muscu | `sec/muscu` | En ligne (lot 1) | `1560b59` | Rien de demandé ; idées dans `docs/feuille-de-route.md` |
 | Programmes | `sec/programme` | Proposition faite, **attend Vuthy** | — (aucun code) | Valider la liste (zone 2, HIIT, Camp, Abdos, + option Course 0→5 km) et dire s'il veut une maquette du minuteur |
 | Amis | `sec/amis` | Codé, **non fusionné** | `fcc2301` | Vuthy doit exécuter la partie AMIS de `dev/schema.sql` dans Supabase et activer les inscriptions ; puis test réel et fusion |
-| Design | `sec/design-liftin` | Maquette codée, **attend Vuthy** | `11888e8` | Choisir l'accent (A bleu / B orange) ; 2ᵉ passe recommandée (séance façon Liftin', 5 onglets) |
+| Design | `sec/design-liftin` | Maquette codée, accent **bleu** choisi | `11888e8` | Garder seulement le bleu (retirer l'option orange) ; éloigner le bleu des protéines (`#2563eb`, trop proche de l'accent) ; 2ᵉ passe recommandée (séance façon Liftin', 5 onglets) : attend Vuthy |
 | Design (ancien) | `sec/design` | **Non retenu** (vert) | — | Garder en archive, ne pas fusionner |
 | Tests | `test/lot2` | Vérifications déjà intégrées dans `main` | — | Mettre à jour ou supprimer les vieux tests cassés (accord de Vuthy requis) |
 
@@ -28,7 +28,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Faible | Tests | `testnut2.py` parfois instable (clic trop rapide dans « ⋯ ») |
 
 ## Décisions en attente de Vuthy
-1. Accent du design : bleu (A) ou orange (B) ; 2ᵉ passe façon Liftin' oui/non.
+1. Design : 2ᵉ passe façon Liftin' oui/non (accent bleu choisi le 26/11).
 2. Liste des programmes cardio.
 3. Activation des comptes Amis dans Supabase (c'est lui qui le fait, guidé pas à pas).
 4. Faut-il garder le raccourci « Recette avec mon frigo » dans Aujourd'hui (retiré par Nutrition) ?

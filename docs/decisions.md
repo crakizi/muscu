@@ -24,6 +24,7 @@ _Ne contient que ce que Vuthy a réellement validé (sa réponse entre guillemet
 | 22/11 | Publication des lots 1-2 | « publie » |
 | 22/11 | Amis : profil en 2 parties (🍽️ Alimentation, 🏋️ Sport), partage « sur mon profil », profil privé (code + acceptation) ou public (pseudo, sans validation), copie de diète recalculée selon ses objectifs | conversation Amis |
 | 26/11 | Design inspiré de **Liftin'** | « j'aime bcp le design de lifting » |
+| 26/11 | Accent du design : **bleu** `#1f6bff` (sombre `#3d86ff`), l'orange est écarté | « Bleu » |
 | 26/11 | Migrer tout le développement vers Claude Code, spécialisation par domaine et coordination centrale | demande du 26/11 |
 
 ## Idées abandonnées ou refusées

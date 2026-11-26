@@ -3,7 +3,7 @@
 _Ordre de priorité proposé ; Vuthy décide. Ce qui est en cours est dans `docs/ETAT.md`._
 
 ## Maintenant (décisions de Vuthy attendues)
-1. **Design façon Liftin'** : choisir l'accent, 2ᵉ passe (séance à grosses lignes, cartes illustrées, 5 onglets), puis publier.
+1. **Design façon Liftin'** : accent bleu choisi (26/11), 2ᵉ passe (séance à grosses lignes, cartes illustrées, 5 onglets), puis publier.
 2. **Corriger** le bug « Copier hier retire du frigo ».
 3. **Alléger le Frigo** (65 boutons → un tap sur l'aliment ouvre ses actions, frigo 3D derrière une icône).
 4. **Nutrition** : « Mes besoins » ramené dans Nutrition ; supprimer l'ancienne `viewKitchen`.

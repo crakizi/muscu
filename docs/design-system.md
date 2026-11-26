@@ -30,7 +30,7 @@ Ce qu'on reprend de Liftin' (sans copier sa marque, ni son rose) :
 Composants : `.card`, bouton principal (capsule accent), `button.sec` (gris, texte accent), `button.ghost`, champs remplis sans bordure, `.chip`, `.seg` (contrôle segmenté), `nav.tabs` (barre floutée), `.entry` (liste), `.ring` (anneaux), `.set` (ligne de série), pilule de repos.
 
 ## Décisions en attente de Vuthy
-1. **Accent** : A bleu ou B orange.
+1. ~~Accent~~ : **bleu choisi par Vuthy le 26/11**. À faire : retirer l'option orange et changer la couleur des protéines (`#2563eb`, trop proche de l'accent).
 2. **2ᵉ passe** (recommandée, car la 1ʳᵉ reste loin de Liftin') : écran Séance à très grosses lignes de séries (1 tap), réglages (RIR, ±) repliés, carte illustrée par séance du programme ; **5 onglets** au lieu de 7 (iOS en recommande 5 au maximum), par exemple Aujourd'hui · Séance · Cuisine · Progrès · Profil, Coach et Scanner ailleurs.
 3. Couleur de l'anneau kcal (turquoise, venant de Nutrition) à harmoniser avec l'accent.
 
