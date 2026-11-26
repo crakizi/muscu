@@ -14,7 +14,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Muscu | `sec/muscu` | En ligne (lot 1) | `1560b59` | Rien de demandé ; idées dans `docs/feuille-de-route.md` |
 | Programmes | `sec/programme` | Proposition faite, **attend Vuthy** | — (aucun code) | Valider la liste (zone 2, HIIT, Camp, Abdos, + option Course 0→5 km) et dire s'il veut une maquette du minuteur |
 | Amis | `sec/amis` | Codé, **non fusionné** | `fcc2301` | Vuthy doit exécuter la partie AMIS de `dev/schema.sql` dans Supabase et activer les inscriptions ; puis test réel et fusion |
-| Design | `sec/design-systeme` | **Aperçu prêt, attend Vuthy** (design system 2 par univers, non publié) | voir branche | Black Cherry + couleurs affirmées (style C renforcé) choisis ; identité commune « neutre + accents » choisie ; Accueil validé (barre 5 onglets + Scanner, Coach et Profil en haut de l'accueil : validée le 27/11) ; reste : intégration définitive écran par écran avec chaque domaine ; comparer sur `dev/apercu-design.html` ; puis intégration définitive écran par écran avec chaque domaine |
+| Design | `sec/design-systeme` | **Intégré, prêt à publier** (attend « publie ») | voir branche | Design system 2 actif par défaut : Black Cherry, couleurs affirmées (style C), neutre + accents, Accueil + barre 5 onglets. Tests 77/77, Cuisine 28/28, Muscu 14/14, Nutrition testnut2 OK, contrastes 0 sous le seuil. Captures `dev/shots/design2/planche-5-*` |
 | Design (Liftin') | `sec/design-liftin` | Remplacée par `sec/design-systeme` (formes Liftin' reprises) | `11888e8` | Ne pas fusionner telle quelle ; accent bleu remplacé par les couleurs par univers |
 | Design (ancien) | `sec/design` | **Non retenu** (vert) | — | Garder en archive, ne pas fusionner |
 | Tests | `test/lot2` | Vérifications déjà intégrées dans `main` | — | Mettre à jour ou supprimer les vieux tests cassés (accord de Vuthy requis) |
@@ -29,7 +29,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Faible | Tests | `testnut2.py` parfois instable (clic trop rapide dans « ⋯ ») |
 
 ## Décisions en attente de Vuthy
-1. Design system 2 (`docs/design-system.md` §0) : ~~palette musculation~~ (Black Cherry choisie), ~~intensité~~ (couleurs affirmées, style C), ~~identité commune~~ (neutre + accents), ~~écran Accueil~~ (oui) ; ~~barre d'onglets~~ (validée le 27/11) ; reste : lancer l'intégration définitive (domaine par domaine) puis publier ; puis 2ᵉ passe (séance à grosses lignes, 5 onglets).
+1. Design system 2 (`docs/design-system.md` §0) : ~~palette musculation~~ (Black Cherry choisie), ~~intensité~~ (couleurs affirmées, style C), ~~identité commune~~ (neutre + accents), ~~écran Accueil~~ (oui) ; ~~barre d'onglets~~ (validée le 27/11) ; intégration faite le 27/11 ; reste : **« publie »** après avoir vu les captures ; puis 2ᵉ passe (séance à grosses lignes, 5 onglets).
 2. Liste des programmes cardio.
 3. Activation des comptes Amis dans Supabase (c'est lui qui le fait, guidé pas à pas).
 4. Faut-il garder le raccourci « Recette avec mon frigo » dans Aujourd'hui (retiré par Nutrition) ?
@@ -45,5 +45,6 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 - Amis réutilise `replacementsFor` (Muscu) et les objectifs `dayTargets` (Nutrition) pour recalculer les copies.
 
 ## Annonces aux autres sessions
+- 27/11 : design system 2 **intégré** sur `sec/design-systeme` : l'app s'ouvre sur l'**Accueil** ; barre Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès ; **Coach et Profil** sont en icônes en haut de l'Accueil (les tests passent par là : voir `tab()` de `testscenarios.py`). Toute nouvelle couleur passe par un jeton (`docs/design-system.md` §6 et §10).
 - 26/11 (soir) : **design system 2** sur `sec/design-systeme` (aperçu seulement, rien de publié). Nouvelles règles de couleur dans `docs/design-system.md` : plus de couleur en dur, jetons sémantiques, univers par écran (`data-u`), couleurs fonctionnelles fixes (macros, succès, erreur…). Les 3 palettes Nutrition / Cuisine / Progression sont validées.
 - 26/11 : migration vers Claude Code. Nouvelles règles dans `CLAUDE.md` et `docs/regles.md` ; anciens fichiers d'organisation dans `docs/archive/`. Toute branche `sec/*` doit fusionner `origin/main` avant de reprendre.

@@ -33,7 +33,7 @@
   --fn-up:var(--fn-ok);--fn-down:var(--n-500); /* baisse = gris neutre, jamais rouge (règle 3) */
   --mac-p:#4F6BED;--mac-c:#B87512;--mac-f:#9B6BDF;--mac-fib:#3F8A5D;
   --musc-prim:#C8553D;--musc-sec:#E3A15A;
-  --rec-ok:#3F9C6B;--rec-mid:#E3A15A;--rec-low:#C8553D;
+  --rec-ok:#3F9C6B;--rec-near:#C9A227;--rec-mid:#E08A3C;--rec-low:#C8553D;
 
   /* ---------- Typographie, espaces, arrondis, mouvement ---------- */
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
@@ -48,7 +48,7 @@
 :where(html[data-ds].dark){
   --fn-ok:#6CC495;--fn-err:#F2867C;--fn-warn:#F0B44C;--fn-warn-fill:#F0B44C;--fn-info:#8DB2F0;--fn-record:#E8C15A;--fn-down:var(--d-mut);
   --mac-p:#8EA2F5;--mac-c:#E9A23B;--mac-f:#B99AEE;--mac-fib:#6CC495;
-  --musc-prim:#EE8A70;--musc-sec:#F2BE7E;--rec-ok:#6CC495;--rec-mid:#F2BE7E;--rec-low:#EE8A70;
+  --musc-prim:#EE8A70;--musc-sec:#F2BE7E;--rec-ok:#6CC495;--rec-near:#E2C45A;--rec-mid:#F2A86B;--rec-low:#EE8A70;
   --elev-1:none;--elev-2:0 8px 28px rgba(0,0,0,.5);
 }
 
@@ -120,7 +120,7 @@ html[data-ds],html[data-ds] [data-u]{
   /* alias des anciens noms */
   --bg:var(--surface-page);--card:var(--surface-card);--txt:var(--text-1);--mut:var(--text-2);--line:var(--border);
   --chip:var(--surface-sunken);--acc:var(--accent);--acc2:var(--action-soft);--grad:var(--action);--kc:var(--u-mid);
-  --red:var(--fn-err);--org:var(--fn-warn-fill);--grn:var(--fn-ok);--p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  --red:var(--fn-err);--org:var(--fn-warn-fill);--grn:var(--fn-ok);--ok:var(--fn-ok);--p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
   --shadow:var(--elev-1);
 }
 /* Mode sombre : un fond commun, des surfaces légèrement différenciées, accents éclaircis */
@@ -208,6 +208,8 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 :where(html[data-ds]) input,:where(html[data-ds]) select,:where(html[data-ds]) textarea{background:var(--card);border-color:var(--line);color:var(--txt);border-radius:var(--r-md)}
 :where(html[data-ds]) .ds-hero :is(input,select,textarea){background:var(--chip)}
 :where(html[data-ds]) .banner{background:var(--surface-soft);color:var(--txt)}
+:where(html[data-ds]) .banner.err{background:color-mix(in srgb,var(--fn-err) 12%,var(--card));color:var(--fn-err)}
+:where(html[data-ds]) .banner.health{background:color-mix(in srgb,var(--fn-info) 12%,var(--card));color:var(--txt)}
 :where(html[data-ds]) .reco{background:var(--surface-soft)}
 :where(html[data-ds]) .toast{background:var(--n-900);color:#fff;box-shadow:var(--elev-2)}
 :where(html[data-ds].dark) .toast{background:var(--d-txt);color:var(--d-bg)}

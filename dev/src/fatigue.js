@@ -68,10 +68,10 @@ function deloadAdvice() {
 const daysBetweenK = (a, b) => Math.round((parseKey(b) - parseKey(a)) / 864e5);
 function deloadCardHTML() {
   const A = deloadAdvice(); if (!A) return "";
-  if (A.active) return `<div class="card" style="border:2px solid #22c55e"><b>🔋 Semaine de décharge en cours</b> (jusqu'au ${fmtDay(A.until)})
+  if (A.active) return `<div class="card" style="border:2px solid var(--fn-ok,#22c55e)"><b>🔋 Semaine de décharge en cours</b> (jusqu'au ${fmtDay(A.until)})
     <p class="sm" style="margin:6px 0">Mêmes exercices et mêmes charges, mais <b>environ moitié moins de séries</b> et 3-4 répétitions en réserve (pas d'échec). Ton corps récupère et tu repars plus fort.</p>
     <button class="ghost small" data-act="deloadStop">Arrêter la décharge</button></div>`;
-  return `<div class="card" style="border:2px solid #f97316"><b>🔋 Une semaine de décharge serait utile</b>
+  return `<div class="card" style="border:2px solid var(--fn-warn-fill,#f97316)"><b>🔋 Une semaine de décharge serait utile</b>
     <p class="sm" style="margin:6px 0">Ta fatigue s'accumule depuis ${A.weeks >= 2 ? A.weeks + " semaines" : "plusieurs semaines"} : ${A.why.map(esc).join(" · ")}.</p>
     <p class="xs mut">Décharge = 1 semaine avec ~50 % des séries, mêmes charges, sans aller à l'échec.</p>
     <div class="row" style="gap:8px"><button class="grow" data-act="deloadStart">Faire ma décharge cette semaine</button><button class="sec" data-act="deloadSnooze">Pas maintenant</button></div></div>`;

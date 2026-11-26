@@ -118,7 +118,7 @@ function dailySheet() {
   const d = day(S.day); const p = profile();
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   return `<div class="row between"><h2>Suivi du jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-    ${d.health ? `<div class="banner" style="background:#fde8ef;color:#9d174d">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
+    ${d.health ? `<div class="banner health">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
     <div class="row"><div class="grow"><label>Poids (au réveil, à jeun, après les toilettes)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="80.2"></div>
     <div class="grow"><label>Pas</label><input id="inSteps" type="number" inputmode="numeric" value="${d.steps || ""}" placeholder="8500"></div>
     <div class="grow"><label>Sommeil (h)</label><input id="inSleep" type="number" step="0.25" inputmode="decimal" value="${d.sleep || ""}" placeholder="7.5"></div></div>
@@ -189,7 +189,7 @@ function addSheet() {
   return `<div class="row between"><h2>Ajouter un aliment</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     <div class="chips" style="margin:6px 0 10px"><span class="xs mut" style="align-self:center">Repas (facultatif) :</span>${["", ...MEALS].map(m => `<button class="chip ${A.meal === m ? "on" : ""}" data-act="addMeal" data-v="${m}">${mealLabel(m)}</button>`).join("")}</div>
     ${A.items || A.sel ? "" : `<div class="chips" style="margin-bottom:10px">${tabs.map(([k, l]) => `<button class="chip ${A.tab === k ? "on" : ""}" data-act="addTab" data-v="${k}">${l}</button>`).join("")}</div>`}
-    ${A.err ? `<div class="banner" style="background:#fde2e3;color:#7f1d1d">${esc(A.err)}</div>` : ""}${body}`;
+    ${A.err ? `<div class="banner err">${esc(A.err)}</div>` : ""}${body}`;
 }
 function foodList(res) {
   return res.map((f, i) => `<div class="entry" data-act="selFood" data-i="${i}"><div><div>${esc(f.name)}${f.brand ? ` <span class="mut xs">${esc(f.brand)}</span>` : ""}</div><div class="mut xs">${r0(f.per100.kcal)} kcal · P ${r1(f.per100.p)} · G ${r1(f.per100.c)} · L ${r1(f.per100.f)} /100 g${f.src === "perso" ? " · mes aliments" : f.src === "récent" ? " · récent" : ""}</div></div><div class="mut">›</div></div>`).join("") || `<p class="mut sm">Aucun résultat.</p>`;
@@ -333,18 +333,20 @@ function drawCharts() {
   if (typeof Chart === "undefined") { $$("canvas").forEach(c => c.outerHTML = `<p class="mut sm">Graphique indisponible (bibliothèque non chargée).</p>`); return; }
   const css = getComputedStyle(document.documentElement); const mut = css.getPropertyValue("--mut").trim(), line = css.getPropertyValue("--line").trim();
   Chart.defaults.color = mut; Chart.defaults.borderColor = line; Chart.defaults.font.family = "-apple-system,system-ui,sans-serif";
+  // couleurs : jetons du design system (theme.js) ; _ds = rôle du jeu de données, relu si la carte devient foncée
+  const CC = cv => typeof dsChartColors === "function" ? dsChartColors(cv) : { point: "#94a3b8", trend: "#2563eb", bars: "#60a5fa", target: "#f59e0b", rm: "#e5484d" };
   const ws = weightSeries(90);
   if ($("#chW")) charts.push(new Chart($("#chW"), { type: "line", data: { labels: ws.map(x => fmtDay(x.k)), datasets: [
-    { label: "Pesée", data: ws.map(x => x.w), showLine: false, pointRadius: 3, borderColor: "#94a3b8", backgroundColor: "#94a3b8" },
-    { label: "Tendance", data: ws.map(x => r1(x.t)), pointRadius: 0, borderColor: "#2563eb", tension: .3 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6 } } } } }));
+    { label: "Pesée", data: ws.map(x => x.w), showLine: false, pointRadius: 3, borderColor: CC($("#chW")).point, backgroundColor: CC($("#chW")).point, _ds: { borderColor: "point", backgroundColor: "point" } },
+    { label: "Tendance", data: ws.map(x => r1(x.t)), pointRadius: 0, borderColor: CC($("#chW")).trend, tension: .3, _ds: { borderColor: "trend" } }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6 } } } } }));
   const ks = [...Array(14)].map((_, i) => addDays(todayKey(), i - 13)); const T = targets();
   if ($("#chK")) charts.push(new Chart($("#chK"), { type: "bar", data: { labels: ks.map(k => fmtDay(k).split(" ").slice(0, 2).join(" ")), datasets: [
-    { label: "Apports", data: ks.map(k => r0(dayTotals(k).kcal)), backgroundColor: "#60a5fa", borderRadius: 4 },
-    { type: "line", label: "Cible", data: ks.map(() => T.kcal), borderColor: "#f59e0b", pointRadius: 0, borderDash: [5, 4] }] }, options: { plugins: { legend: { display: false } } } }));
+    { label: "Apports", data: ks.map(k => r0(dayTotals(k).kcal)), backgroundColor: CC($("#chK")).bars, borderRadius: 4, _ds: { backgroundColor: "bars" } },
+    { type: "line", label: "Cible", data: ks.map(() => T.kcal), borderColor: CC($("#chK")).target, pointRadius: 0, borderDash: [5, 4], _ds: { borderColor: "target" } }] }, options: { plugins: { legend: { display: false } } } }));
   if ($("#chE") && S.progEx) { const h = exerciseHistory(S.progEx).slice().reverse();
     charts.push(new Chart($("#chE"), { type: "line", data: { labels: h.map(x => fmtDay(dateKey(new Date(x.date)))), datasets: [
-      { label: "1RM estimé", data: h.map(x => r1(Math.max(...x.sets.map(e1rm)))), borderColor: "#e5484d", tension: .25 },
-      { label: "Charge max", data: h.map(x => Math.max(...x.sets.map(s => s.w))), borderColor: "#94a3b8", borderDash: [4, 4], tension: .25 }] }, options: { plugins: { legend: { position: "bottom" } } } })); }
+      { label: "1RM estimé", data: h.map(x => r1(Math.max(...x.sets.map(e1rm)))), borderColor: CC($("#chE")).rm, tension: .25, _ds: { borderColor: "rm" } },
+      { label: "Charge max", data: h.map(x => Math.max(...x.sets.map(s => s.w))), borderColor: CC($("#chE")).point, borderDash: [4, 4], tension: .25, _ds: { borderColor: "point" } }] }, options: { plugins: { legend: { position: "bottom" } } } })); }
 }
 
 // ===================== COACH =====================

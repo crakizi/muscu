@@ -18,7 +18,10 @@ async def main():
       pg.on("console", lambda m: cons.append(m.text) if m.type == "error" and "Failed to load resource" not in m.text else None)
       J = lambda expr: pg.evaluate(f"JSON.stringify({expr})")
       async def ev(expr): return json.loads(await J(expr))
-      async def tab(v): await pg.click(f"nav button[data-v={v}]"); await pg.wait_for_timeout(350)
+      async def tab(v):  # barre du design system 2 : Coach et Profil sont en haut de l'Accueil
+        if await pg.locator(f"nav button[data-v={v}]").count() == 0: await pg.click("nav button[data-v=home]"); await pg.wait_for_timeout(250); await pg.click(f".dsh-ib[data-v={v}]")
+        else: await pg.click(f"nav button[data-v={v}]")
+        await pg.wait_for_timeout(350)
       async def shot(n, full=False): await pg.screenshot(path=SH + n, full_page=full)
       async def toast(): return " ".join(await pg.locator(".toast").all_inner_texts())
       await pg.goto(f"http://localhost:{PORT}/index.local.html"); await pg.wait_for_timeout(500)
@@ -26,6 +29,8 @@ async def main():
       await pg.add_script_tag(path=f"{D}/demo_seed.js")
       n = await pg.evaluate("demoSeed()"); DEMO = await ev("DEMO")
       await pg.reload(); await pg.wait_for_timeout(700)  # les données doivent survivre au rechargement
+      check("l'app s'ouvre sur l'Accueil (4 tuiles)", await pg.locator(".dsh-tile").count() == 4)
+      await tab("today")
       await pg.add_script_tag(path=f"{D}/demo_seed.js")  # pour DEMO.foods (sans réinjecter)
       t = await pg.evaluate("todayKey()")
       SECTION[0] = "Données"
@@ -231,7 +236,7 @@ async def main():
       await pg.reload(); await pg.wait_for_timeout(700)
       after = await pg.evaluate("JSON.stringify(Object.keys(Store.docs).sort().map(k=>[k,Store.docs[k]]))")
       check("rechargement : toutes les données identiques", before == after)
-      for v in ["today", "fridge", "workout", "progress", "coach", "profile"]: await tab(v)
+      for v in ["home", "today", "fridge", "workout", "progress", "coach", "profile"]: await tab(v)
       await tab("today"); await shot("17_apres_rechargement.png")
       check("aucune erreur JS", not errs, errs[:3])
       check("aucune erreur console", not cons, cons[:3])

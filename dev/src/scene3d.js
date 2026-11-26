@@ -18,7 +18,7 @@ function makeScene(key, opts) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  const scene = new THREE.Scene(); scene.background = new THREE.Color(isDark() ? (opts.bg || 0x1b1e24) : (opts.bgLight || 0xe4e8ef));
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(dsHex("--surface-sunken", isDark() ? (opts.bg || 0x1b1e24) : (opts.bgLight || 0xe4e8ef))); // fond = jeton du design system (ancien fond si ?ds=0)
   const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100); cam.position.set(...opts.cam);
   // Salle : contrôles « carte » (glisser = se déplacer, clic droit / 2 doigts = tourner, molette / pincer = zoom)
   const controls = opts.map && THREE.MapControls ? new THREE.MapControls(cam, renderer.domElement) : new THREE.OrbitControls(cam, renderer.domElement);
@@ -69,7 +69,7 @@ function makeScene(key, opts) {
     if (e.pointerType === "touch" || (down && e.buttons)) return;
     const o = hit(e); if (o === S3.hover) return;
     if (S3.hover && S3.hover !== S3.selected) tint(S3.hover, null);
-    S3.hover = o; if (o && o !== S3.selected) tint(o, 0x1d4ed8, 0.35);
+    S3.hover = o; if (o && o !== S3.selected) tint(o, dsHex("--accent", 0x1d4ed8), 0.35);
     renderer.domElement.style.cursor = o ? "pointer" : "grab";
     if (S3.tip) { S3.tip.style.display = o ? "block" : "none"; if (o) { S3.tip.textContent = o.userData.label || ""; S3.tip.style.left = (e.offsetX + 14) + "px"; S3.tip.style.top = (e.offsetY + 10) + "px"; } }
   });
@@ -97,7 +97,7 @@ function tint(o, hex, k = 0.6) { Object.values(V3.scenes).forEach(s3 => s3.dirty
   // chaque objet reçoit ses propres copies de matériaux : sinon le survol colorait toutes les machines qui partagent le même matériau
   if (!o.userData.matsOwned) { const map = new Map(); o.traverse(m => { if (m.isMesh && m.material && !Array.isArray(m.material)) { if (!map.has(m.material)) map.set(m.material, m.material.clone()); m.material = map.get(m.material); } }); o.userData.matsOwned = true; }
   o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
-function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, 0x2563eb, 0.75); }
+function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, dsHex("--accent", 0x2563eb), 0.75); }
 V3.clearSel = () => Object.values(V3.scenes).forEach(S3 => { if (S3.selected) { tint(S3.selected, null); S3.selected = null; } if (S3.hover) { tint(S3.hover, null); S3.hover = null; } });
 function mount3D(key, holder, build) {
   if (!has3D()) { holder.innerHTML = `<p class="mut sm c" style="padding:30px">La 3D n'a pas pu se charger (connexion ?).</p>`; return null; }

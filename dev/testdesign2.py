@@ -1,6 +1,6 @@
 # Design system 2 (section Design) : contrastes WCAG 2.2 AA sur la VRAIE app, toutes combinaisons.
 # Lancer depuis dev/ après `python3 build.py --local` : python3 testdesign2.py
-# - vérifie que sans « ?ds » l'app est strictement inchangée ;
+# - vérifie que le nouveau design est actif par défaut et que « ?ds=0 » rend l'ancien design intact ;
 # - mesure les contrastes (texte 4,5:1 ; gros texte et éléments graphiques 3:1) pour
 #   5 palettes muscu × 3 intensités × 2 modes × 3 identités communes × 8 écrans ;
 # - écrit le rapport dans docs/rapport-accessibilite-design.md et des captures dans shots/design2/.
@@ -60,9 +60,13 @@ async def main():
       await pg.goto(base); await pg.evaluate("localStorage.clear()"); await pg.reload(); await pg.wait_for_timeout(400)
       await pg.add_script_tag(path=f"{D}/demo_seed.js"); await pg.evaluate("demoSeed()"); await pg.reload(); await pg.wait_for_timeout(600)
       # 1. sans ?ds : rien ne change
-      st = await pg.evaluate("[document.documentElement.dataset.ds||'', getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(), typeof DS!=='undefined' && DS.ctrl]")
-      same = st[0] == "" and st[1].lower() == "#2563eb" and st[2] is False
-      print(("OK   " if same else "FAIL ") + "app normale inchangée sans ?ds", st); ok += same; bad += (not same)
+      st = await pg.evaluate("[document.documentElement.dataset.ds||'', document.documentElement.dataset.dsMuscu, document.documentElement.dataset.dsStyle, document.documentElement.dataset.dsCommun, S.tab]")
+      same = st == ["2", "cherry", "c", "contextuel", "home"]
+      print(("OK   " if same else "FAIL ") + "app : nouveau design par défaut (Black Cherry, C, neutre + accents, Accueil)", st); ok += same; bad += (not same)
+      await pg.goto(base + "?ds=0"); await pg.wait_for_timeout(500)
+      st = await pg.evaluate("[document.documentElement.dataset.ds||'', getComputedStyle(document.documentElement).getPropertyValue('--acc').trim(), S.tab]")
+      same = st[0] == "" and st[1].lower() == "#2563eb" and st[2] == "today"
+      print(("OK   " if same else "FAIL ") + "?ds=0 : ancien design intact (comparaison)", st); ok += same; bad += (not same)
       # 2. combinaisons
       await pg.goto(base + "?ds=1&screen=today"); await pg.wait_for_timeout(700)
       await pg.add_style_tag(content="*,*::before,*::after{transition:none!important;animation:none!important}")  # mesurer l'état final, pas une transition

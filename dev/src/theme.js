@@ -1,8 +1,24 @@
-// ===================== DESIGN SYSTEM 2 — APERÇU (section Design) =====================
-// INACTIF par défaut. Ne s'allume que si l'adresse contient « ?ds=… » (page dev/apercu-design.html).
-// N'écrit RIEN dans le stockage ni dans les réglages : tout passe par l'adresse ou par postMessage
-// de la page d'aperçu (même origine). Ne touche à aucune donnée ni à aucun calcul.
-const DS = { ctrl: false, on: false, o: { muscu: "cherry", style: "c", commun: "contextuel", mode: "" } };
+// ===================== DESIGN SYSTEM 2 (section Design) =====================
+// ACTIF par défaut (choix de Vuthy du 26-27/11 : Black Cherry, style C, neutre + accents, accueil).
+// « ?ds=0 » dans l'adresse = ancien design (comparaison). Les autres paramètres (?ds=1&m=…&s=…&c=…&mode=…&screen=…)
+// et postMessage servent seulement à la page dev/apercu-design.html. Rien n'est écrit dans le stockage
+// ni dans les réglages ; aucune donnée ni aucun calcul n'est touché.
+const DS = { ctrl: false, on: true, o: { muscu: "cherry", style: "c", commun: "contextuel", mode: "" } };
+
+// Couleur d'un jeton, résolue en « rgb(...) » (Chart.js, canvas) ou en nombre 0xRRGGBB (Three.js).
+// Fonctionne aussi pour les jetons calculés (color-mix). el = élément dont on prend le contexte (carte foncée…).
+function dsColor(name, fallback, el) {
+  if (!DS.on) return fallback;
+  const p = document.createElement("i"); p.style.cssText = `display:none;color:var(${name})`; (el || document.body).appendChild(p);
+  const c = getComputedStyle(p).color; p.remove();
+  const m = c.match(/^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/);
+  return m ? `rgb(${Math.round(m[1] * 255)}, ${Math.round(m[2] * 255)}, ${Math.round(m[3] * 255)})` : (c || fallback);
+}
+function dsHex(name, fallback) {
+  if (!DS.on) return fallback;
+  const m = (dsColor(name, "") || "").match(/(\d+),\s*(\d+),\s*(\d+)/);
+  return m ? (+m[1] << 16) | (+m[2] << 8) | +m[3] : fallback;
+}
 const DS_UNIV = { today: "nutrition", fridge: "cuisine", workout: "muscu", progress: "progression", coach: "commun", profile: "commun", home: "commun" };
 
 function dsSet(o) {
@@ -17,7 +33,7 @@ function dsSet(o) {
 // Après chaque rendu : univers de l'écran, carte principale, graphiques
 function dsAfter() {
   const h = document.documentElement, nav = document.getElementById("nav");
-  [...document.querySelectorAll("#app .banner")].forEach(b => { if (/Mode aperçu/.test(b.textContent)) b.remove(); });
+  if (DS.ctrl) [...document.querySelectorAll("#app .banner")].forEach(b => { if (/Mode aperçu/.test(b.textContent)) b.remove(); });
   if (!DS.on) { if (nav) delete nav.dataset.u; return; }
   h.dataset.u = DS_UNIV[S.tab] || "commun"; if (nav) nav.dataset.u = "commun";
   document.querySelectorAll(".ds-hero").forEach(e => e.classList.remove("ds-hero"));
@@ -30,23 +46,24 @@ function dsAfter() {
   if (hero) hero.classList.add("ds-hero");
   dsCharts();
 }
-// Les graphiques (Chart.js) ont des couleurs écrites dans ui.js : en aperçu on les remplace par les jetons.
+// Couleurs des graphiques (lues par drawCharts dans ui.js) : jetons Progression, lisibles sur la carte foncée.
+function dsChartColors(canvas) {
+  const el = canvas && canvas.closest(".card");
+  return { point: dsColor("--chart-2", "#94a3b8", el), trend: dsColor("--chart-1", "#2563eb", el), bars: dsColor("--chart-3", "#60a5fa", el),
+    target: dsColor("--fn-warn-fill", "#f59e0b", el), rm: dsColor("--mus-accent", "#e5484d", el), grid: dsColor("--line", "", el), tick: dsColor("--mut", "", el) };
+}
+// Axes : après le rendu, la carte principale a pu devenir foncée → on relit ses couleurs.
 function dsCharts() {
-  if (typeof Chart === "undefined" || !Chart.instances) return;
-  const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
-  const dark = document.documentElement.classList.contains("dark");
-  const map = { "#94a3b8": v("--chart-2") || v("--pro-soft"), "#2563eb": dark ? v("--pro-accent-dk") : v("--pro-deep"), "#60a5fa": dark ? "#4A5A78" : v("--pro-pastel"),
-    "#f59e0b": v("--fn-warn-fill"), "#e5484d": dark ? v("--mus-accent-dk") : v("--mus-accent") };
+  if (!DS.on || typeof Chart === "undefined" || !Chart.instances) return;
   Object.values(Chart.instances).forEach(c => {
-    let ch = false;
-    c.data.datasets.forEach(d => ["borderColor", "backgroundColor"].forEach(k => { const o = String(d["_ds_" + k] || d[k] || "").toLowerCase(); if (map[o]) { d["_ds_" + k] = o; d[k] = map[o]; ch = true; } }));
-    const hs = getComputedStyle(c.canvas.closest(".card") || document.documentElement), hv = n => hs.getPropertyValue(n).trim(); // carte foncée : axes lisibles
-    c.options.scales && Object.values(c.options.scales).forEach(s => { s.grid = Object.assign(s.grid || {}, { color: hv("--line") }); s.ticks = Object.assign(s.ticks || {}, { color: hv("--mut") }); });
+    const C = dsChartColors(c.canvas);
+    c.options.scales && Object.values(c.options.scales).forEach(s => { s.grid = Object.assign(s.grid || {}, { color: C.grid }); s.ticks = Object.assign(s.ticks || {}, { color: C.tick }); });
+    c.data.datasets.forEach(d => { if (d._ds) ["borderColor", "backgroundColor"].forEach(k => { if (d._ds[k]) d[k] = C[d._ds[k]]; }); });
     c.update("none");
   });
 }
 
-// ---- Accueil général (PROPOSITION, aperçu seulement) : une tuile par univers, d'après la maquette de Vuthy ----
+// ---- Accueil : une tuile par univers, d'après la maquette de Vuthy (validé le 26/11) ----
 const DS_ICON = {
   nutrition: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 0-3 2.5-3 5.5S15 13 17 13v8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
   cuisine: '<path d="M4 10h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6zM2 10h20M9 6.5c0-1 .8-2 2-2h2c1.2 0 2 1 2 2V10H9z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>'
@@ -74,7 +91,7 @@ function dsHomeHTML() {
   </div>`;
 }
 
-// ---- Barre d'onglets avec Accueil (aperçu) : 5 onglets + Scanner au centre ; Coach et Profil passent en haut de l'accueil ----
+// ---- Barre d'onglets avec Accueil (validée le 27/11) : 5 onglets + Scanner au centre ; Coach et Profil passent en haut de l'accueil ----
 ICONS.home = '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>';
 function dsNavHTML() {
   const L = { home: "Accueil", today: "Nutrition", fridge: "Cuisine", workout: "Séance", progress: "Progrès" };
@@ -86,17 +103,18 @@ function dsNavHTML() {
 
 // ---- Branchements (seulement en mode aperçu) ----
 (function dsInit() {
-  const q = new URLSearchParams(location.search); if (!q.has("ds")) return; // app normale : rien ne change
-  DS.ctrl = true;
+  const q = new URLSearchParams(location.search);
+  DS.ctrl = q.has("ds") && q.get("ds") !== "0"; // page d'aperçu (contrôles, données de démo)
   const _render = render, _nav = navHTML;
   navHTML = function () { return DS.on ? dsNavHTML() : _nav.apply(this, arguments); };
-  if (q.get("ds") !== "0" && !q.get("screen")) S.tab = "home"; // l'app s'ouvre sur l'accueil
   render = function () {
     if (DS.on && S.tab === "home") { if (isEditing()) return; document.getElementById("app").innerHTML = dsHomeHTML(); document.getElementById("nav").innerHTML = navHTML(); renderSheet(); }
     else _render.apply(this, arguments);
     dsAfter();
   };
-  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || "cherry", style: q.get("s") || "c", commun: q.get("c") || "contextuel", mode: q.get("mode") || "" });
+  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || DS.o.muscu, style: q.get("s") || DS.o.style, commun: q.get("c") || DS.o.commun, mode: q.get("mode") || "" });
+  if (DS.on && !q.get("screen")) S.tab = "home"; // l'app s'ouvre sur l'accueil
+  if (!q.has("ds")) return;
   window.addEventListener("message", e => {
     if (e.origin !== location.origin || !e.data || !e.data.ds) return;
     const d = e.data.ds; dsSet(d);

@@ -12,8 +12,8 @@ const Scanner = {
     el.innerHTML = `<div style="color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 10px;display:flex;justify-content:space-between;align-items:center;font:600 16px -apple-system,system-ui">
         <span>${esc(title || "Scanne le code-barres")}</span><button class="sec small" id="scanClose">Fermer</button></div>
       <div style="position:relative;flex:1;overflow:hidden"><video id="scanVid" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
-        <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
-        <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:#22c55e;opacity:.8;animation:blink 1.2s infinite"></div></div>
+        <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid var(--fn-ok,#22c55e);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
+        <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:var(--fn-ok,#22c55e);opacity:.8;animation:blink 1.2s infinite"></div></div>
       <div style="color:#cbd5e1;text-align:center;padding:12px 16px calc(16px + env(safe-area-inset-bottom));font:14px -apple-system,system-ui">Place le code-barres dans le cadre vert, il se lit tout seul.
         ${this.hub ? `<div class="scanmodes"><label>📸 Photo du plat<input type="file" accept="image/*" capture="environment" data-file="hubphoto" style="display:none"></label><label>🏷️ Étiquette / produit<input type="file" accept="image/*" multiple data-file="hubprod" style="display:none"></label><button id="scanSearch">🔎 Chercher</button></div>` : ""}
         <div class="row" style="margin-top:10px;justify-content:center"><input id="scanManual" inputmode="numeric" placeholder="ou tape le code" style="max-width:200px;background:#111;color:#fff;border-color:#333"><button class="small" id="scanManualOk">OK</button></div></div>`;

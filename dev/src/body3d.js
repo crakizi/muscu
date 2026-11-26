@@ -69,8 +69,8 @@ function bodyPaint(grp, o = {}) {
     const g = m.userData.part.g; const mt = m.material; if (g === "_skin" || g === "_b") return;
     let c = dark ? BODY_COL.restDark : BODY_COL.rest, e = 0x000000;
     if (colors && colors[g]) c = new THREE.Color(colors[g]);
-    else if (prim.includes(g)) { c = BODY_COL.prim; e = 0x5a0010; }
-    else if (sec.includes(g)) { c = BODY_COL.sec; e = 0x3a2200; }
+    else if (prim.includes(g)) { c = dsHex("--musc-prim", BODY_COL.prim); e = 0x5a0010; } // jetons lus au moment du coloriage (thème clair/foncé à jour)
+    else if (sec.includes(g)) { c = dsHex("--musc-sec", BODY_COL.sec); e = 0x3a2200; }
     (typeof c === "number" ? mt.color.setHex(c) : mt.color.copy(c)).convertSRGBToLinear(); mt.emissive.setHex(e); mt.emissiveIntensity = 1; mt.userData.e0 = e;
     if (!colors && focus.includes(g)) grp.userData.focus.push(m);
   });
@@ -91,7 +91,7 @@ function bodyThumbRender(o) {
     BODY.tr = { r, scene, grp, cam };
   }
   const { r, scene, grp, cam } = BODY.tr; bodyPaint(grp, o);
-  grp.userData.focus.forEach(m => { m.material.emissive.setHex(0xff2a55); m.material.emissiveIntensity = 0.55; });
+  grp.userData.focus.forEach(m => { m.material.emissive.setHex(dsHex("--musc-prim", 0xff2a55)); m.material.emissiveIntensity = 0.55; });
   r.setScissorTest(true); r.setClearColor(0x000000, 0);
   [[0, 0], [220, Math.PI]].forEach(([x, rot]) => {
     r.setViewport(x, 0, 220, 470); r.setScissor(x, 0, 220, 470); r.clear();
@@ -136,7 +136,7 @@ BODY.preloaded = thumbPreload();
 // ---------- vue 3D interactive (fiche exercice, carte de récupération, atlas) ----------
 function body3DHolderHTML(h = 460, anim = false) {
   const H = typeof h === "number" ? h + "px" : h;
-  return `<div id="body3d" style="height:${H};border-radius:16px;overflow:hidden;background:var(--bg2,#e9edf3);position:relative">
+  return `<div id="body3d" style="height:${H};border-radius:16px;overflow:hidden;background:var(--surface-sunken,var(--bg2,#e9edf3));position:relative">
     <div class="mut sm c" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center" id="body3dWait"><span class="spin"></span>&nbsp;Chargement du corps 3D…</div>
     ${anim ? `<div id="animPhase" class="xs" style="position:absolute;left:10px;bottom:10px;z-index:4;background:rgba(17,24,39,.72);color:#fff;border-radius:10px;padding:5px 9px;pointer-events:none"></div>` : ""}</div>
     ${anim ? `<div class="chips" style="justify-content:center;margin-top:8px"><button class="chip on" data-act="animPlay">${ANIM.playing ? "⏸ Pause" : "▶ Lecture"}</button>${[[0.5, "Lent"], [1, "Normal"]].map(([v, l]) => `<button class="chip ${ANIM.speed === v ? "on" : ""}" data-act="animSpeed" data-v="${v}">${l}</button>`).join("")}</div>` : ""}
@@ -165,9 +165,9 @@ function bodyMount(holder, o) {
       el.addEventListener("pointerleave", () => { bodyHover(S3, null); if (S3.tip) S3.tip.style.display = "none"; });
       el.addEventListener("pointerup", e => { if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8) return; down = null; const m = pick(e); bodyHover(S3, m); bodyInfo(m && m.userData.part); });
       S3.renderer.shadowMap.enabled = true;
-      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(0xff1744); m.material.emissiveIntensity = k * 0.8; } }); if (S3.animOn) animTick(S3, t * 1000); };
+      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(S3.focusHex ?? 0xff1744); m.material.emissiveIntensity = k * 0.8; } }); if (S3.animOn) animTick(S3, t * 1000); };
     }
-    S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3);
+    S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3); S3.focusHex = dsHex("--musc-prim", 0xff1744); // couleur du clignotement, lue une fois par affichage
     const w = holder.querySelector("#body3dWait"); if (w) w.remove();
     V3.prevActive = V3.active && V3.active !== S3 ? V3.active : V3.prevActive;
     mount3D("body", holder, () => S3);
@@ -186,7 +186,7 @@ function bodyMount(holder, o) {
 function bodyHover(S3, m) {
   if (S3.hov === m) return;
   if (S3.hov) { const mt = S3.hov.material; mt.emissive.setHex(mt.userData.e0 || 0); mt.emissiveIntensity = 1; }
-  S3.hov = m; if (m) { m.material.emissive.setHex(0x2563eb); m.material.emissiveIntensity = 0.45; }
+  S3.hov = m; if (m) { m.material.emissive.setHex(dsHex("--mus-accent", 0x2563eb)); m.material.emissiveIntensity = 0.45; }
 }
 function bodyInfo(p) {
   const el = $("#bodyInfo"); if (!el) return;
@@ -239,7 +239,7 @@ function bodyAtlasSheet() {
 }
 function bodyRecoverySheet() {
   return `<div class="row between"><h2>Récupération en 3D</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>${body3DHolderHTML(500)}
-    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>`;
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:var(--rec-ok,#22c55e)">●</b> récupéré</span><span><b style="color:var(--rec-near,#eab308)">●</b> presque</span><span><b style="color:var(--rec-mid,#f97316)">●</b> fatigué</span><span><b style="color:var(--rec-low,#ef4444)">●</b> à reposer</span></div>`;
 }
 // appelé après chaque affichage de feuille : monte la vue 3D si la feuille en contient une
 function bodyAfterSheet() {

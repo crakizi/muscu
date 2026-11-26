@@ -2,6 +2,11 @@
 
 _Les entrées les plus récentes en haut. Chaque publication (Coordination) et chaque changement important d'organisation ajoute une entrée. Les sessions lisent les 3 premières au démarrage. L'historique détaillé V1 → V1.8 (17-21/11) est dans le contexte privé `.private/projet/journal-developpement.md`._
 
+## 27/11/2026 — Design system 2 intégré (branche `sec/design-systeme`, non publié)
+- Nouveau design actif par défaut : Black Cherry, style C, neutre + accents, l'app s'ouvre sur l'Accueil, barre 5 onglets + Scanner (Coach et Profil en haut de l'Accueil). `?ds=0` = ancien design pour comparer.
+- Couleurs en dur branchées sur les jetons : graphiques (`dsChartColors`), bandeaux, scanner (Coordination) ; corps 3D, salle 3D, récupération 4 niveaux, décharge (sous-agent Muscu).
+- Tests adaptés à l'Accueil (`tab()` de testscenarios, testnut2) : scénarios 77/77, Cuisine 28/28, Muscu 14/14, Nutrition OK, contrastes 2 132 mesures 0 sous le seuil, aucune erreur JS. Les 2 échecs connus de la veille (« Copier hier », volume Quadriceps) passent aujourd'hui : probablement liés à la date, à surveiller.
+
 ## 26/11/2026 (soir) — Design system 2 : aperçu par univers (non publié)
 - Branche `sec/design-systeme` : `dev/src/theme.css` (jetons primitifs → rôles par univers → sémantiques → modes et intensités → composants), `dev/src/theme.js` (actif seulement avec `?ds=` dans l'adresse), 2 lignes dans `build.py`. Sans `?ds`, l'app est identique (vérifié).
 - Page de comparaison `dev/apercu-design.html` (vraie app + données de démo, localhost seulement) : 5 palettes muscu, 3 intensités, clair/sombre, 3 identités communes, accueil proposé, mobile/ordinateur, avant/après.

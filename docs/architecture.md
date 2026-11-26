@@ -62,6 +62,6 @@ Ordre des modèles Gemini : 3.8-flash → 3.5-flash → 3.5-flash-lite → flash
 ## Tests (Playwright, Chrome)
 - `dev/demo_seed.js` : données d'exemple réalistes (4 semaines de repas, pesées, séances, frigo, recettes, batch, prix), fonction `demoSeed()`. **Jamais incluses dans l'app** (un test le vérifie).
 - `dev/testscenarios.py` : tests de bout en bout (76 vérifications) entre Nutrition, Cuisine, Muscu, IA sans clé et rechargement.
-- Tests de domaine : `testnut2.py`, `testnut.py`, `testtoday.py` (Nutrition), `testcuisine.py` (Cuisine), `testmuscu.py`, `testanim.py`, `testprog.py` (Muscu), `testamis.py` (branche Amis), `testdesign.py` (branche design), `testdesign2.py` (contrastes du design system 2, branche `sec/design-systeme`).
+- Tests de domaine : `testnut2.py`, `testnut.py`, `testtoday.py` (Nutrition), `testcuisine.py` (Cuisine), `testmuscu.py`, `testanim.py`, `testprog.py` (Muscu), `testamis.py` (branche Amis), `testdesign.py` (branche design), `testdesign2.py` (contrastes du design system 2, branche `sec/design-systeme`). Depuis le design system 2, l'app s'ouvre sur l'Accueil et Coach/Profil ne sont plus dans la barre : passer par `nav button[data-v=home]` puis `.dsh-ib[data-v=coach|profile]`.
 - Tests obsolètes (cassés avant les lots, à mettre à jour ou supprimer avec l'accord de Vuthy) : `test.py`, `test2.py`, `testrec.py`, `testnav.py`, `testui.py`, `testdish2.py`.
 - Serveur local : `python3 -m http.server <port>` dans `dev/` ; Chrome : `/usr/bin/google-chrome` avec `--no-sandbox` dans les environnements cloud ; captures 390×844.

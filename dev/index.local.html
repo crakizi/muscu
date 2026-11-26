@@ -226,7 +226,7 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
   --fn-up:var(--fn-ok);--fn-down:var(--n-500); /* baisse = gris neutre, jamais rouge (règle 3) */
   --mac-p:#4F6BED;--mac-c:#B87512;--mac-f:#9B6BDF;--mac-fib:#3F8A5D;
   --musc-prim:#C8553D;--musc-sec:#E3A15A;
-  --rec-ok:#3F9C6B;--rec-mid:#E3A15A;--rec-low:#C8553D;
+  --rec-ok:#3F9C6B;--rec-near:#C9A227;--rec-mid:#E08A3C;--rec-low:#C8553D;
 
   /* ---------- Typographie, espaces, arrondis, mouvement ---------- */
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
@@ -241,7 +241,7 @@ nav.tabs button{min-width:0;flex:1;padding:6px 2px;font-size:10.5px}nav.tabs but
 :where(html[data-ds].dark){
   --fn-ok:#6CC495;--fn-err:#F2867C;--fn-warn:#F0B44C;--fn-warn-fill:#F0B44C;--fn-info:#8DB2F0;--fn-record:#E8C15A;--fn-down:var(--d-mut);
   --mac-p:#8EA2F5;--mac-c:#E9A23B;--mac-f:#B99AEE;--mac-fib:#6CC495;
-  --musc-prim:#EE8A70;--musc-sec:#F2BE7E;--rec-ok:#6CC495;--rec-mid:#F2BE7E;--rec-low:#EE8A70;
+  --musc-prim:#EE8A70;--musc-sec:#F2BE7E;--rec-ok:#6CC495;--rec-near:#E2C45A;--rec-mid:#F2A86B;--rec-low:#EE8A70;
   --elev-1:none;--elev-2:0 8px 28px rgba(0,0,0,.5);
 }
 
@@ -313,7 +313,7 @@ html[data-ds],html[data-ds] [data-u]{
   /* alias des anciens noms */
   --bg:var(--surface-page);--card:var(--surface-card);--txt:var(--text-1);--mut:var(--text-2);--line:var(--border);
   --chip:var(--surface-sunken);--acc:var(--accent);--acc2:var(--action-soft);--grad:var(--action);--kc:var(--u-mid);
-  --red:var(--fn-err);--org:var(--fn-warn-fill);--grn:var(--fn-ok);--p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
+  --red:var(--fn-err);--org:var(--fn-warn-fill);--grn:var(--fn-ok);--ok:var(--fn-ok);--p:var(--mac-p);--c:var(--mac-c);--f:var(--mac-f);
   --shadow:var(--elev-1);
 }
 /* Mode sombre : un fond commun, des surfaces légèrement différenciées, accents éclaircis */
@@ -401,6 +401,8 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 :where(html[data-ds]) input,:where(html[data-ds]) select,:where(html[data-ds]) textarea{background:var(--card);border-color:var(--line);color:var(--txt);border-radius:var(--r-md)}
 :where(html[data-ds]) .ds-hero :is(input,select,textarea){background:var(--chip)}
 :where(html[data-ds]) .banner{background:var(--surface-soft);color:var(--txt)}
+:where(html[data-ds]) .banner.err{background:color-mix(in srgb,var(--fn-err) 12%,var(--card));color:var(--fn-err)}
+:where(html[data-ds]) .banner.health{background:color-mix(in srgb,var(--fn-info) 12%,var(--card));color:var(--txt)}
 :where(html[data-ds]) .reco{background:var(--surface-soft)}
 :where(html[data-ds]) .toast{background:var(--n-900);color:#fff;box-shadow:var(--elev-2)}
 :where(html[data-ds].dark) .toast{background:var(--d-txt);color:var(--d-bg)}
@@ -1195,7 +1197,7 @@ function makeScene(key, opts) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); renderer.shadowMap.enabled = true;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  const scene = new THREE.Scene(); scene.background = new THREE.Color(isDark() ? (opts.bg || 0x1b1e24) : (opts.bgLight || 0xe4e8ef));
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(dsHex("--surface-sunken", isDark() ? (opts.bg || 0x1b1e24) : (opts.bgLight || 0xe4e8ef))); // fond = jeton du design system (ancien fond si ?ds=0)
   const cam = new THREE.PerspectiveCamera(50, 1, 0.05, 100); cam.position.set(...opts.cam);
   // Salle : contrôles « carte » (glisser = se déplacer, clic droit / 2 doigts = tourner, molette / pincer = zoom)
   const controls = opts.map && THREE.MapControls ? new THREE.MapControls(cam, renderer.domElement) : new THREE.OrbitControls(cam, renderer.domElement);
@@ -1246,7 +1248,7 @@ function makeScene(key, opts) {
     if (e.pointerType === "touch" || (down && e.buttons)) return;
     const o = hit(e); if (o === S3.hover) return;
     if (S3.hover && S3.hover !== S3.selected) tint(S3.hover, null);
-    S3.hover = o; if (o && o !== S3.selected) tint(o, 0x1d4ed8, 0.35);
+    S3.hover = o; if (o && o !== S3.selected) tint(o, dsHex("--accent", 0x1d4ed8), 0.35);
     renderer.domElement.style.cursor = o ? "pointer" : "grab";
     if (S3.tip) { S3.tip.style.display = o ? "block" : "none"; if (o) { S3.tip.textContent = o.userData.label || ""; S3.tip.style.left = (e.offsetX + 14) + "px"; S3.tip.style.top = (e.offsetY + 10) + "px"; } }
   });
@@ -1274,7 +1276,7 @@ function tint(o, hex, k = 0.6) { Object.values(V3.scenes).forEach(s3 => s3.dirty
   // chaque objet reçoit ses propres copies de matériaux : sinon le survol colorait toutes les machines qui partagent le même matériau
   if (!o.userData.matsOwned) { const map = new Map(); o.traverse(m => { if (m.isMesh && m.material && !Array.isArray(m.material)) { if (!map.has(m.material)) map.set(m.material, m.material.clone()); m.material = map.get(m.material); } }); o.userData.matsOwned = true; }
   o.traverse(m => { if (!m.isMesh || !m.material || !m.material.emissive) return; const mt = m.material; if (mt.userData.base === undefined) mt.userData.base = mt.emissive.getHex(); if (hex == null) { mt.emissive.setHex(mt.userData.base); mt.emissiveIntensity = 1; } else { mt.emissive.setHex(hex); mt.emissiveIntensity = k; } }); }
-function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, 0x2563eb, 0.75); }
+function select3D(S3, o) { if (S3.selected && S3.selected !== o) tint(S3.selected, null); S3.selected = o; tint(o, dsHex("--accent", 0x2563eb), 0.75); }
 V3.clearSel = () => Object.values(V3.scenes).forEach(S3 => { if (S3.selected) { tint(S3.selected, null); S3.selected = null; } if (S3.hover) { tint(S3.hover, null); S3.hover = null; } });
 function mount3D(key, holder, build) {
   if (!has3D()) { holder.innerHTML = `<p class="mut sm c" style="padding:30px">La 3D n'a pas pu se charger (connexion ?).</p>`; return null; }
@@ -1760,8 +1762,8 @@ function bodyPaint(grp, o = {}) {
     const g = m.userData.part.g; const mt = m.material; if (g === "_skin" || g === "_b") return;
     let c = dark ? BODY_COL.restDark : BODY_COL.rest, e = 0x000000;
     if (colors && colors[g]) c = new THREE.Color(colors[g]);
-    else if (prim.includes(g)) { c = BODY_COL.prim; e = 0x5a0010; }
-    else if (sec.includes(g)) { c = BODY_COL.sec; e = 0x3a2200; }
+    else if (prim.includes(g)) { c = dsHex("--musc-prim", BODY_COL.prim); e = 0x5a0010; } // jetons lus au moment du coloriage (thème clair/foncé à jour)
+    else if (sec.includes(g)) { c = dsHex("--musc-sec", BODY_COL.sec); e = 0x3a2200; }
     (typeof c === "number" ? mt.color.setHex(c) : mt.color.copy(c)).convertSRGBToLinear(); mt.emissive.setHex(e); mt.emissiveIntensity = 1; mt.userData.e0 = e;
     if (!colors && focus.includes(g)) grp.userData.focus.push(m);
   });
@@ -1782,7 +1784,7 @@ function bodyThumbRender(o) {
     BODY.tr = { r, scene, grp, cam };
   }
   const { r, scene, grp, cam } = BODY.tr; bodyPaint(grp, o);
-  grp.userData.focus.forEach(m => { m.material.emissive.setHex(0xff2a55); m.material.emissiveIntensity = 0.55; });
+  grp.userData.focus.forEach(m => { m.material.emissive.setHex(dsHex("--musc-prim", 0xff2a55)); m.material.emissiveIntensity = 0.55; });
   r.setScissorTest(true); r.setClearColor(0x000000, 0);
   [[0, 0], [220, Math.PI]].forEach(([x, rot]) => {
     r.setViewport(x, 0, 220, 470); r.setScissor(x, 0, 220, 470); r.clear();
@@ -1827,7 +1829,7 @@ BODY.preloaded = thumbPreload();
 // ---------- vue 3D interactive (fiche exercice, carte de récupération, atlas) ----------
 function body3DHolderHTML(h = 460, anim = false) {
   const H = typeof h === "number" ? h + "px" : h;
-  return `<div id="body3d" style="height:${H};border-radius:16px;overflow:hidden;background:var(--bg2,#e9edf3);position:relative">
+  return `<div id="body3d" style="height:${H};border-radius:16px;overflow:hidden;background:var(--surface-sunken,var(--bg2,#e9edf3));position:relative">
     <div class="mut sm c" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center" id="body3dWait"><span class="spin"></span>&nbsp;Chargement du corps 3D…</div>
     ${anim ? `<div id="animPhase" class="xs" style="position:absolute;left:10px;bottom:10px;z-index:4;background:rgba(17,24,39,.72);color:#fff;border-radius:10px;padding:5px 9px;pointer-events:none"></div>` : ""}</div>
     ${anim ? `<div class="chips" style="justify-content:center;margin-top:8px"><button class="chip on" data-act="animPlay">${ANIM.playing ? "⏸ Pause" : "▶ Lecture"}</button>${[[0.5, "Lent"], [1, "Normal"]].map(([v, l]) => `<button class="chip ${ANIM.speed === v ? "on" : ""}" data-act="animSpeed" data-v="${v}">${l}</button>`).join("")}</div>` : ""}
@@ -1856,9 +1858,9 @@ function bodyMount(holder, o) {
       el.addEventListener("pointerleave", () => { bodyHover(S3, null); if (S3.tip) S3.tip.style.display = "none"; });
       el.addEventListener("pointerup", e => { if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8) return; down = null; const m = pick(e); bodyHover(S3, m); bodyInfo(m && m.userData.part); });
       S3.renderer.shadowMap.enabled = true;
-      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(0xff1744); m.material.emissiveIntensity = k * 0.8; } }); if (S3.animOn) animTick(S3, t * 1000); };
+      S3.tick = t => { const k = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5)); (S3.grp.userData.focus || []).forEach(m => { if (m !== S3.hov) { m.material.emissive.setHex(S3.focusHex ?? 0xff1744); m.material.emissiveIntensity = k * 0.8; } }); if (S3.animOn) animTick(S3, t * 1000); };
     }
-    S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3);
+    S3.opts = o; bodyPaint(S3.grp, o); bodyApplyToggles(S3); S3.focusHex = dsHex("--musc-prim", 0xff1744); // couleur du clignotement, lue une fois par affichage
     const w = holder.querySelector("#body3dWait"); if (w) w.remove();
     V3.prevActive = V3.active && V3.active !== S3 ? V3.active : V3.prevActive;
     mount3D("body", holder, () => S3);
@@ -1877,7 +1879,7 @@ function bodyMount(holder, o) {
 function bodyHover(S3, m) {
   if (S3.hov === m) return;
   if (S3.hov) { const mt = S3.hov.material; mt.emissive.setHex(mt.userData.e0 || 0); mt.emissiveIntensity = 1; }
-  S3.hov = m; if (m) { m.material.emissive.setHex(0x2563eb); m.material.emissiveIntensity = 0.45; }
+  S3.hov = m; if (m) { m.material.emissive.setHex(dsHex("--mus-accent", 0x2563eb)); m.material.emissiveIntensity = 0.45; }
 }
 function bodyInfo(p) {
   const el = $("#bodyInfo"); if (!el) return;
@@ -1930,7 +1932,7 @@ function bodyAtlasSheet() {
 }
 function bodyRecoverySheet() {
   return `<div class="row between"><h2>Récupération en 3D</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>${body3DHolderHTML(500)}
-    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>`;
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:var(--rec-ok,#22c55e)">●</b> récupéré</span><span><b style="color:var(--rec-near,#eab308)">●</b> presque</span><span><b style="color:var(--rec-mid,#f97316)">●</b> fatigué</span><span><b style="color:var(--rec-low,#ef4444)">●</b> à reposer</span></div>`;
 }
 // appelé après chaque affichage de feuille : monte la vue 3D si la feuille en contient une
 function bodyAfterSheet() {
@@ -2117,8 +2119,8 @@ const Scanner = {
     el.innerHTML = `<div style="color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 10px;display:flex;justify-content:space-between;align-items:center;font:600 16px -apple-system,system-ui">
         <span>${esc(title || "Scanne le code-barres")}</span><button class="sec small" id="scanClose">Fermer</button></div>
       <div style="position:relative;flex:1;overflow:hidden"><video id="scanVid" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover"></video>
-        <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid #22c55e;border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
-        <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:#22c55e;opacity:.8;animation:blink 1.2s infinite"></div></div>
+        <div style="position:absolute;left:10%;right:10%;top:38%;height:24%;border:3px solid var(--fn-ok,#22c55e);border-radius:16px;box-shadow:0 0 0 2000px rgba(0,0,0,.35)"></div>
+        <div style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:var(--fn-ok,#22c55e);opacity:.8;animation:blink 1.2s infinite"></div></div>
       <div style="color:#cbd5e1;text-align:center;padding:12px 16px calc(16px + env(safe-area-inset-bottom));font:14px -apple-system,system-ui">Place le code-barres dans le cadre vert, il se lit tout seul.
         ${this.hub ? `<div class="scanmodes"><label>📸 Photo du plat<input type="file" accept="image/*" capture="environment" data-file="hubphoto" style="display:none"></label><label>🏷️ Étiquette / produit<input type="file" accept="image/*" multiple data-file="hubprod" style="display:none"></label><button id="scanSearch">🔎 Chercher</button></div>` : ""}
         <div class="row" style="margin-top:10px;justify-content:center"><input id="scanManual" inputmode="numeric" placeholder="ou tape le code" style="max-width:200px;background:#111;color:#fff;border-color:#333"><button class="small" id="scanManualOk">OK</button></div></div>`;
@@ -2264,7 +2266,7 @@ function dailySheet() {
   const d = day(S.day); const p = profile();
   const scale = (key, lab) => `<div><div class="xs mut">${lab}</div><div class="scale">${[1, 2, 3, 4, 5].map(i => `<button class="${d[key] === i ? "on" : ""}" data-act="setScale" data-k="${key}" data-v="${i}">${i}</button>`).join("")}</div></div>`;
   return `<div class="row between"><h2>Suivi du jour</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
-    ${d.health ? `<div class="banner" style="background:#fde8ef;color:#9d174d">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
+    ${d.health ? `<div class="banner health">❤️ Apple Santé : ${d.steps ? d.steps.toLocaleString("fr-FR") + " pas · " : ""}${d.health.active} kcal actives${d.sleep ? " · sommeil " + d.sleep + " h" : ""}</div>` : ""}
     <div class="row"><div class="grow"><label>Poids (au réveil, à jeun, après les toilettes)</label><input id="inW" type="number" step="0.1" inputmode="decimal" value="${d.weight || ""}" placeholder="80.2"></div>
     <div class="grow"><label>Pas</label><input id="inSteps" type="number" inputmode="numeric" value="${d.steps || ""}" placeholder="8500"></div>
     <div class="grow"><label>Sommeil (h)</label><input id="inSleep" type="number" step="0.25" inputmode="decimal" value="${d.sleep || ""}" placeholder="7.5"></div></div>
@@ -2335,7 +2337,7 @@ function addSheet() {
   return `<div class="row between"><h2>Ajouter un aliment</h2><button class="sec small" data-act="closeSheet">Fermer</button></div>
     <div class="chips" style="margin:6px 0 10px"><span class="xs mut" style="align-self:center">Repas (facultatif) :</span>${["", ...MEALS].map(m => `<button class="chip ${A.meal === m ? "on" : ""}" data-act="addMeal" data-v="${m}">${mealLabel(m)}</button>`).join("")}</div>
     ${A.items || A.sel ? "" : `<div class="chips" style="margin-bottom:10px">${tabs.map(([k, l]) => `<button class="chip ${A.tab === k ? "on" : ""}" data-act="addTab" data-v="${k}">${l}</button>`).join("")}</div>`}
-    ${A.err ? `<div class="banner" style="background:#fde2e3;color:#7f1d1d">${esc(A.err)}</div>` : ""}${body}`;
+    ${A.err ? `<div class="banner err">${esc(A.err)}</div>` : ""}${body}`;
 }
 function foodList(res) {
   return res.map((f, i) => `<div class="entry" data-act="selFood" data-i="${i}"><div><div>${esc(f.name)}${f.brand ? ` <span class="mut xs">${esc(f.brand)}</span>` : ""}</div><div class="mut xs">${r0(f.per100.kcal)} kcal · P ${r1(f.per100.p)} · G ${r1(f.per100.c)} · L ${r1(f.per100.f)} /100 g${f.src === "perso" ? " · mes aliments" : f.src === "récent" ? " · récent" : ""}</div></div><div class="mut">›</div></div>`).join("") || `<p class="mut sm">Aucun résultat.</p>`;
@@ -2479,18 +2481,20 @@ function drawCharts() {
   if (typeof Chart === "undefined") { $$("canvas").forEach(c => c.outerHTML = `<p class="mut sm">Graphique indisponible (bibliothèque non chargée).</p>`); return; }
   const css = getComputedStyle(document.documentElement); const mut = css.getPropertyValue("--mut").trim(), line = css.getPropertyValue("--line").trim();
   Chart.defaults.color = mut; Chart.defaults.borderColor = line; Chart.defaults.font.family = "-apple-system,system-ui,sans-serif";
+  // couleurs : jetons du design system (theme.js) ; _ds = rôle du jeu de données, relu si la carte devient foncée
+  const CC = cv => typeof dsChartColors === "function" ? dsChartColors(cv) : { point: "#94a3b8", trend: "#2563eb", bars: "#60a5fa", target: "#f59e0b", rm: "#e5484d" };
   const ws = weightSeries(90);
   if ($("#chW")) charts.push(new Chart($("#chW"), { type: "line", data: { labels: ws.map(x => fmtDay(x.k)), datasets: [
-    { label: "Pesée", data: ws.map(x => x.w), showLine: false, pointRadius: 3, borderColor: "#94a3b8", backgroundColor: "#94a3b8" },
-    { label: "Tendance", data: ws.map(x => r1(x.t)), pointRadius: 0, borderColor: "#2563eb", tension: .3 }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6 } } } } }));
+    { label: "Pesée", data: ws.map(x => x.w), showLine: false, pointRadius: 3, borderColor: CC($("#chW")).point, backgroundColor: CC($("#chW")).point, _ds: { borderColor: "point", backgroundColor: "point" } },
+    { label: "Tendance", data: ws.map(x => r1(x.t)), pointRadius: 0, borderColor: CC($("#chW")).trend, tension: .3, _ds: { borderColor: "trend" } }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { maxTicksLimit: 6 } } } } }));
   const ks = [...Array(14)].map((_, i) => addDays(todayKey(), i - 13)); const T = targets();
   if ($("#chK")) charts.push(new Chart($("#chK"), { type: "bar", data: { labels: ks.map(k => fmtDay(k).split(" ").slice(0, 2).join(" ")), datasets: [
-    { label: "Apports", data: ks.map(k => r0(dayTotals(k).kcal)), backgroundColor: "#60a5fa", borderRadius: 4 },
-    { type: "line", label: "Cible", data: ks.map(() => T.kcal), borderColor: "#f59e0b", pointRadius: 0, borderDash: [5, 4] }] }, options: { plugins: { legend: { display: false } } } }));
+    { label: "Apports", data: ks.map(k => r0(dayTotals(k).kcal)), backgroundColor: CC($("#chK")).bars, borderRadius: 4, _ds: { backgroundColor: "bars" } },
+    { type: "line", label: "Cible", data: ks.map(() => T.kcal), borderColor: CC($("#chK")).target, pointRadius: 0, borderDash: [5, 4], _ds: { borderColor: "target" } }] }, options: { plugins: { legend: { display: false } } } }));
   if ($("#chE") && S.progEx) { const h = exerciseHistory(S.progEx).slice().reverse();
     charts.push(new Chart($("#chE"), { type: "line", data: { labels: h.map(x => fmtDay(dateKey(new Date(x.date)))), datasets: [
-      { label: "1RM estimé", data: h.map(x => r1(Math.max(...x.sets.map(e1rm)))), borderColor: "#e5484d", tension: .25 },
-      { label: "Charge max", data: h.map(x => Math.max(...x.sets.map(s => s.w))), borderColor: "#94a3b8", borderDash: [4, 4], tension: .25 }] }, options: { plugins: { legend: { position: "bottom" } } } })); }
+      { label: "1RM estimé", data: h.map(x => r1(Math.max(...x.sets.map(e1rm)))), borderColor: CC($("#chE")).rm, tension: .25, _ds: { borderColor: "rm" } },
+      { label: "Charge max", data: h.map(x => Math.max(...x.sets.map(s => s.w))), borderColor: CC($("#chE")).point, borderDash: [4, 4], tension: .25, _ds: { borderColor: "point" } }] }, options: { plugins: { legend: { position: "bottom" } } } })); }
 }
 
 // ===================== COACH =====================
@@ -3202,7 +3206,8 @@ function muscleFatigue() {
       x.prim.forEach(m => f[m] = (f[m] || 0) + n * decay); x.sec.forEach(m => f[m] = (f[m] || 0) + n * 0.5 * decay); }); });
   const rec = {}; Object.keys(f).forEach(m => rec[m] = Math.max(0, Math.min(1, 1 - f[m] / 6))); return rec; // 1 = récupéré
 }
-const recColor = r => r >= 0.85 ? "#22c55e" : r >= 0.6 ? "#eab308" : r >= 0.35 ? "#f97316" : "#ef4444";
+// couleurs de récupération = jetons --rec-* du design system (anciennes couleurs si ?ds=0) ; format « rgb(...) » accepté par le SVG et par Three.js
+const recColor = r => r >= 0.85 ? dsColor("--rec-ok", "#22c55e") : r >= 0.6 ? dsColor("--rec-near", "#eab308") : r >= 0.35 ? dsColor("--rec-mid", "#f97316") : dsColor("--rec-low", "#ef4444");
 function recoveryCardHTML() {
   const rec = muscleFatigue(); const colors = {}; Object.entries(rec).forEach(([m, r]) => colors[m] = recColor(r));
   const groupRec = {}; Object.entries(rec).forEach(([m, r]) => { const g = MUSCLES[m][1]; groupRec[g] = Math.min(groupRec[g] ?? 1, r); });
@@ -3212,7 +3217,7 @@ function recoveryCardHTML() {
   return `<div class="card"><h2>Récupération des muscles</h2>
     <div style="max-width:300px;margin:auto;cursor:pointer" data-act="bodyRecovery">${bodyThumbHTML({ colors })}</div>
     <div class="row" style="justify-content:center;gap:8px;margin-top:6px"><button class="sec small" data-act="bodyRecovery">Voir en 3D</button><button class="sec small" data-act="bodyAtlas">Anatomie 3D</button></div>
-    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:var(--rec-ok,#22c55e)">●</b> récupéré</span><span><b style="color:var(--rec-near,#eab308)">●</b> presque</span><span><b style="color:var(--rec-mid,#f97316)">●</b> fatigué</span><span><b style="color:var(--rec-low,#ef4444)">●</b> à reposer</span></div>
     ${tired.length ? `<p class="sm">À laisser reposer : <b>${tired.map(([g, r]) => `${g} (${Math.round(r * 100)} %)`).join(", ")}</b></p>` : `<p class="sm">Tous tes muscles sont récupérés 💪</p>`}
     ${best ? `<div class="reco good sm">Séance conseillée aujourd'hui : <b>${esc(best[0])}</b> (muscles récupérés à ${Math.round(best[1] * 100)} %)</div>` : ""}
     <p class="xs mut">Estimation à partir de tes séries des 5 derniers jours (muscle principal = 1 série, secondaire = ½) ; récupération d'environ 48 à 72 h selon le volume.</p></div>`;
@@ -4255,10 +4260,10 @@ function deloadAdvice() {
 const daysBetweenK = (a, b) => Math.round((parseKey(b) - parseKey(a)) / 864e5);
 function deloadCardHTML() {
   const A = deloadAdvice(); if (!A) return "";
-  if (A.active) return `<div class="card" style="border:2px solid #22c55e"><b>🔋 Semaine de décharge en cours</b> (jusqu'au ${fmtDay(A.until)})
+  if (A.active) return `<div class="card" style="border:2px solid var(--fn-ok,#22c55e)"><b>🔋 Semaine de décharge en cours</b> (jusqu'au ${fmtDay(A.until)})
     <p class="sm" style="margin:6px 0">Mêmes exercices et mêmes charges, mais <b>environ moitié moins de séries</b> et 3-4 répétitions en réserve (pas d'échec). Ton corps récupère et tu repars plus fort.</p>
     <button class="ghost small" data-act="deloadStop">Arrêter la décharge</button></div>`;
-  return `<div class="card" style="border:2px solid #f97316"><b>🔋 Une semaine de décharge serait utile</b>
+  return `<div class="card" style="border:2px solid var(--fn-warn-fill,#f97316)"><b>🔋 Une semaine de décharge serait utile</b>
     <p class="sm" style="margin:6px 0">Ta fatigue s'accumule depuis ${A.weeks >= 2 ? A.weeks + " semaines" : "plusieurs semaines"} : ${A.why.map(esc).join(" · ")}.</p>
     <p class="xs mut">Décharge = 1 semaine avec ~50 % des séries, mêmes charges, sans aller à l'échec.</p>
     <div class="row" style="gap:8px"><button class="grow" data-act="deloadStart">Faire ma décharge cette semaine</button><button class="sec" data-act="deloadSnooze">Pas maintenant</button></div></div>`;
@@ -4593,11 +4598,27 @@ ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
 if (typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); }
 
-// ===================== DESIGN SYSTEM 2 — APERÇU (section Design) =====================
-// INACTIF par défaut. Ne s'allume que si l'adresse contient « ?ds=… » (page dev/apercu-design.html).
-// N'écrit RIEN dans le stockage ni dans les réglages : tout passe par l'adresse ou par postMessage
-// de la page d'aperçu (même origine). Ne touche à aucune donnée ni à aucun calcul.
-const DS = { ctrl: false, on: false, o: { muscu: "cherry", style: "c", commun: "contextuel", mode: "" } };
+// ===================== DESIGN SYSTEM 2 (section Design) =====================
+// ACTIF par défaut (choix de Vuthy du 26-27/11 : Black Cherry, style C, neutre + accents, accueil).
+// « ?ds=0 » dans l'adresse = ancien design (comparaison). Les autres paramètres (?ds=1&m=…&s=…&c=…&mode=…&screen=…)
+// et postMessage servent seulement à la page dev/apercu-design.html. Rien n'est écrit dans le stockage
+// ni dans les réglages ; aucune donnée ni aucun calcul n'est touché.
+const DS = { ctrl: false, on: true, o: { muscu: "cherry", style: "c", commun: "contextuel", mode: "" } };
+
+// Couleur d'un jeton, résolue en « rgb(...) » (Chart.js, canvas) ou en nombre 0xRRGGBB (Three.js).
+// Fonctionne aussi pour les jetons calculés (color-mix). el = élément dont on prend le contexte (carte foncée…).
+function dsColor(name, fallback, el) {
+  if (!DS.on) return fallback;
+  const p = document.createElement("i"); p.style.cssText = `display:none;color:var(${name})`; (el || document.body).appendChild(p);
+  const c = getComputedStyle(p).color; p.remove();
+  const m = c.match(/^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/);
+  return m ? `rgb(${Math.round(m[1] * 255)}, ${Math.round(m[2] * 255)}, ${Math.round(m[3] * 255)})` : (c || fallback);
+}
+function dsHex(name, fallback) {
+  if (!DS.on) return fallback;
+  const m = (dsColor(name, "") || "").match(/(\d+),\s*(\d+),\s*(\d+)/);
+  return m ? (+m[1] << 16) | (+m[2] << 8) | +m[3] : fallback;
+}
 const DS_UNIV = { today: "nutrition", fridge: "cuisine", workout: "muscu", progress: "progression", coach: "commun", profile: "commun", home: "commun" };
 
 function dsSet(o) {
@@ -4612,7 +4633,7 @@ function dsSet(o) {
 // Après chaque rendu : univers de l'écran, carte principale, graphiques
 function dsAfter() {
   const h = document.documentElement, nav = document.getElementById("nav");
-  [...document.querySelectorAll("#app .banner")].forEach(b => { if (/Mode aperçu/.test(b.textContent)) b.remove(); });
+  if (DS.ctrl) [...document.querySelectorAll("#app .banner")].forEach(b => { if (/Mode aperçu/.test(b.textContent)) b.remove(); });
   if (!DS.on) { if (nav) delete nav.dataset.u; return; }
   h.dataset.u = DS_UNIV[S.tab] || "commun"; if (nav) nav.dataset.u = "commun";
   document.querySelectorAll(".ds-hero").forEach(e => e.classList.remove("ds-hero"));
@@ -4625,23 +4646,24 @@ function dsAfter() {
   if (hero) hero.classList.add("ds-hero");
   dsCharts();
 }
-// Les graphiques (Chart.js) ont des couleurs écrites dans ui.js : en aperçu on les remplace par les jetons.
+// Couleurs des graphiques (lues par drawCharts dans ui.js) : jetons Progression, lisibles sur la carte foncée.
+function dsChartColors(canvas) {
+  const el = canvas && canvas.closest(".card");
+  return { point: dsColor("--chart-2", "#94a3b8", el), trend: dsColor("--chart-1", "#2563eb", el), bars: dsColor("--chart-3", "#60a5fa", el),
+    target: dsColor("--fn-warn-fill", "#f59e0b", el), rm: dsColor("--mus-accent", "#e5484d", el), grid: dsColor("--line", "", el), tick: dsColor("--mut", "", el) };
+}
+// Axes : après le rendu, la carte principale a pu devenir foncée → on relit ses couleurs.
 function dsCharts() {
-  if (typeof Chart === "undefined" || !Chart.instances) return;
-  const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
-  const dark = document.documentElement.classList.contains("dark");
-  const map = { "#94a3b8": v("--chart-2") || v("--pro-soft"), "#2563eb": dark ? v("--pro-accent-dk") : v("--pro-deep"), "#60a5fa": dark ? "#4A5A78" : v("--pro-pastel"),
-    "#f59e0b": v("--fn-warn-fill"), "#e5484d": dark ? v("--mus-accent-dk") : v("--mus-accent") };
+  if (!DS.on || typeof Chart === "undefined" || !Chart.instances) return;
   Object.values(Chart.instances).forEach(c => {
-    let ch = false;
-    c.data.datasets.forEach(d => ["borderColor", "backgroundColor"].forEach(k => { const o = String(d["_ds_" + k] || d[k] || "").toLowerCase(); if (map[o]) { d["_ds_" + k] = o; d[k] = map[o]; ch = true; } }));
-    const hs = getComputedStyle(c.canvas.closest(".card") || document.documentElement), hv = n => hs.getPropertyValue(n).trim(); // carte foncée : axes lisibles
-    c.options.scales && Object.values(c.options.scales).forEach(s => { s.grid = Object.assign(s.grid || {}, { color: hv("--line") }); s.ticks = Object.assign(s.ticks || {}, { color: hv("--mut") }); });
+    const C = dsChartColors(c.canvas);
+    c.options.scales && Object.values(c.options.scales).forEach(s => { s.grid = Object.assign(s.grid || {}, { color: C.grid }); s.ticks = Object.assign(s.ticks || {}, { color: C.tick }); });
+    c.data.datasets.forEach(d => { if (d._ds) ["borderColor", "backgroundColor"].forEach(k => { if (d._ds[k]) d[k] = C[d._ds[k]]; }); });
     c.update("none");
   });
 }
 
-// ---- Accueil général (PROPOSITION, aperçu seulement) : une tuile par univers, d'après la maquette de Vuthy ----
+// ---- Accueil : une tuile par univers, d'après la maquette de Vuthy (validé le 26/11) ----
 const DS_ICON = {
   nutrition: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 0-3 2.5-3 5.5S15 13 17 13v8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
   cuisine: '<path d="M4 10h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6zM2 10h20M9 6.5c0-1 .8-2 2-2h2c1.2 0 2 1 2 2V10H9z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>'
@@ -4669,7 +4691,7 @@ function dsHomeHTML() {
   </div>`;
 }
 
-// ---- Barre d'onglets avec Accueil (aperçu) : 5 onglets + Scanner au centre ; Coach et Profil passent en haut de l'accueil ----
+// ---- Barre d'onglets avec Accueil (validée le 27/11) : 5 onglets + Scanner au centre ; Coach et Profil passent en haut de l'accueil ----
 ICONS.home = '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>';
 function dsNavHTML() {
   const L = { home: "Accueil", today: "Nutrition", fridge: "Cuisine", workout: "Séance", progress: "Progrès" };
@@ -4681,17 +4703,18 @@ function dsNavHTML() {
 
 // ---- Branchements (seulement en mode aperçu) ----
 (function dsInit() {
-  const q = new URLSearchParams(location.search); if (!q.has("ds")) return; // app normale : rien ne change
-  DS.ctrl = true;
+  const q = new URLSearchParams(location.search);
+  DS.ctrl = q.has("ds") && q.get("ds") !== "0"; // page d'aperçu (contrôles, données de démo)
   const _render = render, _nav = navHTML;
   navHTML = function () { return DS.on ? dsNavHTML() : _nav.apply(this, arguments); };
-  if (q.get("ds") !== "0" && !q.get("screen")) S.tab = "home"; // l'app s'ouvre sur l'accueil
   render = function () {
     if (DS.on && S.tab === "home") { if (isEditing()) return; document.getElementById("app").innerHTML = dsHomeHTML(); document.getElementById("nav").innerHTML = navHTML(); renderSheet(); }
     else _render.apply(this, arguments);
     dsAfter();
   };
-  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || "cherry", style: q.get("s") || "c", commun: q.get("c") || "contextuel", mode: q.get("mode") || "" });
+  dsSet({ on: q.get("ds") !== "0", muscu: q.get("m") || DS.o.muscu, style: q.get("s") || DS.o.style, commun: q.get("c") || DS.o.commun, mode: q.get("mode") || "" });
+  if (DS.on && !q.get("screen")) S.tab = "home"; // l'app s'ouvre sur l'accueil
+  if (!q.has("ds")) return;
   window.addEventListener("message", e => {
     if (e.origin !== location.origin || !e.data || !e.data.ds) return;
     const d = e.data.ds; dsSet(d);

@@ -1,6 +1,6 @@
 # Design system
 
-_Référence pour toutes les sessions. Mis à jour le 26/11/2026 (design system 2, branche `sec/design-systeme`, **aperçu non publié**)._
+_Référence pour toutes les sessions. Mis à jour le 27/11/2026 : design system 2 **intégré** sur la branche `sec/design-systeme` (actif par défaut), **pas encore publié** (attend le « publie » de Vuthy)._
 
 ## 0. Où en est-on ?
 | Sujet | Statut |
@@ -20,7 +20,8 @@ _Référence pour toutes les sessions. Mis à jour le 26/11/2026 (design system 
 - Planches fixes : `dev/shots/design2/planche-*.png` (régénérées par `dev/testdesign2.py`).
 
 ## 2. Architecture des jetons (`dev/src/theme.css`)
-Le fichier est concaténé **après** `style.css` par `build.py`. **Tout est sous `html[data-ds]`** : sans cet attribut, l'app est strictement identique (vérifié par `testdesign2.py`). `dev/src/theme.js` pose l'attribut **seulement** si l'adresse contient `?ds=` (aperçu) ; il n'écrit rien dans le stockage.
+Le fichier est concaténé **après** `style.css` par `build.py`. **Tout est sous `html[data-ds]`**, attribut que `dev/src/theme.js` pose **par défaut** depuis le 27/11 (Black Cherry, style C, neutre + accents, ouverture sur l'Accueil). `?ds=0` dans l'adresse rend l'ancien design intact (comparaison, vérifié par `testdesign2.py`). Les paramètres `?ds=1&m=…&s=…&c=…&mode=…&screen=…` et `postMessage` ne servent qu'à la page d'aperçu. Rien n'est écrit dans le stockage.
+Couleurs pour canvas et 3D : `dsColor(nom, repli, élément)` → « rgb(…) » (Chart.js, SVG), `dsHex(nom, repli)` → 0xRRGGBB (Three.js) ; les deux renvoient le repli avec `?ds=0`. Graphiques : `dsChartColors(canvas)` (rôles `point`, `trend`, `bars`, `target`, `rm`).
 
 | Couche | Exemples | Règle |
 |---|---|---|
@@ -99,8 +100,10 @@ Les choix tiennent en 4 valeurs : mode (`clair|sombre|auto`, existe déjà dans 
 
 ## 10. Conventions pour la suite
 - Code d'un domaine : n'utiliser que `var(--…)` sémantiques ; si l'écran a une carte principale, la marquer (aujourd'hui `theme.js` la devine).
-- Graphiques Chart.js : couleurs encore en dur dans `ui.js` (`drawCharts`) ; l'aperçu les remplace à la volée (`dsCharts`). À l'intégration : lire les jetons `--chart-*` au lieu des hex.
-- Intégration définitive (après validation) : supprimer la condition `?ds` dans `theme.js`, retirer les anciens jetons de tête de `style.css`, puis nettoyer les couleurs en dur listées dans l'audit (§11) domaine par domaine.
+- Graphiques Chart.js : `drawCharts` (ui.js) lit `dsChartColors` ; marquer chaque jeu de données avec `_ds: { borderColor: "trend" }` pour qu'il suive la carte foncée.
+- 3D (Three.js) : `dsHex("--musc-prim", repli)`, `dsHex("--surface-sunken", repli)`, `dsHex("--accent", repli)` (fait par Muscu le 27/11). Les matériaux réalistes (métal, caoutchouc, peau, os) restent des couleurs d'objet.
+- Fait le 27/11 : graphiques, bandeaux (`.banner.err`, `.banner.health`), scanner, récupération 4 niveaux (`--rec-ok/near/mid/low`), décharge, corps 3D, salle 3D. Reste en dur (volontaire) : Spotify (couleur de marque), visionneuse photos (fond noir), page de connexion Spotify.
+- Plus tard (nettoyage, sans effet visible) : retirer les anciens jetons en tête de `style.css` quand on ne voudra plus comparer avec `?ds=0` ; couleur de la barre d'état et de l'icône (`theme_color` dans `build.py`) à revoir avec la couleur de marque.
 
 ## 11. Audit du design actuel (26/11/2026, version en ligne)
 - **Une seule couleur pour tout** : bleu `#2563eb` + dégradé bleu→indigo sur tous les boutons, puces et onglets ; aucun repère d'univers (nutrition, cuisine, séance se ressemblent).
@@ -108,7 +111,7 @@ Les choix tiennent en 4 valeurs : mode (`clair|sombre|auto`, existe déjà dans 
 - **Couleurs en dur** : 42 couleurs différentes dans `style.css` (dont une quinzaine hors jetons : minuteur `#111827` + dégradé bleu/violet, ombres bleues, étiquettes rouges/vertes/oranges, ▲▼ rouge/vert, violet de la « séance fantôme ») ; ~35 dans le JS (`ui.js` graphiques et pastilles roses `#fde8ef`, `#22c55e`, Spotify `#1db954` ; `scene3d.js` / `body3d.js` décor 3D ; `recipes.js`, `scanner.js`) ; plus de 200 attributs `style="…"` dans les vues.
 - **Sombre** : simple inversion de quelques jetons ; décors 3D (frigo, salle) restent clairs.
 - **Dépendances** : `ui.js` (navigation, Progrès, Profil) est partagé ; anneaux dans `nutri2.js` (Nutrition), cartes de séance dans `program.js` (Muscu), Cuisine dans `cuisine2.js`/`fridge.js`. Le design system 2 ne modifie **aucun** de ces fichiers (seuls ajouts : `theme.css`, `theme.js`, 2 lignes dans `build.py`).
-- **Limites de l'aperçu** : décors 3D (frigo, salle) et photos d'exercices non recolorés ; emojis encore présents dans certains titres ; l'accueil est une proposition (pas d'écran Accueil dans l'app aujourd'hui).
+- **Limites connues** : le fond d'une scène 3D est lu à sa création (ne suit pas un changement clair/sombre sans recharger, comme avant) ;  décors 3D (frigo, salle) et photos d'exercices non recolorés ; emojis encore présents dans certains titres ; l'accueil est une proposition (pas d'écran Accueil dans l'app aujourd'hui).
 
 ## Historique
 - 22/11 : direction verte (`sec/design`) — non retenue.

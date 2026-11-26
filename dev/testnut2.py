@@ -3,7 +3,7 @@ from playwright.async_api import async_playwright
 PORT = os.environ.get("PORT", "8771"); SH = "shots/nutrition/"; os.makedirs(SH, exist_ok=True)
 async def main():
   async with async_playwright() as p:
-    b = await p.chromium.launch(executable_path="/usr/bin/google-chrome", args=["--no-sandbox"])
+    b = await p.chromium.launch(executable_path=next((c for c in ["/usr/bin/google-chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"] if os.path.exists(c)), None), args=["--no-sandbox"])
     pg = await b.new_page(viewport={"width":390,"height":844}); errs=[]; fails=[]
     pg.on("pageerror", lambda e: errs.append("PAGEERR "+str(e)))
     def ok(c, m):
@@ -15,7 +15,7 @@ async def main():
     await pg.evaluate("""for(let i=1;i<=14;i++){const k=addDays(todayKey(),-i); Store.set('d-'+k,{entries:[],acts:[],weight:80+(i%3)*0.6})}
       Store.set('profile',Object.assign({},Store.get('profile',{}),{weekPlan:['muscu','repos','muscu','repos','muscu','sport','repos']}));
       Store.set('w-1',{live:false,name:'Haut',start:Date.now()-3600e3,end:Date.now(),ex:[]});
-      updDay(d=>{d.weight=81.2; d.entries.push(makeEntry({name:'Poulet',per100:{kcal:110,p:23,c:0,f:2}},200,'Déjeuner'))}); render()""")
+      updDay(d=>{d.weight=81.2; d.entries.push(makeEntry({name:'Poulet',per100:{kcal:110,p:23,c:0,f:2}},200,'Déjeuner'))}); S.tab='today'; render()""")  # l'app s'ouvre sur l'Accueil : on va sur Nutrition
     r = await pg.evaluate("JSON.stringify([dayType(todayKey()), dayTargets(todayKey()), targets().kcal])")
     t, T, base = json.loads(r); ok(t == "muscu", f"type du jour = muscu ({t})")
     ok(T["kcal"] > base and T["p"] == json.loads(await pg.evaluate("JSON.stringify(targets().p)")), f"jour muscu plus de kcal ({T['kcal']} > {base}), protéines constantes")
@@ -63,7 +63,7 @@ async def main():
     pill = await pg.inner_text(".dstrip .dpill"); ok(str(W["trend"]) in pill and "81.2" not in pill, f"pastille poids = tendance seule : {pill}")
     await pg.click(".dstrip .dpill"); await pg.wait_for_timeout(200); ok(await pg.input_value("#inW") == "81.2", "pesée brute dans la fiche détail"); await pg.evaluate("closeSheet()")
     # réglage profil : désactiver
-    await pg.click("nav button[data-v=profile]"); await pg.wait_for_timeout(300)
+    await pg.click("nav button[data-v=home]"); await pg.wait_for_timeout(250); await pg.click(".dsh-ib[data-v=profile]"); await pg.wait_for_timeout(300)  # Profil : en haut de l'Accueil
     await pg.locator("text=Objectifs selon le jour").scroll_into_view_if_needed(); await pg.screenshot(path=SH+"5_profil_reglages.png")
     await pg.click("input[data-act=cycleOn]"); await pg.wait_for_timeout(150)
     ok(await pg.evaluate("dayTargets(todayKey()).kcal === targets().kcal"), "désactivé → objectif fixe")

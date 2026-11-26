@@ -74,7 +74,8 @@ function muscleFatigue() {
       x.prim.forEach(m => f[m] = (f[m] || 0) + n * decay); x.sec.forEach(m => f[m] = (f[m] || 0) + n * 0.5 * decay); }); });
   const rec = {}; Object.keys(f).forEach(m => rec[m] = Math.max(0, Math.min(1, 1 - f[m] / 6))); return rec; // 1 = récupéré
 }
-const recColor = r => r >= 0.85 ? "#22c55e" : r >= 0.6 ? "#eab308" : r >= 0.35 ? "#f97316" : "#ef4444";
+// couleurs de récupération = jetons --rec-* du design system (anciennes couleurs si ?ds=0) ; format « rgb(...) » accepté par le SVG et par Three.js
+const recColor = r => r >= 0.85 ? dsColor("--rec-ok", "#22c55e") : r >= 0.6 ? dsColor("--rec-near", "#eab308") : r >= 0.35 ? dsColor("--rec-mid", "#f97316") : dsColor("--rec-low", "#ef4444");
 function recoveryCardHTML() {
   const rec = muscleFatigue(); const colors = {}; Object.entries(rec).forEach(([m, r]) => colors[m] = recColor(r));
   const groupRec = {}; Object.entries(rec).forEach(([m, r]) => { const g = MUSCLES[m][1]; groupRec[g] = Math.min(groupRec[g] ?? 1, r); });
@@ -84,7 +85,7 @@ function recoveryCardHTML() {
   return `<div class="card"><h2>Récupération des muscles</h2>
     <div style="max-width:300px;margin:auto;cursor:pointer" data-act="bodyRecovery">${bodyThumbHTML({ colors })}</div>
     <div class="row" style="justify-content:center;gap:8px;margin-top:6px"><button class="sec small" data-act="bodyRecovery">Voir en 3D</button><button class="sec small" data-act="bodyAtlas">Anatomie 3D</button></div>
-    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:#22c55e">●</b> récupéré</span><span><b style="color:#eab308">●</b> presque</span><span><b style="color:#f97316">●</b> fatigué</span><span><b style="color:#ef4444">●</b> à reposer</span></div>
+    <div class="row xs" style="gap:10px;justify-content:center;margin:6px 0"><span><b style="color:var(--rec-ok,#22c55e)">●</b> récupéré</span><span><b style="color:var(--rec-near,#eab308)">●</b> presque</span><span><b style="color:var(--rec-mid,#f97316)">●</b> fatigué</span><span><b style="color:var(--rec-low,#ef4444)">●</b> à reposer</span></div>
     ${tired.length ? `<p class="sm">À laisser reposer : <b>${tired.map(([g, r]) => `${g} (${Math.round(r * 100)} %)`).join(", ")}</b></p>` : `<p class="sm">Tous tes muscles sont récupérés 💪</p>`}
     ${best ? `<div class="reco good sm">Séance conseillée aujourd'hui : <b>${esc(best[0])}</b> (muscles récupérés à ${Math.round(best[1] * 100)} %)</div>` : ""}
     <p class="xs mut">Estimation à partir de tes séries des 5 derniers jours (muscle principal = 1 série, secondaire = ½) ; récupération d'environ 48 à 72 h selon le volume.</p></div>`;
