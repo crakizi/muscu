@@ -8,3 +8,5 @@ dev/dist/
 dev/index.local.html
 dev/vendor
 dev/icons
+# Projet natif Xcode (local seulement)
+natif/
