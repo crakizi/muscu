@@ -14,7 +14,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Muscu | `sec/muscu` | En ligne (lot 1) | `1560b59` | Rien de demandé ; idées dans `docs/feuille-de-route.md` |
 | Programmes | `sec/programme` | Proposition faite, **attend Vuthy** | — (aucun code) | Valider la liste (zone 2, HIIT, Camp, Abdos, + option Course 0→5 km) et dire s'il veut une maquette du minuteur |
 | Amis | `sec/amis` | Codé, **non fusionné** | `fcc2301` | Vuthy doit exécuter la partie AMIS de `dev/schema.sql` dans Supabase et activer les inscriptions ; puis test réel et fusion |
-| Design | `sec/design-systeme` | **Aperçu prêt, attend Vuthy** (design system 2 par univers, non publié) | voir branche | Choisir : palette muscu (5 finalistes), intensité (A/B/C), identité commune (3 propositions) ; comparer sur `dev/apercu-design.html` ; puis intégration définitive écran par écran avec chaque domaine |
+| Design | `sec/design-systeme` | **Aperçu prêt, attend Vuthy** (design system 2 par univers, non publié) | voir branche | Black Cherry + couleurs affirmées (style C renforcé) choisis ; reste à choisir l'identité commune (3 propositions) et l'écran Accueil ; comparer sur `dev/apercu-design.html` ; puis intégration définitive écran par écran avec chaque domaine |
 | Design (Liftin') | `sec/design-liftin` | Remplacée par `sec/design-systeme` (formes Liftin' reprises) | `11888e8` | Ne pas fusionner telle quelle ; accent bleu remplacé par les couleurs par univers |
 | Design (ancien) | `sec/design` | **Non retenu** (vert) | — | Garder en archive, ne pas fusionner |
 | Tests | `test/lot2` | Vérifications déjà intégrées dans `main` | — | Mettre à jour ou supprimer les vieux tests cassés (accord de Vuthy requis) |
@@ -29,7 +29,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Faible | Tests | `testnut2.py` parfois instable (clic trop rapide dans « ⋯ ») |
 
 ## Décisions en attente de Vuthy
-1. Design system 2 (`docs/design-system.md` §0) : **palette musculation** (19 Black Cherry, 21 Ruby, 22 Pomegranate, 25 Graphite, 28 Carbon Yellow), **intensité** (A minimaliste, B immersif, C premium contrasté), **identité commune** (neutre, bleu pétrole, neutre + accents par univers), écran **Accueil** oui/non ; puis 2ᵉ passe (séance à grosses lignes, 5 onglets).
+1. Design system 2 (`docs/design-system.md` §0) : ~~palette musculation~~ (Black Cherry choisie), ~~intensité~~ (couleurs affirmées, style C), **identité commune** (neutre, bleu pétrole, neutre + accents par univers), écran **Accueil** oui/non ; puis 2ᵉ passe (séance à grosses lignes, 5 onglets).
 2. Liste des programmes cardio.
 3. Activation des comptes Amis dans Supabase (c'est lui qui le fait, guidé pas à pas).
 4. Faut-il garder le raccourci « Recette avec mon frigo » dans Aujourd'hui (retiré par Nutrition) ?

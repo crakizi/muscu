@@ -72,14 +72,15 @@
   --com-accent-dk:#6EB2B7;--com-action-dk:var(--ocean-200);--com-on-dk:var(--ocean-900);--com-tint-dk:var(--ocean-ink);
 }
 /* Musculation : la palette choisie remplit les rôles --mus-* (data-ds-muscu) */
-:where(html[data-ds]),:where(html[data-ds][data-ds-muscu=ruby]){
-  --mus-deep:var(--ruby-600);--mus-accent:var(--ruby-600);--mus-mid:var(--ruby-600);--mus-soft:var(--ruby-400);--mus-pastel:var(--ruby-200);--mus-wash:var(--ruby-50);--mus-on:#fff;--mus-hero:var(--ruby-900);
-  --mus-accent-dk:#DE88A6;--mus-action-dk:var(--ruby-200);--mus-on-dk:var(--ruby-900);--mus-tint-dk:#24121A;
-}
-:where(html[data-ds][data-ds-muscu=cherry]){
+:where(html[data-ds]),:where(html[data-ds][data-ds-muscu=cherry]){ /* Black Cherry = choix de Vuthy (26/11) */
   --mus-deep:var(--cherry-600);--mus-accent:var(--cherry-600);--mus-mid:var(--cherry-600);--mus-soft:var(--cherry-400);--mus-pastel:var(--cherry-200);--mus-wash:var(--cherry-50);--mus-on:#fff;--mus-hero:var(--cherry-900);
   --mus-accent-dk:var(--cherry-200);--mus-action-dk:var(--cherry-200);--mus-on-dk:var(--cherry-900);--mus-tint-dk:#1F1216;
 }
+:where(html[data-ds][data-ds-muscu=ruby]){
+  --mus-deep:var(--ruby-600);--mus-accent:var(--ruby-600);--mus-mid:var(--ruby-600);--mus-soft:var(--ruby-400);--mus-pastel:var(--ruby-200);--mus-wash:var(--ruby-50);--mus-on:#fff;--mus-hero:var(--ruby-900);
+  --mus-accent-dk:#DE88A6;--mus-action-dk:var(--ruby-200);--mus-on-dk:var(--ruby-900);--mus-tint-dk:#24121A;
+}
+
 :where(html[data-ds][data-ds-muscu=pome]){
   --mus-deep:var(--pome-600);--mus-accent:var(--pome-600);--mus-mid:var(--pome-600);--mus-soft:var(--pome-400);--mus-pastel:var(--pome-200);--mus-wash:var(--pome-50);--mus-on:#fff;--mus-hero:var(--pome-900);
   --mus-accent-dk:var(--pome-400);--mus-action-dk:var(--pome-200);--mus-on-dk:var(--pome-900);--mus-tint-dk:#251417;
@@ -96,7 +97,7 @@
 /* L'univers d'un élément (data-u) recopie ses rôles dans --u-* (commun d'abord = valeur par défaut) */
 :where(html[data-ds]),:where(html[data-ds][data-u=commun]),:where(html[data-ds]) :where([data-u=commun]){--u-deep:var(--com-deep);--u-accent:var(--com-accent);--u-mid:var(--com-mid);--u-soft:var(--com-soft);--u-pastel:var(--com-pastel);--u-wash:var(--com-wash);--u-on:var(--com-on);--u-hero:var(--com-deep);--u-accent-dk:var(--com-accent-dk);--u-action-dk:var(--com-action-dk);--u-on-dk:var(--com-on-dk);--u-tint-dk:var(--com-tint-dk)}
 :where(html[data-ds][data-u=nutrition]),:where(html[data-ds]) :where([data-u=nutrition]){--u-deep:var(--nut-deep);--u-accent:var(--nut-accent);--u-mid:var(--nut-mid);--u-soft:var(--nut-soft);--u-pastel:var(--nut-pastel);--u-wash:var(--nut-wash);--u-on:var(--nut-on);--u-hero:var(--nut-deep);--u-accent-dk:var(--nut-accent-dk);--u-action-dk:var(--nut-action-dk);--u-on-dk:var(--nut-on-dk);--u-tint-dk:var(--nut-tint-dk)}
-:where(html[data-ds][data-u=cuisine]),:where(html[data-ds]) :where([data-u=cuisine]){--u-deep:var(--cui-deep);--u-accent:var(--cui-accent);--u-mid:var(--cui-mid);--u-soft:var(--cui-soft);--u-pastel:var(--cui-pastel);--u-wash:var(--cui-wash);--u-on:var(--cui-on);--u-hero:#5E3A28;--u-accent-dk:var(--cui-accent-dk);--u-action-dk:var(--cui-action-dk);--u-on-dk:var(--cui-on-dk);--u-tint-dk:var(--cui-tint-dk)}
+:where(html[data-ds][data-u=cuisine]),:where(html[data-ds]) :where([data-u=cuisine]){--u-deep:var(--cui-deep);--u-accent:var(--cui-accent);--u-mid:var(--cui-mid);--u-soft:var(--cui-soft);--u-pastel:var(--cui-pastel);--u-wash:var(--cui-wash);--u-on:var(--cui-on);--u-hero:var(--earth-900);--u-accent-dk:var(--cui-accent-dk);--u-action-dk:var(--cui-action-dk);--u-on-dk:var(--cui-on-dk);--u-tint-dk:var(--cui-tint-dk)}
 :where(html[data-ds][data-u=muscu]),:where(html[data-ds]) :where([data-u=muscu]){--u-deep:var(--mus-deep);--u-accent:var(--mus-accent);--u-mid:var(--mus-mid);--u-soft:var(--mus-soft);--u-pastel:var(--mus-pastel);--u-wash:var(--mus-wash);--u-on:var(--mus-on);--u-hero:var(--mus-hero);--u-accent-dk:var(--mus-accent-dk);--u-action-dk:var(--mus-action-dk);--u-on-dk:var(--mus-on-dk);--u-tint-dk:var(--mus-tint-dk)}
 :where(html[data-ds][data-u=progression]),:where(html[data-ds]) :where([data-u=progression]){--u-deep:var(--pro-deep);--u-accent:var(--pro-accent);--u-mid:var(--pro-mid);--u-soft:var(--pro-soft);--u-pastel:var(--pro-pastel);--u-wash:var(--pro-wash);--u-on:var(--pro-on);--u-hero:var(--pro-deep);--u-accent-dk:var(--pro-accent-dk);--u-action-dk:var(--pro-action-dk);--u-on-dk:var(--pro-on-dk);--u-tint-dk:var(--pro-tint-dk)}
 
@@ -151,19 +152,33 @@ html[data-ds][data-ds-style=b].dark,html[data-ds][data-ds-style=b].dark [data-u]
 }
 /* C — Premium contrasté : fond doux, carte principale profonde */
 html[data-ds][data-ds-style=c],html[data-ds][data-ds-style=c] [data-u]{
-  --surface-page:var(--u-wash);
+  /* couleurs affirmées (maquette de Vuthy, 26/11) : fond bien teinté, cartes teintées,
+     carte principale profonde, boutons secondaires pastel pleins à texte profond */
+  --surface-page:color-mix(in srgb,var(--u-pastel) 30%,var(--u-wash));
+  --surface-card:color-mix(in srgb,var(--u-wash) 70%,var(--n-0));
+  --surface-soft:color-mix(in srgb,var(--u-pastel) 45%,var(--n-0));
+  --surface-sunken:color-mix(in srgb,var(--u-pastel) 60%,var(--n-0));
+  --border:color-mix(in srgb,var(--u-pastel) 70%,var(--n-0));
+  --action-soft:var(--u-pastel);--on-action-soft:var(--u-hero);
+  --title:var(--u-hero);
 }
 html[data-ds][data-ds-style=c].dark,html[data-ds][data-ds-style=c].dark [data-u]{
-  --surface-page:var(--d-bg);
+  --surface-page:color-mix(in srgb,var(--u-tint-dk) 45%,var(--d-bg));
+  --surface-card:color-mix(in srgb,var(--u-tint-dk) 35%,var(--d-card));
+  --surface-soft:color-mix(in srgb,var(--u-accent-dk) 14%,var(--d-card));
+  --surface-sunken:color-mix(in srgb,var(--u-tint-dk) 50%,var(--d-chip));
+  --border:color-mix(in srgb,var(--u-tint-dk) 50%,var(--d-line));
+  --action-soft:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));--on-action-soft:var(--u-accent-dk);
+  --title:var(--u-accent-dk);
 }
 /* La carte principale (.ds-hero, posée par theme.js) devient profonde en style C */
 html[data-ds][data-ds-style=c] .ds-hero{
   --surface-card:var(--u-hero);--card:var(--u-hero);
-  --txt:#fff;--mut:color-mix(in srgb,#fff 74%,var(--u-hero));
+  --txt:#fff;--mut:color-mix(in srgb,#fff 84%,var(--u-hero));
   --chip:color-mix(in srgb,#fff 14%,var(--u-hero));--line:color-mix(in srgb,#fff 16%,var(--u-hero));
   --acc:var(--u-pastel);--acc2:color-mix(in srgb,#fff 14%,var(--u-hero));--on-action-soft:#fff;--grad:var(--u-pastel);--on-action:var(--u-hero);
   --surface-soft:color-mix(in srgb,#fff 12%,var(--u-hero));--kc:var(--u-pastel);--p:#AFC0FF;--c:#F4C77A;--f:#D4BDF7;
-  background:var(--u-hero)!important;color:#fff;box-shadow:var(--elev-2);
+  background:var(--u-hero)!important;color:#fff;box-shadow:0 6px 20px color-mix(in srgb,var(--u-hero) 28%,transparent);
 }
 html[data-ds][data-ds-style=c].dark .ds-hero{
   --u-hero-dk:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));
@@ -243,16 +258,22 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 /* B — cartes secondaires colorées */
 :where(html[data-ds][data-ds-style=b]) .qa button,:where(html[data-ds][data-ds-style=b]) .dpill,:where(html[data-ds][data-ds-style=b]) .ktab:not(.on){background:var(--surface-sunken)}
 
-/* ---------- Accueil (proposition, aperçu seulement) ---------- */
+/* ---------- Accueil (proposition, aperçu seulement) — tuiles par univers, d'après la maquette de Vuthy ---------- */
 :where(html[data-ds]) .dsh-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-3)}
-:where(html[data-ds]) .dsh-card{border-radius:var(--r-lg);padding:var(--sp-4);background:var(--surface-soft);color:var(--txt);display:flex;flex-direction:column;gap:6px;min-height:132px;box-shadow:var(--shadow);text-align:left;font-weight:var(--fw-reg)}
-:where(html[data-ds][data-ds-style=a]) .dsh-card,:where(html[data-ds]:not([data-ds-style])) .dsh-card{background:var(--card);border-top:4px solid var(--u-mid)}
-:where(html[data-ds][data-ds-style=c]) .dsh-card{background:var(--card)}
-:where(html[data-ds]) .dsh-card .dsh-k{font-size:var(--fs-xs);font-weight:var(--fw-semi);letter-spacing:.04em;text-transform:uppercase;color:var(--acc)}
-:where(html[data-ds]) .dsh-card .dsh-v{font-size:var(--fs-xl);font-weight:var(--fw-bold);line-height:1.1}
-:where(html[data-ds]) .dsh-card .bar>i{background:var(--u-mid)}
-:where(html[data-ds].dark) .dsh-card .bar>i{background:var(--u-accent-dk)}
-:where(html[data-ds]) .dsh-hero{grid-column:1/-1}
-:where(html[data-ds]) .dsh-sw{display:inline-flex;gap:3px}.dsh-sw i{width:10px;height:10px;border-radius:3px;display:inline-block}
+@media (max-width:360px){:where(html[data-ds]) .dsh-grid{grid-template-columns:1fr}}
+:where(html[data-ds]) .dsh-tile{border-radius:var(--r-lg);padding:var(--sp-3);background:color-mix(in srgb,var(--u-pastel) 30%,var(--u-wash));display:flex;flex-direction:column;gap:var(--sp-2)}
+:where(html[data-ds].dark) .dsh-tile{background:color-mix(in srgb,var(--u-tint-dk) 80%,var(--d-card))}
+:where(html[data-ds]) .dsh-t{margin:2px 2px 0;font-size:var(--fs-lg);font-weight:var(--fw-semi);color:var(--u-hero)}
+:where(html[data-ds].dark) .dsh-t{color:var(--u-accent-dk)}
+:where(html[data-ds]) .dsh-deep{background:var(--u-hero);color:#fff;border-radius:var(--r-md);padding:var(--sp-3);display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;font-weight:var(--fw-reg);box-shadow:0 6px 18px color-mix(in srgb,var(--u-hero) 25%,transparent)}
+:where(html[data-ds].dark) .dsh-deep{background:color-mix(in srgb,var(--u-accent-dk) 24%,var(--d-card));color:var(--d-txt);box-shadow:none}
+:where(html[data-ds]) .dsh-deep svg{width:26px;height:26px;margin-bottom:6px;opacity:.95}
+:where(html[data-ds]) .dsh-v{font-size:var(--fs-xl);font-weight:var(--fw-bold);line-height:1.15}
+:where(html[data-ds]) .dsh-s{font-size:var(--fs-xs);opacity:.8}
+:where(html[data-ds]) .dsh-bar{width:100%;height:5px;border-radius:3px;background:color-mix(in srgb,#fff 18%,transparent);margin-top:8px;overflow:hidden}
+:where(html[data-ds]) .dsh-bar>i{display:block;height:100%;border-radius:3px;background:var(--u-pastel)}
+:where(html[data-ds].dark) .dsh-bar>i{background:var(--u-accent-dk)}
+:where(html[data-ds]) .dsh-go{background:var(--u-pastel);color:var(--u-hero);width:100%}
+:where(html[data-ds].dark) .dsh-go{background:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));color:var(--u-accent-dk)}
 
 @media (prefers-reduced-motion:reduce){:where(html[data-ds]) *{transition:none!important;animation-duration:.01ms!important}}

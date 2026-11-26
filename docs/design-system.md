@@ -7,9 +7,9 @@ _Référence pour toutes les sessions. Mis à jour le 26/11/2026 (design system 
 |---|---|
 | Formes façon **Liftin'** (cartes très arrondies, grands titres, police système, barre floutée) | ✅ Validé (26/11) — gardé dans le design system 2 |
 | Palettes **Nutrition** (Deep Ocean), **Cuisine** (Warm Earth), **Progression** (Slate Blue) | ✅ Validées par Vuthy (26/11) |
-| Palette **Musculation** : 5 finalistes (19 Black Cherry, 21 Ruby, 22 Pomegranate, 25 Graphite, 28 Carbon Yellow) | ⏳ **À choisir par Vuthy** — ne pas trancher |
+| Palette **Musculation** : **Black Cherry (option 19)** | ✅ Choisie par Vuthy (26/11, « je choisi black cherry ») ; les 4 autres restent dans l'aperçu pour mémoire |
 | **Identité commune** (accueil, barre d'onglets, profil, réglages) : neutre / bleu pétrole / neutre + accents par univers | ⏳ **À choisir par Vuthy** — propositions seulement |
-| **Intensité** : A minimaliste / B immersif / C premium contrasté | ⏳ **À choisir par Vuthy** |
+| **Intensité** : couleurs **affirmées** demandées (« pas assez prononcé ») d'après sa maquette : fonds bien teintés, grande carte profonde par univers, boutons pastel pleins à texte profond → style **C renforcé** | ✅ Direction validée (26/11) ; C est la valeur par défaut de l'aperçu. A et B restent comparables |
 | Accent unique bleu `#1f6bff` (`sec/design-liftin`, choisi le 26/11 en journée) | ⚠️ Remplacé par les couleurs par univers ; le bleu du logo reste possible pour la marque (identité commune non tranchée) |
 | Personnalisation par l'utilisateur (mode, palette muscu, intensité) | 🧩 Architecture prête, **pas** dans les réglages avant validation |
 
@@ -34,7 +34,7 @@ Le fichier est concaténé **après** `style.css` par `build.py`. **Tout est sou
 
 Attributs sur `<html>` : `data-ds` (allumé), `data-u` (univers de l'écran), `data-ds-muscu` (`cherry|ruby|pome|graphite|carbon`), `data-ds-style` (`a|b|c`), `data-ds-commun` (`neutre|petrole|contextuel`), classe `dark`.
 Univers par écran : Aujourd'hui → `nutrition`, Cuisine → `cuisine`, Séance → `muscu`, Progrès → `progression`, Coach/Profil/barre d'onglets/accueil → `commun`. Le minuteur de repos garde la couleur muscu sur tous les onglets.
-Les valeurs par défaut de l'aperçu (Ruby, style A, commun neutre) servent seulement à afficher quelque chose : **ce ne sont pas des choix**.
+Valeurs par défaut de l'aperçu : Black Cherry et style C (choix de Vuthy) ; identité commune « neutre » seulement pour afficher quelque chose (**pas un choix**).
 
 ## 3. Les palettes et leurs rôles
 | Univers | deep (actions) | accent (texte) | mid (graphiques) | pastel | wash (fond) | Sombre : accent / bouton |
@@ -42,7 +42,7 @@ Les valeurs par défaut de l'aperçu (Ruby, style A, commun neutre) servent seul
 | Nutrition — Deep Ocean ✅ | `#103B49` | `#1A6F75`* | `#208A91` | `#BBD9DD` | `#EDF4F5` | `#6EB2B7`* / `#BBD9DD` (texte `#103B49`) ; teinte `#172B36` |
 | Cuisine — Warm Earth ✅ | `#81543D` | `#81543D` | `#B77C55` | `#EBD6C1` | `#F6EFE6` | `#D4AB86` / `#D4AB86` (texte `#2B1A10`*) |
 | Progression — Slate Blue ✅ | `#303E5C` | `#526889` | `#526889` | `#C6D2E4` | `#EDF0F6` | `#8296B5` / `#C6D2E4` (texte `#303E5C`) |
-| Muscu 19 Black Cherry ⏳ | `#702D44` | `#702D44` | `#702D44` | `#DFC0CE` | `#F6EAF0` | `#DFC0CE` / `#DFC0CE` |
+| Muscu 19 Black Cherry ✅ choisie | `#702D44` | `#702D44` | `#702D44` | `#DFC0CE` | `#F6EAF0` | `#DFC0CE` / `#DFC0CE` |
 | Muscu 21 Ruby ⏳ | `#A12C53` | `#A12C53` | `#A12C53` | `#F1C9D8` | `#FCEFF4` | `#DE88A6`* / `#F1C9D8` |
 | Muscu 22 Pomegranate ⏳ | `#B34559` | `#B34559` | `#B34559` | `#F1CED5` | `#FBEFF1` | `#DD8998` / `#F1CED5` |
 | Muscu 25 Graphite ⏳ | `#181818` | `#383838` | `#383838` | `#C7C7C7` | `#F0F0F0` | `#C7C7C7` / `#F0F0F0` |
@@ -72,7 +72,7 @@ Pourquoi : une palette muscu rouge ne doit pas faire ressembler les boutons à d
 ## 5. Les trois intensités
 - **A — Minimaliste** : fond neutre légèrement teinté de l'univers, cartes blanches, couleur seulement sur les actions et repères.
 - **B — Immersif** : fond et cartes teintés, puces et cartes secondaires colorées, titres colorés.
-- **C — Premium contrasté** : fond doux de l'univers, **une carte principale profonde** (`.ds-hero` : anneaux du jour, exercice en cours, frigo « à finir vite », graphique de poids), autres cartes claires, titres colorés.
+- **C — Premium contrasté (renforcé, retenu)** : d'après la maquette de Vuthy du 26/11. Fond bien teinté (pastel 30 % + fond de l'univers), cartes légèrement teintées, **une carte principale profonde** (`.ds-hero` : anneaux du jour, exercice en cours, frigo « à finir vite », graphique de poids), boutons secondaires **pastel pleins** avec texte profond, titres en couleur profonde. Accueil : une tuile par univers (titre coloré, carte profonde avec icône, valeur, barre, bouton « Consulter » pastel).
 Répartition visée (direction, pas une règle) : ~60 % surfaces neutres/teintées, ~30 % couleurs secondaires (pastels), ~10 % accents profonds.
 
 ## 6. Règles de design (pour toutes les sessions)
@@ -86,7 +86,7 @@ Répartition visée (direction, pas une règle) : ~60 % surfaces neutres/teinté
 
 ## 7. Accessibilité (WCAG 2.2 AA)
 - Seuils : texte ≥ 4,5:1 ; gros texte et éléments graphiques (anneaux, pastilles, bouton Scanner) ≥ 3:1 ; focus clavier visible (`outline` 2 px `--focus`).
-- Vérification automatique : `dev/testdesign2.py` mesure les contrastes **réels dans l'app** pour 5 palettes × 3 intensités × 2 modes × 3 identités × 8 écrans. Rapport : `docs/rapport-accessibilite-design.md` (26/11 : **2 343 mesures, 0 sous le seuil**).
+- Vérification automatique : `dev/testdesign2.py` mesure les contrastes **réels dans l'app** pour 5 palettes × 3 intensités × 2 modes × 3 identités × 8 écrans. Rapport : `docs/rapport-accessibilite-design.md` (26/11 : **0 sous le seuil** ; ~2 100 mesures depuis l'accueil en tuiles).
 - Toute nouvelle combinaison (nouvel écran, nouvelle palette) doit repasser ce test.
 
 ## 8. Composants partagés (classes existantes, branchées sur les jetons)
@@ -111,7 +111,7 @@ Les choix tiennent en 4 valeurs : mode (`clair|sombre|auto`, existe déjà dans 
 ## Historique
 - 22/11 : direction verte (`sec/design`) — non retenue.
 - 26/11 (journée) : direction Liftin' (`sec/design-liftin`), accent bleu choisi.
-- 26/11 (soir) : design system 2 par univers (`sec/design-systeme`) : 3 palettes validées, muscu, intensité et identité commune en attente.
+- 26/11 (soir) : design system 2 par univers (`sec/design-systeme`) : 3 palettes validées ; puis Black Cherry choisie pour la muscu et couleurs affirmées (style C renforcé, accueil en tuiles) d'après la maquette de Vuthy. Identité commune encore en attente.
 
 ## Références visuelles
 Captures réelles des apps concurrentes (privées, sur le Mac) : `~/Applications/WDA/_shots/galerie-muscu.jpg`, `galerie-nutrition.jpg`, et `liftin/` (10 écrans de Liftin').

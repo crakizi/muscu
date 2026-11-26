@@ -69,9 +69,9 @@ async def main():
       for mode in MODES:
         for style in STYLES:
           for commun in COMMUN:
-            for m in (MUSCU if commun == "neutre" else ["ruby"]):
+            for m in (MUSCU if commun == "neutre" else ["cherry"]):
               for scr in (SCREENS if commun == "neutre" else ["home", "profile", "today"]):
-                if m != "ruby" and scr not in ("live", "rest", "workout", "home"): continue
+                if m != "cherry" and scr not in ("live", "rest", "workout", "home"): continue
                 await pg.evaluate(f"dsSet({{on:true,muscu:'{m}',style:'{style}',commun:'{commun}',mode:'{mode}'}}); dsScreen('{scr}')"); await pg.wait_for_timeout(120)
                 res = await pg.evaluate(MEASURE)
                 for name, r, mn in res:
@@ -79,7 +79,7 @@ async def main():
                   if key not in worst or r < worst[key][0]: worst[key] = (r, combo, mn)
                   if r >= mn: ok += 1
                   else: bad += 1; fails.setdefault(key, []).append(f"{combo} = {r}")
-                if commun == "neutre" and (m == "ruby" or scr in ("live", "home")) and scr in ("home", "today", "fridge", "live", "progress"):
+                if commun == "neutre" and (m == "cherry" or scr in ("live", "home")) and scr in ("home", "today", "fridge", "live", "progress"):
                   await pg.evaluate("window.scrollTo(0,0)"); await pg.screenshot(path=f"{SH}{scr}_{m}_{style}_{mode}.png")
       await pg.evaluate("dsSet({on:false}); render()")
       await b.close()
