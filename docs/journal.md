@@ -8,7 +8,7 @@ _Les entrées les plus récentes en haut. Chaque publication (Coordination) et c
 - Accessibilité : `dev/testdesign2.py`, 2 343 contrastes mesurés, 0 sous le seuil WCAG AA (`docs/rapport-accessibilite-design.md`). Tests de l'app : 74/76 comme avant (2 échecs déjà connus).
 - `testscenarios.py` trouve maintenant Chrome sur Mac.
 - Docs : `docs/design-system.md` réécrit (audit, jetons, règles, palettes validées / en attente).
-- Puis, d'après la maquette de Vuthy : **Black Cherry** choisie, style C renforcé (couleurs affirmées) et accueil en tuiles par univers ; contrastes toujours 0 sous le seuil. Identité commune : neutre + accents par univers.
+- Puis, d'après la maquette de Vuthy : **Black Cherry** choisie, style C renforcé (couleurs affirmées) et accueil en tuiles par univers ; contrastes toujours 0 sous le seuil. Identité commune : neutre + accents par univers. Accueil validé : premier onglet, barre 7 → 5 onglets + Scanner (Coach et Profil en haut de l'accueil). Tests : contrastes 0 sous le seuil, app 74/76 comme avant.
 
 ## 26/11/2026 — Migration vers Claude Code
 - Organisation : `CLAUDE.md` réécrit ; source de vérité dans `docs/` (ETAT, architecture, règles, design system, décisions, feuille de route, journal, fiches par domaine) ; sous-agents `.claude/agents/` (nutrition, cuisine, muscu, programmes, amis, design, testeur) ; skills `.claude/skills/livrer` et `publier`.

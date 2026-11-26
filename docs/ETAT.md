@@ -14,7 +14,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Muscu | `sec/muscu` | En ligne (lot 1) | `1560b59` | Rien de demandé ; idées dans `docs/feuille-de-route.md` |
 | Programmes | `sec/programme` | Proposition faite, **attend Vuthy** | — (aucun code) | Valider la liste (zone 2, HIIT, Camp, Abdos, + option Course 0→5 km) et dire s'il veut une maquette du minuteur |
 | Amis | `sec/amis` | Codé, **non fusionné** | `fcc2301` | Vuthy doit exécuter la partie AMIS de `dev/schema.sql` dans Supabase et activer les inscriptions ; puis test réel et fusion |
-| Design | `sec/design-systeme` | **Aperçu prêt, attend Vuthy** (design system 2 par univers, non publié) | voir branche | Black Cherry + couleurs affirmées (style C renforcé) choisis ; identité commune « neutre + accents » choisie ; reste : écran Accueil oui/non, puis intégration définitive écran par écran avec chaque domaine ; comparer sur `dev/apercu-design.html` ; puis intégration définitive écran par écran avec chaque domaine |
+| Design | `sec/design-systeme` | **Aperçu prêt, attend Vuthy** (design system 2 par univers, non publié) | voir branche | Black Cherry + couleurs affirmées (style C renforcé) choisis ; identité commune « neutre + accents » choisie ; Accueil validé (barre 5 onglets + Scanner, Coach et Profil en haut de l'accueil, à confirmer) ; reste : intégration définitive écran par écran avec chaque domaine ; comparer sur `dev/apercu-design.html` ; puis intégration définitive écran par écran avec chaque domaine |
 | Design (Liftin') | `sec/design-liftin` | Remplacée par `sec/design-systeme` (formes Liftin' reprises) | `11888e8` | Ne pas fusionner telle quelle ; accent bleu remplacé par les couleurs par univers |
 | Design (ancien) | `sec/design` | **Non retenu** (vert) | — | Garder en archive, ne pas fusionner |
 | Tests | `test/lot2` | Vérifications déjà intégrées dans `main` | — | Mettre à jour ou supprimer les vieux tests cassés (accord de Vuthy requis) |
@@ -29,7 +29,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Faible | Tests | `testnut2.py` parfois instable (clic trop rapide dans « ⋯ ») |
 
 ## Décisions en attente de Vuthy
-1. Design system 2 (`docs/design-system.md` §0) : ~~palette musculation~~ (Black Cherry choisie), ~~intensité~~ (couleurs affirmées, style C), ~~identité commune~~ (neutre + accents), écran **Accueil** oui/non ; puis 2ᵉ passe (séance à grosses lignes, 5 onglets).
+1. Design system 2 (`docs/design-system.md` §0) : ~~palette musculation~~ (Black Cherry choisie), ~~intensité~~ (couleurs affirmées, style C), ~~identité commune~~ (neutre + accents), ~~écran Accueil~~ (oui) ; confirmer la nouvelle barre d'onglets (Accueil · Nutrition · Cuisine · Scanner · Séance · Progrès) et le nom « Nutrition » au lieu de « Aujourd'hui » ; puis 2ᵉ passe (séance à grosses lignes, 5 onglets).
 2. Liste des programmes cardio.
 3. Activation des comptes Amis dans Supabase (c'est lui qui le fait, guidé pas à pas).
 4. Faut-il garder le raccourci « Recette avec mon frigo » dans Aujourd'hui (retiré par Nutrition) ?

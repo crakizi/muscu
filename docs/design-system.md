@@ -11,6 +11,7 @@ _Référence pour toutes les sessions. Mis à jour le 26/11/2026 (design system 
 | **Identité commune** (accueil, barre d'onglets, profil, réglages) : **neutre + accents par univers** (« contextuel ») | ✅ Choisie par Vuthy (26/11, « Neutre + accents ») : surfaces neutres, l'onglet actif prend la couleur de son univers. Neutre seul et bleu pétrole écartés |
 | **Intensité** : couleurs **affirmées** demandées (« pas assez prononcé ») d'après sa maquette : fonds bien teintés, grande carte profonde par univers, boutons pastel pleins à texte profond → style **C renforcé** | ✅ Direction validée (26/11) ; C est la valeur par défaut de l'aperçu. A et B restent comparables |
 | Accent unique bleu `#1f6bff` (`sec/design-liftin`, choisi le 26/11 en journée) | ⚠️ Remplacé par les couleurs par univers ; le bleu du logo reste possible pour la marque (identité commune non tranchée) |
+| **Écran Accueil** + barre à 5 onglets (Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès) ; Coach et Profil en icônes en haut de l'accueil | ✅ Accueil validé par Vuthy (26/11, « Oui, l'accueil ») ; la barre est une proposition de Coordination visible dans l'aperçu, à confirmer en le regardant |
 | Personnalisation par l'utilisateur (mode, palette muscu, intensité) | 🧩 Architecture prête, **pas** dans les réglages avant validation |
 
 ## 1. Comment voir et comparer (sans toucher au code)
@@ -33,7 +34,8 @@ Le fichier est concaténé **après** `style.css` par `build.py`. **Tout est sou
 | Fondations | `--font`, `--fs-xs…2xl`, `--fw-*`, `--sp-1…6` (4/8/12/16/24/32), `--r-sm/md/lg/pill` (10/14/20/999), `--dur-fast/--dur/--ease`, `--elev-1/2` | Communes à tous les univers. |
 
 Attributs sur `<html>` : `data-ds` (allumé), `data-u` (univers de l'écran), `data-ds-muscu` (`cherry|ruby|pome|graphite|carbon`), `data-ds-style` (`a|b|c`), `data-ds-commun` (`neutre|petrole|contextuel`), classe `dark`.
-Univers par écran : Aujourd'hui → `nutrition`, Cuisine → `cuisine`, Séance → `muscu`, Progrès → `progression`, Coach/Profil/barre d'onglets/accueil → `commun`. Le minuteur de repos garde la couleur muscu sur tous les onglets.
+Dans l'aperçu, l'app s'ouvre sur l'**Accueil** (`S.tab = "home"`) ; la barre d'onglets devient Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès (`dsNavHTML`), l'onglet « Aujourd'hui » s'appelle « Nutrition », Coach et Profil sont en icônes en haut de l'accueil (barre 7 → 5 onglets + Scanner).
+Univers par écran : Accueil → `commun`, Aujourd'hui → `nutrition`, Cuisine → `cuisine`, Séance → `muscu`, Progrès → `progression`, Coach/Profil/barre d'onglets/accueil → `commun`. Le minuteur de repos garde la couleur muscu sur tous les onglets.
 Valeurs par défaut de l'aperçu : Black Cherry et style C (choix de Vuthy) ; identité commune « contextuel » (choix de Vuthy).
 
 ## 3. Les palettes et leurs rôles

@@ -64,20 +64,33 @@ function dsHomeHTML() {
   const tile = (u, title, tab, icon, v, sub, pct) => `<div class="dsh-tile" data-u="${u}"><div class="dsh-t">${title}</div>
     <button class="dsh-deep" data-act="tab" data-v="${tab}"><svg viewBox="0 0 24 24">${icon}</svg><span class="dsh-v">${v}</span><span class="dsh-s">${sub}</span><span class="dsh-bar"><i style="width:${pct}%"></i></span></button>
     <button class="dsh-go" data-act="tab" data-v="${tab}">Consulter</button></div>`;
-  return `<div class="row between"><h1>Bonjour</h1><span class="tag">Données de démo</span></div>
+  const ib = (tab, lab) => `<button class="ghost dsh-ib" data-act="tab" data-v="${tab}" aria-label="${lab}" title="${lab}"><svg viewBox="0 0 24 24">${ICONS[tab]}</svg></button>`;
+  return `<div class="row between"><h1>Bonjour</h1><div class="row" style="gap:2px">${DS.ctrl ? '<span class="tag" style="margin-right:6px">Démo</span>' : ""}${ib("coach", "Coach")}${ib("profile", "Profil")}</div></div>
   <div class="dsh-grid">
     ${tile("nutrition", "Nutrition", "today", DS_ICON.nutrition, `${kc.left} kcal`, "Calories restantes", 100 - kc.pct)}
     ${tile("cuisine", "Cuisine", "fridge", DS_ICON.cuisine, `${soon} à finir vite`, `${fr} aliments au frigo`, fr ? Math.round(100 * soon / fr) : 0)}
-    ${tile("muscu", "Musculation", "workout", ICONS.workout, esc(next), `${nex} exercices · ${nb} séance(s) cette semaine`, pctW)}
+    ${tile("muscu", "Musculation", "workout", ICONS.workout, esc(next), `${nex} exercices · ${nb} cette sem.`, pctW)}
     ${tile("progression", "Progression", "progress", ICONS.progress, `${f1(w)} kg`, dw == null ? "Poids tendance" : `${dw <= 0 ? "▼" : "▲"} ${f1(Math.abs(dw))} kg en 30 jours`, 60)}
   </div>`;
+}
+
+// ---- Barre d'onglets avec Accueil (aperçu) : 5 onglets + Scanner au centre ; Coach et Profil passent en haut de l'accueil ----
+ICONS.home = '<path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6h-6v6H5a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="2" fill="none" stroke-linejoin="round"/>';
+function dsNavHTML() {
+  const L = { home: "Accueil", today: "Nutrition", fridge: "Cuisine", workout: "Séance", progress: "Progrès" };
+  const btn = k => `<button class="${S.tab === k || (k === "home" && (S.tab === "coach" || S.tab === "profile")) ? "on" : ""}" data-act="tab" data-v="${k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${L[k]}${k === "workout" && liveWorkout() ? " •" : ""}</button>`;
+  const ks = Object.keys(L);
+  const scan = `<button class="scanbtn" data-act="scanHub" aria-label="Scanner un aliment"><span><svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 9v6M10 9v6M13 9v6M17 9v6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>Scanner</button>`;
+  return ks.slice(0, 3).map(btn).join("") + scan + ks.slice(3).map(btn).join("");
 }
 
 // ---- Branchements (seulement en mode aperçu) ----
 (function dsInit() {
   const q = new URLSearchParams(location.search); if (!q.has("ds")) return; // app normale : rien ne change
   DS.ctrl = true;
-  const _render = render;
+  const _render = render, _nav = navHTML;
+  navHTML = function () { return DS.on ? dsNavHTML() : _nav.apply(this, arguments); };
+  if (q.get("ds") !== "0" && !q.get("screen")) S.tab = "home"; // l'app s'ouvre sur l'accueil
   render = function () {
     if (DS.on && S.tab === "home") { if (isEditing()) return; document.getElementById("app").innerHTML = dsHomeHTML(); document.getElementById("nav").innerHTML = navHTML(); renderSheet(); }
     else _render.apply(this, arguments);

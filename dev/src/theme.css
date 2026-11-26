@@ -234,6 +234,7 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 :where(html[data-ds]) nav.tabs button.scanbtn span{background:var(--grad);box-shadow:0 6px 18px color-mix(in srgb,var(--grad) 35%,transparent);border-color:var(--card)}
 :where(html[data-ds]) nav.tabs button.scanbtn svg path{stroke:var(--on-action)}
 /* identité « contextuelle » : l'onglet actif prend la couleur de son univers */
+:where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=home]{--u-accent:var(--com-accent);--u-pastel:var(--com-pastel);--u-accent-dk:var(--com-accent-dk)}
 :where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=today]{--u-accent:var(--nut-accent);--u-pastel:var(--nut-pastel);--u-accent-dk:var(--nut-accent-dk)}
 :where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=fridge]{--u-accent:var(--cui-accent);--u-pastel:var(--cui-pastel);--u-accent-dk:var(--cui-accent-dk)}
 :where(html[data-ds][data-ds-commun=contextuel]) nav.tabs button[data-v=workout]{--u-accent:var(--mus-accent);--u-pastel:var(--mus-pastel);--u-accent-dk:var(--mus-accent-dk)}
@@ -273,6 +274,7 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 :where(html[data-ds]) .dsh-bar{width:100%;height:5px;border-radius:3px;background:color-mix(in srgb,#fff 18%,transparent);margin-top:8px;overflow:hidden}
 :where(html[data-ds]) .dsh-bar>i{display:block;height:100%;border-radius:3px;background:var(--u-pastel)}
 :where(html[data-ds].dark) .dsh-bar>i{background:var(--u-accent-dk)}
+:where(html[data-ds]) .dsh-ib{padding:6px;color:var(--txt)}:where(html[data-ds]) .dsh-ib svg{width:24px;height:24px;display:block}
 :where(html[data-ds]) .dsh-go{background:var(--u-pastel);color:var(--u-hero);width:100%}
 :where(html[data-ds].dark) .dsh-go{background:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));color:var(--u-accent-dk)}
 
