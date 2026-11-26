@@ -1,0 +1,10 @@
+
+# Contexte privé (jamais dans le dépôt public)
+.private/
+CLAUDE.local.md
+.claude/settings.local.json
+# Fichiers générés
+dev/dist/
+dev/index.local.html
+dev/vendor
+dev/icons

@@ -1,24 +1,24 @@
-# Règles pour toute session Claude qui travaille sur cette app
+# App muscu + nutrition de Vuthy — règles pour Claude Code
 
-App PWA muscu + nutrition de Vuthy (crakizi.github.io/muscu). Réponds en français.
+PWA en ligne sur https://crakizi.github.io/muscu (dépôt **public** `crakizi/muscu`). Réponds toujours en **français simple** : Vuthy ne programme pas, ne lui demande jamais de taper une commande.
 
-## À lire au démarrage
-1. `docs/organisation-conversations.md` : rôles, règles de branches, fichiers de chaque section, contrats entre sections.
-2. `docs/consignes.md` : ta tâche en cours (lis seulement la partie de ta section).
-3. `docs/vision-produit.md` ; puis la fiche de ta section si elle existe (`docs/fiche-*.md`).
-`docs/` est une copie tenue à jour par la conversation Coordination. Le cahier des charges et le journal de développement complets sont dans le projet claude.ai « Mon app Muscu et nutrition ».
+## Source de vérité (à lire au démarrage, dans cet ordre)
+1. `docs/ETAT.md` — état actuel : fonctions en ligne, tâches en cours par domaine, bugs, décisions en attente, dépendances. **Toujours à jour.**
+2. `docs/journal.md` — dernières modifications importantes (les 3 premières entrées suffisent).
+3. `docs/regles.md` — règles de travail, domaines, branches, conflits, livraison, publication.
+4. Selon la tâche : `docs/architecture.md`, `docs/design-system.md`, `docs/domaines/<domaine>.md`, `docs/vision-produit.md`, `docs/feuille-de-route.md`, `docs/decisions.md`.
+5. Contexte privé (sur le Mac de Vuthy seulement, jamais commité) : `CLAUDE.local.md` et `.private/` — profil de Vuthy, cahier des charges complet, analyses des concurrents, historique des anciennes conversations.
 
-## Règle n°1 : la simplicité
-Peu de fonctions, mais bonnes. Un écran = un but principal, 2 ou 3 actions visibles au plus, le reste replié. Textes courts. Chaque livraison dit ce qui a été retiré ou replié. En cas de doute, ne pas ajouter : demander à Vuthy.
+## Les 3 règles qui priment
+1. **Simplicité** : un écran = un but, 2-3 actions visibles au plus, le reste replié ; dire ce qui a été retiré.
+2. **S'inspirer des meilleures apps, à notre sauce** : dire de quelle app vient l'idée et ce qu'on améliore.
+3. **Ne rien casser** : jamais de push sur `main` sans le « publie » de Vuthy ; jamais supprimer de fichier ou de branche, ni réécrire l'historique ; données hors ligne préservées ; clés et données personnelles jamais dans le dépôt public.
 
-## Règle n°2 : s'inspirer des meilleures apps
-Avant toute proposition, lire les analyses des apps concurrentes (voir `docs/organisation-conversations.md`, règle n°2) et dire de quelle app vient l'idée et ce qu'on améliore.
+## Organisation
+- **Coordination** = la session principale : elle reçoit les demandes de Vuthy, les répartit aux sous-agents de domaine (`.claude/agents/` : nutrition, cuisine, muscu, programmes, amis, design, testeur), vérifie, fusionne et publie (skill `publier`).
+- **Domaines** = un sous-agent ou une session par domaine, sur sa branche `sec/<domaine>` (worktree conseillé pour travailler en parallèle), qui livre avec la skill `livrer`.
+- Toute modification importante est tracée dans `docs/journal.md` et `docs/ETAT.md` pour que les autres sessions la voient.
 
-## Règles de travail
-- Une branche par section (`sec/<section>`), partie de `main` (à jour). Jamais de push sur `main`, jamais de modification de `index.html` / `sw.js` à la racine : seule la Coordination publie, après accord de Vuthy.
-- Rester dans les fichiers de sa section ; petits points d'accroche seulement dans `ui.js`, `core.js`, `actions.js`, `build.py` ; CSS ajouté en fin de `style.css` dans une section à son nom.
-- Économiser les tokens : grep avant de lire, ne pas relire des fichiers entiers inutilement.
-- Compiler : voir `dev/README.md` (`python3 build.py --local`). Tests de bout en bout : `dev/testscenarios.py` avec les données `dev/demo_seed.js` (jamais incluses dans l'app).
-- Rien de propre à Vuthy en dur dans le code (tout en réglage) ; données hors ligne préservées (migrations douces) ; pas de pop-up ; jamais de rouge culpabilisant.
-- Clés (Gemini, Pollinations, Supabase) : jamais dans le code.
-- Avant de livrer : compiler, lancer son test + `testscenarios.py`, captures 390×844, pousser sa branche, dire « prêt à fusionner ».
+## Commandes utiles
+- Compiler : `cd dev && python3 build.py --local` (copier/lier `../vendor`, `../icons` dans `dev/` si absents).
+- Tests : `cd dev && python3 -m http.server 8765 &` puis `python3 testscenarios.py` (Playwright + Chrome).
