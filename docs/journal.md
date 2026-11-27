@@ -2,6 +2,12 @@
 
 _Les entrées les plus récentes en haut. Chaque publication (Coordination) et chaque changement important d'organisation ajoute une entrée. Les sessions lisent les 3 premières au démarrage. L'historique détaillé V1 → V1.8 (17-21/11) est dans le contexte privé `.private/projet/journal-developpement.md`._
 
+## 27/11/2026 — Correctif format téléphone (branche `sec/design-systeme`)
+- Bug signalé par Vuthy : sur le Mac (Safari / app Mac), bande blanche à droite du téléphone, barre d'onglets au milieu. Cause : `zoom` CSS sur le cadre, que WebKit applique une 2ᵉ fois dans l'iframe (prouvé avec une page minimale : contenu à 60 % avec `zoom`, 100 % avec `transform`). Correctif : `transform: scale()`.
+- « Ouvrir en grand » : ajout d'un bouton « Format téléphone » pour revenir.
+- Mises à jour : l'app dans le cadre recharge aussi le cadre (sinon l'ancien cadre restait jusqu'au redémarrage).
+- Nouveau test `dev/testwebkit.swift` (moteur de Safari) : OK en 1280×860, 900×600, 1440×900, 760×1000 ; scénarios 77/77, contrastes 0 sous le seuil.
+
 ## 27/11/2026 — Publication : format téléphone
 - En ligne : sur grand écran (Mac, ordinateur, iPad), l'app s'affiche dans un iPhone simulé ; « Ouvrir en grand » pour l'écran entier. Avant publication : `main` = `82522d0`.
 
