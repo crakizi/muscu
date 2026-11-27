@@ -473,6 +473,25 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 :where(html[data-ds]) .dsh-go{background:var(--u-pastel);color:var(--u-hero);width:100%}
 :where(html[data-ds].dark) .dsh-go{background:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));color:var(--u-accent-dk)}
 
+/* ---------- Format téléphone (phone.js) : iPhone simulé sur grand écran ---------- */
+html.phone-host,html.phone-host body{height:100%;margin:0;overflow:hidden;background:#E6E8EC}
+html.phone-host.dark,html.phone-host.dark body{background:#08090B}
+.phone-stage{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.phone{position:relative;width:414px;height:868px;flex:none;padding:12px;box-sizing:border-box;border-radius:64px;background:#101114;box-shadow:0 0 0 2px #2B2E34,0 0 0 5px #0B0C0E,0 30px 80px rgba(0,0,0,.28)}
+.phone iframe{width:390px;height:844px;border:0;border-radius:52px;display:block;background:#fff}
+.phone-island{position:absolute;top:23px;left:50%;transform:translateX(-50%);width:122px;height:35px;border-radius:20px;background:#000;pointer-events:none}
+.phone-home{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:rgba(0,0,0,.82);pointer-events:none}
+html.phone-host.dark .phone-home{background:rgba(255,255,255,.82)}
+.phone-out{font:13px -apple-system,system-ui,sans-serif;color:#5F6670;text-decoration:none}.phone-out:hover{text-decoration:underline}
+html.phone-host.dark .phone-out{color:#9AA1AC}
+html.in-phone #app{padding-top:59px!important}
+.phone-status{position:fixed;top:0;left:0;right:0;height:50px;z-index:95;display:flex;justify-content:space-between;align-items:center;padding:4px 26px 0 40px;font:600 16px -apple-system,system-ui,sans-serif;color:var(--txt);background:var(--bg);pointer-events:none}
+.phone-status span{display:flex;gap:6px;align-items:center}.phone-status svg{fill:currentColor}
+html.in-phone nav.tabs{padding-bottom:26px}
+html.in-phone .sheet{padding-bottom:34px}
+html.in-phone .restbar,html.in-phone .fab{bottom:104px}html.in-phone .toast{bottom:108px}
+html.in-phone body:has(#restBar) .toast{bottom:172px}
+
 @media (prefers-reduced-motion:reduce){:where(html[data-ds]) *{transition:none!important;animation-duration:.01ms!important}}
 
 #app{padding-top:calc(12px + env(safe-area-inset-top))}</style>
@@ -480,7 +499,50 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 </head><body><div id="app"></div><nav class="tabs" id="nav"></nav><div id="sheet"></div>
 <script>
 const BUILD_CFG = {"url": "https://eicwzeupcccweewzorqh.supabase.co", "anon": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpY3d6ZXVwY2Njd2Vld3pvcnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDUyNTIsImV4cCI6MjExMDUyMTI1Mn0.7XVI5QM_8nJ0UjwqJ043HyMdNshlfuT1uDzhsctiJY4"};
-const BUILD_VERSION = "1795735328";
+const BUILD_VERSION = "1795738259";
+// ===================== FORMAT TÉLÉPHONE (section Design) =====================
+// Sur un grand écran (Mac, navigateur d'ordinateur, iPad), l'app s'affiche dans un iPhone simulé (390 × 844) :
+// la page devient un simple « support » qui contient un cadre (iframe) où tourne la vraie app (?inphone=1).
+// Le support ne lance PAS l'app (pas de synchro, pas de données) : il n'y a qu'une seule app qui tourne.
+// Jamais de cadre : sur un téléphone, dans l'app iPhone (pont Santé), dans un cadre, avec ?ds (page d'aperçu),
+// au retour de connexion Spotify (?code=), ou avec ?nophone=1 (« Ouvrir en grand »).
+const PHONE = (() => {
+  const q = new URLSearchParams(location.search);
+  const inPhone = q.has("inphone");
+  let top = true; try { top = window.top === window.self; } catch (e) { top = false; }
+  const native = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.health);
+  const host = !inPhone && top && !native && !q.has("ds") && !q.has("nophone") && !q.get("code") && Math.min(innerWidth, screen.width || innerWidth) >= 700;
+  return { inPhone, host };
+})();
+
+// Appelée au démarrage (actions.js). Renvoie true si la page est le support (l'app ne démarre pas ici).
+function phoneBoot() {
+  const h = document.documentElement;
+  if (PHONE.inPhone) { h.classList.add("in-phone"); phoneStatusBar(); return false; }
+  if (!PHONE.host) return false;
+  h.classList.add("phone-host");
+  const dark = () => { const p = typeof themePref === "function" ? themePref() : "clair"; return p === "sombre" || (p === "auto" && matchMedia("(prefers-color-scheme: dark)").matches); };
+  const paint = () => h.classList.toggle("dark", dark());
+  paint(); addEventListener("storage", e => { if (e.key === "muscu_theme") paint(); }); // le thème choisi dans l'app suit
+  const src = location.pathname + "?inphone=1" + location.hash;
+  document.body.innerHTML = `<div class="phone-stage"><div class="phone" id="phone"><iframe src="${src}" title="Muscu & Nutrition" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen; screen-wake-lock"></iframe>
+    <i class="phone-island"></i><i class="phone-home"></i></div><a class="phone-out" href="${location.pathname}?nophone=1">Ouvrir en grand</a></div>`;
+  const fit = () => { const s = Math.min(1, (innerHeight - 56) / 868, (innerWidth - 32) / 414); document.getElementById("phone").style.zoom = s.toFixed(3); };
+  fit(); addEventListener("resize", fit);
+  return true;
+}
+
+// Barre d'état façon iPhone (heure + icônes), dans l'app quand elle tourne dans le cadre
+function phoneStatusBar() {
+  const el = document.createElement("div"); el.className = "phone-status"; el.setAttribute("aria-hidden", "true");
+  const icons = `<svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0zM3.2 6.6a6.8 6.8 0 0 1 9.6 0l-1.4 1.4a4.8 4.8 0 0 0-6.8 0zM.8 4.2a10.2 10.2 0 0 1 14.4 0L13.8 5.6a8.2 8.2 0 0 0-11.6 0z"/></svg>
+    <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="22" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2"/><path d="M24 4.5v4a2 2 0 0 0 0-4z" opacity=".4"/></svg>`;
+  const tick = () => { const d = new Date(); el.innerHTML = `<b>${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}</b><span>${icons}</span>`; };
+  tick(); setInterval(tick, 20000);
+  document.body.appendChild(el);
+}
+
 // ===================== DONNÉES DE BASE =====================
 // Aliments courants : valeurs moyennes pour 100 g (kcal, prot, gluc, lip, fibres). u = portion type en g
 const FOODS_BASE = [
@@ -1278,6 +1340,7 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) naviga
 // ---------- Mises à jour automatiques ----------
 async function checkUpdate() {
   if (!navigator.onLine || typeof BUILD_VERSION === "undefined" || !location.protocol.startsWith("http")) return;
+  if (typeof PHONE !== "undefined" && PHONE.host) return; // le support du format téléphone ne se recharge pas : l'app dans le cadre s'en charge
   try {
     const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
     if (j.v && j.v !== BUILD_VERSION) {
@@ -4840,7 +4903,7 @@ Object.assign(ACT, DISH_ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_A
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
-if (typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); }
+if ((typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) && !(typeof phoneBoot === "function" && phoneBoot())) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); } // phoneBoot : format téléphone sur grand écran (phone.js)
 
 // ===================== DESIGN SYSTEM 2 (section Design) =====================
 // ACTIF par défaut (choix de Vuthy du 26-27/11 : Black Cherry, style C, neutre + accents, accueil).

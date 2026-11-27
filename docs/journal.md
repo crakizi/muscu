@@ -2,7 +2,10 @@
 
 _Les entrées les plus récentes en haut. Chaque publication (Coordination) et chaque changement important d'organisation ajoute une entrée. Les sessions lisent les 3 premières au démarrage. L'historique détaillé V1 → V1.8 (17-21/11) est dans le contexte privé `.private/projet/journal-developpement.md`._
 
-## 27/11/2026 — Format téléphone (branche `sec/design-systeme`, non publié)
+## 27/11/2026 — Publication : format téléphone
+- En ligne : sur grand écran (Mac, ordinateur, iPad), l'app s'affiche dans un iPhone simulé ; « Ouvrir en grand » pour l'écran entier. Avant publication : `main` = `82522d0`.
+
+## 27/11/2026 — Format téléphone (branche `sec/design-systeme`)
 - Sur grand écran, l'app s'affiche dans un iPhone simulé (`dev/src/phone.js`, styles en fin de `theme.css`), lien « Ouvrir en grand ». Tests : scénarios 77/77, contrastes 0 sous le seuil, cadre vérifié en 1440×900, 1024×700 et 390×844 (pas de cadre sur téléphone), aucune erreur JS.
 
 ## 27/11/2026 — Publication : design system 2
