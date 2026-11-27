@@ -3,7 +3,7 @@
 _Mis à jour le 26/11/2026 (design system 2). Chaque session met à jour sa ligne et la date à chaque livraison ; la Coordination met à jour le reste à chaque publication._
 
 ## En ligne (`main`, https://crakizi.github.io/muscu)
-Dernière publication : 27/11/2026 (design system 2 ; `main` avant publication : `45069f8`). Contenu : V1 à V1.8 + Nutrition lots 1-2, Cuisine lots 1-2, Muscu lot 1 + design system 2 (couleurs par univers, Accueil, barre 5 onglets). Détail : `docs/journal.md` et les fiches `docs/domaines/`.
+Dernière publication : 27/11/2026 (design system 2 ; `main` avant publication : `45069f8`). Contenu : V1 à V1.8 + Nutrition lots 1-2, Cuisine lots 1-2, Muscu lot 1 + design system 2 (couleurs par univers, Accueil, barre 5 onglets) + format téléphone sur grand écran (27/11). Détail : `docs/journal.md` et les fiches `docs/domaines/`.
 Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26.bundle` + projet natif `MuscuApp-natif-2026-11-26.tgz` dans `~/Applications/Muscu-sauvegardes/` sur le Mac ; branches `sauv/*` dans le bundle.
 
 ## Tâches par domaine
@@ -14,7 +14,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Muscu | `sec/muscu` | En ligne (lot 1) | `1560b59` | Rien de demandé ; idées dans `docs/feuille-de-route.md` |
 | Programmes | `sec/programme` | Proposition faite, **attend Vuthy** | — (aucun code) | Valider la liste (zone 2, HIIT, Camp, Abdos, + option Course 0→5 km) et dire s'il veut une maquette du minuteur |
 | Amis | `sec/amis` | Codé, **non fusionné** | `fcc2301` | Vuthy doit exécuter la partie AMIS de `dev/schema.sql` dans Supabase et activer les inscriptions ; puis test réel et fusion |
-| Design | `sec/design-systeme` | **En ligne** (27/11) ; **format téléphone** prêt, attend « publie » | voir branche | Design system 2 actif par défaut : Black Cherry, couleurs affirmées (style C), neutre + accents, Accueil + barre 5 onglets. Tests 77/77, Cuisine 28/28, Muscu 14/14, Nutrition testnut2 OK, contrastes 0 sous le seuil. Captures `dev/shots/design2/planche-5-*` |
+| Design | `sec/design-systeme` | **En ligne** (27/11) ; **format téléphone en ligne** (27/11) | voir branche | Design system 2 actif par défaut : Black Cherry, couleurs affirmées (style C), neutre + accents, Accueil + barre 5 onglets. Tests 77/77, Cuisine 28/28, Muscu 14/14, Nutrition testnut2 OK, contrastes 0 sous le seuil. Captures `dev/shots/design2/planche-5-*` |
 | Design (Liftin') | `sec/design-liftin` | Remplacée par `sec/design-systeme` (formes Liftin' reprises) | `11888e8` | Ne pas fusionner telle quelle ; accent bleu remplacé par les couleurs par univers |
 | Design (ancien) | `sec/design` | **Non retenu** (vert) | — | Garder en archive, ne pas fusionner |
 | Tests | `test/lot2` | Vérifications déjà intégrées dans `main` | — | Mettre à jour ou supprimer les vieux tests cassés (accord de Vuthy requis) |
