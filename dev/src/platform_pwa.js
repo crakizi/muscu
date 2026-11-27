@@ -183,7 +183,7 @@ async function checkUpdate() {
     if (j.v && j.v !== BUILD_VERSION) {
       const reg = await navigator.serviceWorker?.getRegistration(); if (reg) await reg.update().catch(() => {});
       if (S.sheet || isEditing() || liveWorkout()) { window._updReady = true; Store.emit(); return; }
-      toast("Mise à jour de l'app…"); setTimeout(() => location.reload(), 800);
+      toast("Mise à jour de l'app…"); setTimeout(() => (typeof PHONE !== "undefined" && PHONE.inPhone ? window.top : window).location.reload(), 800); // format téléphone : recharger aussi le cadre
     }
   } catch (e) {}
 }

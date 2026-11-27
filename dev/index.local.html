@@ -477,13 +477,17 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 html.phone-host,html.phone-host body{height:100%;margin:0;overflow:hidden;background:#E6E8EC}
 html.phone-host.dark,html.phone-host.dark body{background:#08090B}
 .phone-stage{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.phone{position:relative;width:414px;height:868px;flex:none;padding:12px;box-sizing:border-box;border-radius:64px;background:#101114;box-shadow:0 0 0 2px #2B2E34,0 0 0 5px #0B0C0E,0 30px 80px rgba(0,0,0,.28)}
+.phone-fit{position:relative;flex:none}
+.phone{position:absolute;top:0;left:0;transform-origin:0 0;width:414px;height:868px;padding:12px;box-sizing:border-box;border-radius:64px;background:#101114;box-shadow:0 0 0 2px #2B2E34,0 0 0 5px #0B0C0E,0 30px 80px rgba(0,0,0,.28)}
 .phone iframe{width:390px;height:844px;border:0;border-radius:52px;display:block;background:#fff}
 .phone-island{position:absolute;top:23px;left:50%;transform:translateX(-50%);width:122px;height:35px;border-radius:20px;background:#000;pointer-events:none}
 .phone-home{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:rgba(0,0,0,.82);pointer-events:none}
 html.phone-host.dark .phone-home{background:rgba(255,255,255,.82)}
 .phone-out{font:13px -apple-system,system-ui,sans-serif;color:#5F6670;text-decoration:none}.phone-out:hover{text-decoration:underline}
 html.phone-host.dark .phone-out{color:#9AA1AC}
+.phone-back{position:fixed;top:14px;right:16px;z-index:96;font:600 13px -apple-system,system-ui,sans-serif;text-decoration:none;color:var(--txt,#16181D);background:var(--card,#fff);border:1px solid var(--line,#E2E4E8);border-radius:999px;padding:8px 14px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.phone-back::before{content:"";display:inline-block;width:9px;height:14px;border:2px solid currentColor;border-radius:3px;margin-right:7px;vertical-align:-2px}
+.phone-back:hover{filter:brightness(.97)}
 html.in-phone #app{padding-top:59px!important}
 .phone-status{position:fixed;top:0;left:0;right:0;height:50px;z-index:95;display:flex;justify-content:space-between;align-items:center;padding:4px 26px 0 40px;font:600 16px -apple-system,system-ui,sans-serif;color:var(--txt);background:var(--bg);pointer-events:none}
 .phone-status span{display:flex;gap:6px;align-items:center}.phone-status svg{fill:currentColor}
@@ -503,29 +507,36 @@ html.in-phone body:has(#restBar) .toast{bottom:172px}
 // la page devient un simple « support » qui contient un cadre (iframe) où tourne la vraie app (?inphone=1).
 // Le support ne lance PAS l'app (pas de synchro, pas de données) : il n'y a qu'une seule app qui tourne.
 // Jamais de cadre : sur un téléphone, dans l'app iPhone (pont Santé), dans un cadre, avec ?ds (page d'aperçu),
-// au retour de connexion Spotify (?code=), ou avec ?nophone=1 (« Ouvrir en grand »).
+// au retour de connexion Spotify (?code=), ou avec ?nophone=1 (« Ouvrir en grand », qui affiche alors un bouton « Format téléphone » pour revenir).
 const PHONE = (() => {
   const q = new URLSearchParams(location.search);
   const inPhone = q.has("inphone");
   let top = true; try { top = window.top === window.self; } catch (e) { top = false; }
   const native = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.health);
   const host = !inPhone && top && !native && !q.has("ds") && !q.has("nophone") && !q.get("code") && Math.min(innerWidth, screen.width || innerWidth) >= 700;
-  return { inPhone, host };
+  const big = !inPhone && top && !native && !q.has("ds") && !q.get("code") && q.has("nophone") && Math.min(innerWidth, screen.width || innerWidth) >= 700;
+  return { inPhone, host, big };
 })();
 
 // Appelée au démarrage (actions.js). Renvoie true si la page est le support (l'app ne démarre pas ici).
 function phoneBoot() {
   const h = document.documentElement;
   if (PHONE.inPhone) { h.classList.add("in-phone"); phoneStatusBar(); return false; }
+  if (PHONE.big) { // « Ouvrir en grand » : petit bouton pour revenir au téléphone simulé
+    const a = document.createElement("a"); a.className = "phone-back"; a.href = location.pathname + location.hash; a.textContent = "Format téléphone";
+    a.setAttribute("aria-label", "Revenir au format téléphone"); document.body.appendChild(a); return false; }
   if (!PHONE.host) return false;
   h.classList.add("phone-host");
   const dark = () => { const p = typeof themePref === "function" ? themePref() : "clair"; return p === "sombre" || (p === "auto" && matchMedia("(prefers-color-scheme: dark)").matches); };
   const paint = () => h.classList.toggle("dark", dark());
   paint(); addEventListener("storage", e => { if (e.key === "muscu_theme") paint(); }); // le thème choisi dans l'app suit
   const src = location.pathname + "?inphone=1" + location.hash;
-  document.body.innerHTML = `<div class="phone-stage"><div class="phone" id="phone"><iframe src="${src}" title="Muscu & Nutrition" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen; screen-wake-lock"></iframe>
-    <i class="phone-island"></i><i class="phone-home"></i></div><a class="phone-out" href="${location.pathname}?nophone=1">Ouvrir en grand</a></div>`;
-  const fit = () => { const s = Math.min(1, (innerHeight - 56) / 868, (innerWidth - 32) / 414); document.getElementById("phone").style.zoom = s.toFixed(3); };
+  document.body.innerHTML = `<div class="phone-stage"><div class="phone-fit" id="phoneFit"><div class="phone" id="phone"><iframe src="${src}" title="Muscu & Nutrition" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen; screen-wake-lock"></iframe>
+    <i class="phone-island"></i><i class="phone-home"></i></div></div><a class="phone-out" href="${location.pathname}?nophone=1">Ouvrir en grand</a></div>`;
+  // Mise à l'échelle par transform (et non « zoom » : Safari/WebKit appliquait le zoom une 2e fois dans le cadre,
+  // l'app ne remplissait plus l'écran → bande blanche à droite). Le cadre garde toujours 390 × 844 à l'intérieur.
+  const fit = () => { const s = Math.min(1, (innerHeight - 56) / 868, (innerWidth - 32) / 414), f = document.getElementById("phoneFit");
+    f.style.width = Math.round(414 * s) + "px"; f.style.height = Math.round(868 * s) + "px"; document.getElementById("phone").style.transform = `scale(${s.toFixed(4)})`; };
   fit(); addEventListener("resize", fit);
   return true;
 }

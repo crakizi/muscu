@@ -3,29 +3,36 @@
 // la page devient un simple « support » qui contient un cadre (iframe) où tourne la vraie app (?inphone=1).
 // Le support ne lance PAS l'app (pas de synchro, pas de données) : il n'y a qu'une seule app qui tourne.
 // Jamais de cadre : sur un téléphone, dans l'app iPhone (pont Santé), dans un cadre, avec ?ds (page d'aperçu),
-// au retour de connexion Spotify (?code=), ou avec ?nophone=1 (« Ouvrir en grand »).
+// au retour de connexion Spotify (?code=), ou avec ?nophone=1 (« Ouvrir en grand », qui affiche alors un bouton « Format téléphone » pour revenir).
 const PHONE = (() => {
   const q = new URLSearchParams(location.search);
   const inPhone = q.has("inphone");
   let top = true; try { top = window.top === window.self; } catch (e) { top = false; }
   const native = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.health);
   const host = !inPhone && top && !native && !q.has("ds") && !q.has("nophone") && !q.get("code") && Math.min(innerWidth, screen.width || innerWidth) >= 700;
-  return { inPhone, host };
+  const big = !inPhone && top && !native && !q.has("ds") && !q.get("code") && q.has("nophone") && Math.min(innerWidth, screen.width || innerWidth) >= 700;
+  return { inPhone, host, big };
 })();
 
 // Appelée au démarrage (actions.js). Renvoie true si la page est le support (l'app ne démarre pas ici).
 function phoneBoot() {
   const h = document.documentElement;
   if (PHONE.inPhone) { h.classList.add("in-phone"); phoneStatusBar(); return false; }
+  if (PHONE.big) { // « Ouvrir en grand » : petit bouton pour revenir au téléphone simulé
+    const a = document.createElement("a"); a.className = "phone-back"; a.href = location.pathname + location.hash; a.textContent = "Format téléphone";
+    a.setAttribute("aria-label", "Revenir au format téléphone"); document.body.appendChild(a); return false; }
   if (!PHONE.host) return false;
   h.classList.add("phone-host");
   const dark = () => { const p = typeof themePref === "function" ? themePref() : "clair"; return p === "sombre" || (p === "auto" && matchMedia("(prefers-color-scheme: dark)").matches); };
   const paint = () => h.classList.toggle("dark", dark());
   paint(); addEventListener("storage", e => { if (e.key === "muscu_theme") paint(); }); // le thème choisi dans l'app suit
   const src = location.pathname + "?inphone=1" + location.hash;
-  document.body.innerHTML = `<div class="phone-stage"><div class="phone" id="phone"><iframe src="${src}" title="Muscu & Nutrition" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen; screen-wake-lock"></iframe>
-    <i class="phone-island"></i><i class="phone-home"></i></div><a class="phone-out" href="${location.pathname}?nophone=1">Ouvrir en grand</a></div>`;
-  const fit = () => { const s = Math.min(1, (innerHeight - 56) / 868, (innerWidth - 32) / 414); document.getElementById("phone").style.zoom = s.toFixed(3); };
+  document.body.innerHTML = `<div class="phone-stage"><div class="phone-fit" id="phoneFit"><div class="phone" id="phone"><iframe src="${src}" title="Muscu & Nutrition" allow="camera; microphone; clipboard-read; clipboard-write; fullscreen; screen-wake-lock"></iframe>
+    <i class="phone-island"></i><i class="phone-home"></i></div></div><a class="phone-out" href="${location.pathname}?nophone=1">Ouvrir en grand</a></div>`;
+  // Mise à l'échelle par transform (et non « zoom » : Safari/WebKit appliquait le zoom une 2e fois dans le cadre,
+  // l'app ne remplissait plus l'écran → bande blanche à droite). Le cadre garde toujours 390 × 844 à l'intérieur.
+  const fit = () => { const s = Math.min(1, (innerHeight - 56) / 868, (innerWidth - 32) / 414), f = document.getElementById("phoneFit");
+    f.style.width = Math.round(414 * s) + "px"; f.style.height = Math.round(868 * s) + "px"; document.getElementById("phone").style.transform = `scale(${s.toFixed(4)})`; };
   fit(); addEventListener("resize", fit);
   return true;
 }
