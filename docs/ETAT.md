@@ -3,7 +3,7 @@
 _Mis à jour le 26/11/2026 (design system 2). Chaque session met à jour sa ligne et la date à chaque livraison ; la Coordination met à jour le reste à chaque publication._
 
 ## En ligne (`main`, https://crakizi.github.io/muscu)
-Dernière publication : 27/11/2026 (design system 2 ; `main` avant publication : `45069f8`). Contenu : V1 à V1.8 + Nutrition lots 1-2, Cuisine lots 1-2, Muscu lot 1 + design system 2 (couleurs par univers, Accueil, barre 5 onglets) + format téléphone sur grand écran (27/11). Détail : `docs/journal.md` et les fiches `docs/domaines/`.
+Dernière publication : 27/11/2026 (design system 2 ; `main` avant publication : `45069f8`). Contenu : V1 à V1.8 + Nutrition lots 1-2, Cuisine lots 1-2, Muscu lot 1 + design system 2 (couleurs par univers, Accueil, barre 5 onglets) + format téléphone sur grand écran (27/11, corrigé pour Safari / app Mac le même jour). Détail : `docs/journal.md` et les fiches `docs/domaines/`.
 Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26.bundle` + projet natif `MuscuApp-natif-2026-11-26.tgz` dans `~/Applications/Muscu-sauvegardes/` sur le Mac ; branches `sauv/*` dans le bundle.
 
 ## Tâches par domaine
