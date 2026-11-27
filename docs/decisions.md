@@ -30,6 +30,7 @@ _Ne contient que ce que Vuthy a réellement validé (sa réponse entre guillemet
 | 26/11 | Identité des écrans communs : **neutre + accents par univers** (onglet actif à la couleur de son univers) | « Neutre + accents » |
 | 26/11 | Écran **Accueil** en tuiles par univers (d'après sa maquette) ; il devient le premier onglet | « Oui, l'accueil » |
 | 27/11 | Barre d'onglets : Accueil · Nutrition · Cuisine · [Scanner] · Séance · Progrès ; Coach et Profil en icônes en haut de l'accueil ; « Aujourd'hui » renommé « Nutrition » | « Oui, elle me va » |
+| 27/11 | Sur grand écran, l'app s'affiche **en format téléphone** (iPhone simulé) ; « Ouvrir en grand » pour l'écran entier | « je veux que l'appli soit format téléphone, une sorte de simulation téléphone » |
 | 26/11 | Migrer tout le développement vers Claude Code, spécialisation par domaine et coordination centrale | demande du 26/11 |
 
 ## Idées abandonnées ou refusées

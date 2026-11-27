@@ -280,4 +280,23 @@ html[data-ds][data-ds-style=c].dark .ds-hero{
 :where(html[data-ds]) .dsh-go{background:var(--u-pastel);color:var(--u-hero);width:100%}
 :where(html[data-ds].dark) .dsh-go{background:color-mix(in srgb,var(--u-accent-dk) 22%,var(--d-card));color:var(--u-accent-dk)}
 
+/* ---------- Format téléphone (phone.js) : iPhone simulé sur grand écran ---------- */
+html.phone-host,html.phone-host body{height:100%;margin:0;overflow:hidden;background:#E6E8EC}
+html.phone-host.dark,html.phone-host.dark body{background:#08090B}
+.phone-stage{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.phone{position:relative;width:414px;height:868px;flex:none;padding:12px;box-sizing:border-box;border-radius:64px;background:#101114;box-shadow:0 0 0 2px #2B2E34,0 0 0 5px #0B0C0E,0 30px 80px rgba(0,0,0,.28)}
+.phone iframe{width:390px;height:844px;border:0;border-radius:52px;display:block;background:#fff}
+.phone-island{position:absolute;top:23px;left:50%;transform:translateX(-50%);width:122px;height:35px;border-radius:20px;background:#000;pointer-events:none}
+.phone-home{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:rgba(0,0,0,.82);pointer-events:none}
+html.phone-host.dark .phone-home{background:rgba(255,255,255,.82)}
+.phone-out{font:13px -apple-system,system-ui,sans-serif;color:#5F6670;text-decoration:none}.phone-out:hover{text-decoration:underline}
+html.phone-host.dark .phone-out{color:#9AA1AC}
+html.in-phone #app{padding-top:59px!important}
+.phone-status{position:fixed;top:0;left:0;right:0;height:50px;z-index:95;display:flex;justify-content:space-between;align-items:center;padding:4px 26px 0 40px;font:600 16px -apple-system,system-ui,sans-serif;color:var(--txt);background:var(--bg);pointer-events:none}
+.phone-status span{display:flex;gap:6px;align-items:center}.phone-status svg{fill:currentColor}
+html.in-phone nav.tabs{padding-bottom:26px}
+html.in-phone .sheet{padding-bottom:34px}
+html.in-phone .restbar,html.in-phone .fab{bottom:104px}html.in-phone .toast{bottom:108px}
+html.in-phone body:has(#restBar) .toast{bottom:172px}
+
 @media (prefers-reduced-motion:reduce){:where(html[data-ds]) *{transition:none!important;animation-duration:.01ms!important}}

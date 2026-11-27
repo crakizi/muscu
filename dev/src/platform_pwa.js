@@ -177,6 +177,7 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) naviga
 // ---------- Mises à jour automatiques ----------
 async function checkUpdate() {
   if (!navigator.onLine || typeof BUILD_VERSION === "undefined" || !location.protocol.startsWith("http")) return;
+  if (typeof PHONE !== "undefined" && PHONE.host) return; // le support du format téléphone ne se recharge pas : l'app dans le cadre s'en charge
   try {
     const j = await (await fetch("version.json?t=" + Date.now(), { cache: "no-store" })).json();
     if (j.v && j.v !== BUILD_VERSION) {

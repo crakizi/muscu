@@ -1,6 +1,6 @@
 # Rapport d'accessibilité — design system 2 (aperçu)
 
-_Généré par `dev/testdesign2.py` le 27/11/2026 00:15. Mesures sur la vraie app (données de démo), WCAG 2.2 AA : texte ≥ 4,5:1, éléments graphiques ≥ 3:1._
+_Généré par `dev/testdesign2.py` le 27/11/2026 01:02. Mesures sur la vraie app (données de démo), WCAG 2.2 AA : texte ≥ 4,5:1, éléments graphiques ≥ 3:1._
 
 **Résultat : 2132 vérifications réussies, 0 sous le seuil.**
 

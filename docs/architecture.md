@@ -48,6 +48,7 @@ Ordre des modèles Gemini : 3.8-flash → 3.5-flash → 3.5-flash-lite → flash
 | `platform_pwa.js` / `platform_claude.js` | Commun | Accès IA et plateforme selon la cible |
 | `spotify.js` | Divers | Barre musique Spotify (PWA) |
 | `style.css` | Design | Section « Design system » en tête (Design), puis sections par domaine à la fin |
+| `phone.js` | Design | Format téléphone sur grand écran (iPhone simulé, cadre `?inphone=1`) ; accroche dans `actions.js` (démarrage) et `platform_pwa.js` (mises à jour) |
 | `theme.css`, `theme.js` (branche `sec/design-systeme`) | Design | Design system 2 par univers ; inactif sans `?ds=` dans l'adresse ; voir `docs/design-system.md` |
 | `friends.js` (branche `sec/amis`) | Amis | Amis et partage |
 | `programs2.js` (à créer) | Programmes | Programmes cardio, brûle-graisse, camp, abdos |

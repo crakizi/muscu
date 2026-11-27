@@ -319,4 +319,4 @@ Object.assign(ACT, DISH_ACT, PLATFORM_ACT, RECIPE_ACT, BODY_ACT, PROG_ACT, NUT_A
 ACT_PICK_MACHINE = id => openSheet(machineSheet(id));
 ACT_PICK_FRIDGE = id => openSheet(fridgeItemSheet(id));
 Store.on(() => { render(); if (liveWorkout()) scheduleTimer(); wakeSync(); });
-if (typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); }
+if ((typeof IS_SP_REDIRECT === "undefined" || !IS_SP_REDIRECT) && !(typeof phoneBoot === "function" && phoneBoot())) { render(); Store.init(); if (typeof spBoot === "function") spBoot(); } // phoneBoot : format téléphone sur grand écran (phone.js)

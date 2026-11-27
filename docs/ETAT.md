@@ -14,7 +14,7 @@ Sauvegarde de l'état au 26/11 : bundle git complet `muscu-sauvegarde-2026-11-26
 | Muscu | `sec/muscu` | En ligne (lot 1) | `1560b59` | Rien de demandé ; idées dans `docs/feuille-de-route.md` |
 | Programmes | `sec/programme` | Proposition faite, **attend Vuthy** | — (aucun code) | Valider la liste (zone 2, HIIT, Camp, Abdos, + option Course 0→5 km) et dire s'il veut une maquette du minuteur |
 | Amis | `sec/amis` | Codé, **non fusionné** | `fcc2301` | Vuthy doit exécuter la partie AMIS de `dev/schema.sql` dans Supabase et activer les inscriptions ; puis test réel et fusion |
-| Design | `sec/design-systeme` | **En ligne** (27/11) | voir branche | Design system 2 actif par défaut : Black Cherry, couleurs affirmées (style C), neutre + accents, Accueil + barre 5 onglets. Tests 77/77, Cuisine 28/28, Muscu 14/14, Nutrition testnut2 OK, contrastes 0 sous le seuil. Captures `dev/shots/design2/planche-5-*` |
+| Design | `sec/design-systeme` | **En ligne** (27/11) ; **format téléphone** prêt, attend « publie » | voir branche | Design system 2 actif par défaut : Black Cherry, couleurs affirmées (style C), neutre + accents, Accueil + barre 5 onglets. Tests 77/77, Cuisine 28/28, Muscu 14/14, Nutrition testnut2 OK, contrastes 0 sous le seuil. Captures `dev/shots/design2/planche-5-*` |
 | Design (Liftin') | `sec/design-liftin` | Remplacée par `sec/design-systeme` (formes Liftin' reprises) | `11888e8` | Ne pas fusionner telle quelle ; accent bleu remplacé par les couleurs par univers |
 | Design (ancien) | `sec/design` | **Non retenu** (vert) | — | Garder en archive, ne pas fusionner |
 | Tests | `test/lot2` | Vérifications déjà intégrées dans `main` | — | Mettre à jour ou supprimer les vieux tests cassés (accord de Vuthy requis) |
